@@ -1,11 +1,19 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/gin-gonic/gin"
+	"pashmak.com/pashmak/initializers"
 )
 
-func main() {
-    router := gin.Default()
+func init() {
+	initializers.LoadEnvVars()
+}
 
-    router.Run("localhost:8080")
+func main() {
+	serverPort := os.Getenv("SERVER_PORT")
+	router := gin.Default()
+	router.Run(fmt.Sprintf("localhost:%s", serverPort))
 }
