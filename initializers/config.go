@@ -2,8 +2,12 @@ package initializers
 
 import (
     "log"
-
+	"os"
     "github.com/joho/godotenv"
+)
+
+var (
+	ServerPort = os.Getenv("SERVER_PORT")
 )
 
 func LoadEnvVars(){

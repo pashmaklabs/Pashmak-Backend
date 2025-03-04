@@ -13,7 +13,6 @@ func init() {
 }
 
 func main() {
-	serverPort := os.Getenv("SERVER_PORT")
 	router := gin.Default()
-	router.Run(fmt.Sprintf("localhost:%s", serverPort))
+	router.Run(fmt.Sprintf("localhost:%s", initializers.ServerPort))
 }
