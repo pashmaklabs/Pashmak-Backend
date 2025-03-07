@@ -1,18 +1,34 @@
 package initializers
 
 import (
-    "log"
+	"log"
 	"os"
-    "github.com/joho/godotenv"
+
+	"github.com/joho/godotenv"
 )
 
 var (
-	ServerPort = os.Getenv("SERVER_PORT")
+	SERVER_PORT string
+)
+
+var (
+	POSTGRES_HOST string
+	POSTGRES_USER string
+	POSTGRES_PASSWORD string
+	POSTGRES_DBNAME string
+	POSTGRES_PORT string
 )
 
 func LoadEnvVars(){
-	err := godotenv.Load()
+	// [INFO] overwrite existing envs
+	err := godotenv.Overload()
 	if err != nil {
 		log.Println("Error loading .env file")
 	}
+	SERVER_PORT = os.Getenv("SERVER_PORT")
+	POSTGRES_HOST = os.Getenv("POSTGRES_HOST")
+	POSTGRES_USER = os.Getenv("POSTGRES_USER")
+	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
+	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
+	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
 }

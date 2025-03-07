@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-bookworm
+    container_name: pashmak_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pashmak_postgres
+    volumes:
+      - type: volume
+        source: pashmak_postgres
+        target: /var/lib/postgresql/data
+    ports:
+      - 127.0.0.1:5432:5432
+
+volumes:
+  pashmak_postgres:
