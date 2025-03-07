@@ -25,6 +25,10 @@ func SetUpPostgres() *gorm.DB {
 	}	
 	var dsn string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tehran",
 									postgres_dsn.host, postgres_dsn.user, postgres_dsn.password, postgres_dsn.dbname, postgres_dsn.port)
-	db, _ := gorm.Open(postgres.Open(dsn),  &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn),  &gorm.Config{})
+	if err != nil {
+		// TODO: set logger instead of Println
+		fmt.Println("failed to initialize database")
+	}
 	return db
 }
