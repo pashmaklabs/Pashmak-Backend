@@ -6,4 +6,5 @@ import (
 
 func AuthRoutes(router *gin.Engine) {
 	//Add routes here
+	router.POST("StartEmailAuth", StartEmailAuth)
 }
