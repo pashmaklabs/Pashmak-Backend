@@ -14,9 +14,10 @@ type User struct {
 	UpdatedAt	time.Time	`gorm:"autoUpdateTime"`
 }
 
-type OneTimePassword struct{
+type UserOTP struct{
 	ID			uint		`gorm:"primaryKey;autoIncrement"`
 	Email 		string		`gorm:"unique;not null"`
+	OTP			string		`gorm:"not null"`
 	CreatedAt	time.Time	`gorm:"autoCreateTime"`
 	UpdatedAt 	time.Time	`gorm:"autoUpdateTime"`
 }
