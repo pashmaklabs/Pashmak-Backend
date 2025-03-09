@@ -10,6 +10,7 @@ func getModels() []interface{}{
 	all_models := []interface{}{
 		// authentication
 		&authentication.User{},
+		&authentication.OneTimePassword{},
 	}
 	return all_models
 }

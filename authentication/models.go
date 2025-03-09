@@ -13,3 +13,10 @@ type User struct {
 	CreatedAt	time.Time	`gorm:"autoCreateTime"`
 	UpdatedAt	time.Time	`gorm:"autoUpdateTime"`
 }
+
+type OneTimePassword struct{
+	ID			uint		`gorm:"primaryKey;autoIncrement"`
+	Email 		string		`gorm:"unique;not null"`
+	CreatedAt	time.Time	`gorm:"autoCreateTime"`
+	UpdatedAt 	time.Time	`gorm:"autoUpdateTime"`
+}
