@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"pashmak.com/pashmak/authentication"
 	"pashmak.com/pashmak/initializers"
 )
 
@@ -15,5 +16,9 @@ func init() {
 
 func main() {
 	router := gin.Default()
+
+	// Add each domain routes here
+	authentication.AuthRoutes(router)
+
 	router.Run(fmt.Sprintf("localhost:%s", initializers.SERVER_PORT))
 }
