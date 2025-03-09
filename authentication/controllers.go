@@ -6,7 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func StartEmailAuth(c *gin.Context){
+type AuthController struct{
+	authService *AuthService
+}
+
+func NewAuthController(authService *AuthService) *AuthController {
+	return &AuthController{authService: authService}
+}
+
+
+func (ac *AuthController)StartEmailAuth(c *gin.Context){
 	var body StartEmailAuthRequest
 
 	if c.Bind(body) != nil{
@@ -16,6 +25,8 @@ func StartEmailAuth(c *gin.Context){
 	}
 
 	// Pass to service
+	//resp := ac.authService.ValidateUser(body.Email)
+
 
 	// Send response
 }
