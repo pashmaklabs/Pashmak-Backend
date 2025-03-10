@@ -10,8 +10,6 @@ var(
 )
 
 func AuthRoutes(router *gin.Engine) {
-	
-	
 	//Add routes here
 	router.POST("StartEmailAuth", routeController.StartEmailAuth)
 }
