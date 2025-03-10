@@ -88,3 +88,6 @@ Temporary Items
 
 # Environment variables
 .env
+
+# VScode extensions setting
+.vscode
