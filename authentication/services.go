@@ -35,13 +35,11 @@ func CheckExistance(email string) bool{
 func (as *AuthService)ValidateUser(email string) (bool, error){
   if CheckExistance(email){
     userotp := GnerateOTP()
-    fmt.Println(userotp)
     ctx := context.Background()
     err := initializers.RedisClient.Set(ctx, email, userotp, 5*time.Minute).Err()
     if err != nil{
-      return false, err
+      return true, err
     }
-    // TODO: store OTP in redis
     return true, nil
   }
   return false, nil

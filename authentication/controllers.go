@@ -26,7 +26,7 @@ func (ac *AuthController) StartEmailAuth(c *gin.Context) {
 		return
 	}
 
-	// Pass to service
+	// Pass to auth service
 	resp, err := ac.authService.ValidateUser(body.Email)
 	if err != nil{
 		c.JSON(http.StatusInternalServerError, gin.H{
