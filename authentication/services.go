@@ -19,8 +19,8 @@ func NewAuthService() *AuthService{
 
 func GnerateOTP()string{
   rand.NewSource(time.Now().UnixNano())
-    otp := rand.Intn(10000)
-    return fmt.Sprintf("%04d", otp)
+  otp := rand.Intn(10000)
+  return fmt.Sprintf("%04d", otp)
 }
 
 func CheckExistance(email string) bool{
@@ -33,6 +33,7 @@ func (as *AuthService)ValidateUser(email string) bool{
   if CheckExistance(email){
     userotp := GnerateOTP()
     fmt.Println(userotp)
+    // TODO: store OTP in redis
     return true
   }
   return false
