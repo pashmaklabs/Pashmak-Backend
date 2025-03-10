@@ -15,16 +15,31 @@ func NewAuthController(authService *AuthService) *AuthController {
 }
 
 func (ac *AuthController) StartEmailAuth(c *gin.Context) {
+	// Read body
 	var body StartEmailAuthRequest
-
-	if c.Bind(body) != nil {
+	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "error reading request body",
+			"status": "error",
+			"message": "error reading request body",
+			"errorCode": "INVALID_REQUEST_BODY",
 		})
+		return
 	}
 
 	// Pass to service
-	//resp := ac.authService.ValidateUser(body.Email)
-
+	resp := ac.authService.ValidateUser(body.Email)
+	
 	// Send response
+	if !resp{
+	  c.JSON(http.StatusNotFound, gin.H{
+		"status": "error",
+		"message": "User not found",
+		"errorCode": "USER_NOT_FOUND",
+	  })
+	  return
+	}
+	c.JSON(http.StatusAccepted, gin.H{
+		"status":  "success",
+		"message": "User found",
+	})
 }
