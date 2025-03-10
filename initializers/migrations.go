@@ -9,8 +9,8 @@ func getModels() []interface{}{
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
 		// authentication
-		&authentication.User{},
-		&authentication.UserOTP{},
+		&models.User{},
+		&models.UserOTP{},
 	}
 	return all_models
 }
