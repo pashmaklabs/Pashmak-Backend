@@ -2,7 +2,7 @@ package initializers
 
 import (
 	"gorm.io/gorm"
-	"pashmak.com/pashmak/authentication"
+	"pashmak.com/pashmak/models"
 )
 
 func getModels() []interface{}{
