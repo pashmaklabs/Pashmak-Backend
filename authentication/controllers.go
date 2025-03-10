@@ -27,17 +27,22 @@ func (ac *AuthController) StartEmailAuth(c *gin.Context) {
 	}
 
 	// Pass to service
-	resp := ac.authService.ValidateUser(body.Email)
-	
-	// Send response
-	if !resp{
-	  c.JSON(http.StatusNotFound, gin.H{
-		"status": "error",
-		"message": "User not found",
-		"errorCode": "USER_NOT_FOUND",
-	  })
-	  return
+	resp, err := ac.authService.ValidateUser(body.Email)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": err.Error(),
+		})
+		return		
 	}
+	if !resp{
+		c.JSON(http.StatusNotFound, gin.H{
+			"status": "success",
+			"message": "User not found",
+		})
+		return
+	}
+	
 	c.JSON(http.StatusAccepted, gin.H{
 		"status":  "success",
 		"message": "User found",
