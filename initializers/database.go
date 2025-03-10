@@ -2,6 +2,8 @@ package initializers
 
 import (
 	"fmt"
+
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,6 +17,7 @@ type DatabaseDSN struct {
 }
   
 var DB *gorm.DB
+var RedisClient *redis.Client
 
 func SetUpPostgres() *gorm.DB {
 	var err error
@@ -33,4 +36,14 @@ func SetUpPostgres() *gorm.DB {
 		fmt.Println("failed to initialize database")
 	}
 	return DB
+}
+
+func SetupRedis() *redis.Client{
+	RedisClient = redis.NewClient(&redis.Options{
+        Addr:	  "localhost:6379",
+        Password: "",
+        DB:		  0,
+        Protocol: 2,
+    })
+	return RedisClient
 }

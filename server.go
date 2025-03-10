@@ -12,6 +12,7 @@ func init() {
 	initializers.LoadEnvVars()
 	db := initializers.SetUpPostgres()
 	initializers.MakeMigrations(db)
+	initializers.SetupRedis()
 }
 
 func main() {
