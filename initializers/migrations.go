@@ -10,7 +10,6 @@ func getModels() []interface{}{
 	all_models := []interface{}{
 		// authentication
 		&models.User{},
-		&models.UserOTP{},
 	}
 	return all_models
 }
