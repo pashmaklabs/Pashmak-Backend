@@ -36,7 +36,7 @@ func (ac *AuthController) StartEmailAuth(c *gin.Context) {
 		return		
 	}
 	if !resp{
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"status": "success",
 			"message": "User not found",
 		})
@@ -60,5 +60,23 @@ func (ac *AuthController)VerifyOTP(c *gin.Context){
 		return
 	}
 
-	// resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
+	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": err.Error(),
+		})
+	}
+	if !resp{
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"message": "OTP mismatch",
+		})
+	}
+	if resp{
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"message": "OTP match",
+		})
+	}
 }
