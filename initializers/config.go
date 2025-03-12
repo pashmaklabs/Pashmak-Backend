@@ -9,6 +9,7 @@ import (
 
 var (
 	SERVER_PORT string
+	EMAIL_PASSWORD string
 )
 
 var (
@@ -31,4 +32,5 @@ func LoadEnvVars(){
 	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
+	EMAIL_PASSWORD = os.Getenv("EMAIL_PASSWORD")
 }
