@@ -10,7 +10,7 @@ var (
 	authController = NewAuthController(authService)
 )
 
-func AuthRoutes(router *gin.Engine) {
+func AddAuthRoutes(router *gin.Engine) {
 	//Add routes here
 	router.POST("/StartEmailAuth", authController.StartEmailAuth)
 	router.POST("/VerifyOTP", authController.VerifyOTP)

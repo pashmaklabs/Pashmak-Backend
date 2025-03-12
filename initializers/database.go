@@ -41,6 +41,7 @@ func SetUpPostgres() *gorm.DB {
 func SetupRedis() *redis.Client{
 	RedisClient = redis.NewClient(&redis.Options{
         Addr:	  "localhost:6379",
+		// TODO: Set redis password
         Password: "",
         DB:		  0,
         Protocol: 2,

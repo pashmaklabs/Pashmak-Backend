@@ -19,7 +19,7 @@ func main() {
 	router := gin.Default()
 
 	// Add each domain routes here
-	authentication.AuthRoutes(router)
+	authentication.AddAuthRoutes(router)
 
 	router.Run(fmt.Sprintf("localhost:%s", initializers.SERVER_PORT))
 }
