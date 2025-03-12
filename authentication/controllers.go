@@ -48,3 +48,17 @@ func (ac *AuthController) StartEmailAuth(c *gin.Context) {
 		"message": "User found",
 	})
 }
+
+func (ac *AuthController)VerifyOTP(c *gin.Context){
+	var body VerifyOTPRequest
+	if c.Bind(&body) != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message": "error reading request body",
+			"errorCode": "INVALID_REQUEST_BODY",
+		})
+		return
+	}
+
+	resp, err := ac.authService.ValidateOTP()
+}

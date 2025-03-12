@@ -7,3 +7,7 @@ type StartEmailAuthRequest struct{
 type StartEmailAuthResponse struct{
 	//
 }
+
+type VerifyOTPRequest struct{
+	OTP string	`json:"OTP"`
+}

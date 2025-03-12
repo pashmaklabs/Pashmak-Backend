@@ -101,3 +101,7 @@ func (as *AuthService) ValidateUser(Email string) (bool, error) {
 	}
 	return false, nil
 }
+
+func (as *AuthService)ValidateOTP(){
+
+}
