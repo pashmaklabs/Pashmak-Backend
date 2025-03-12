@@ -9,5 +9,6 @@ type StartEmailAuthResponse struct{
 }
 
 type VerifyOTPRequest struct{
-	OTP string	`json:"OTP"`
+	Email string	`json:"email"`
+	OTP string		`json:"OTP"`
 }

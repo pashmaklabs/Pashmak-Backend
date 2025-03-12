@@ -60,5 +60,5 @@ func (ac *AuthController)VerifyOTP(c *gin.Context){
 		return
 	}
 
-	resp, err := ac.authService.ValidateOTP()
+	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
 }
