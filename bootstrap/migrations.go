@@ -1,15 +1,15 @@
-package initializers
+package bootstrap
 
 import (
 	"gorm.io/gorm"
-	"pashmak.com/pashmak/authentication"
+	"pashmak.com/pashmak/models"
 )
 
 func getModels() []interface{}{
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
 		// authentication
-		&authentication.User{},
+		&models_auth.User{},
 	}
 	return all_models
 }

@@ -4,16 +4,16 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"pashmak.com/pashmak/initializers"
+	"pashmak.com/pashmak/bootstrap"
 )
 
 func init() {
-	initializers.LoadEnvVars()
-	db := initializers.SetUpPostgres()
-	initializers.MakeMigrations(db)
+	bootstrap.LoadEnvVars()
+	db := bootstrap.SetUpPostgres()
+	bootstrap.MakeMigrations(db)
 }
 
 func main() {
 	router := gin.Default()
-	router.Run(fmt.Sprintf("localhost:%s", initializers.SERVER_PORT))
+	router.Run(fmt.Sprintf("localhost:%s", bootstrap.SERVER_PORT))
 }
