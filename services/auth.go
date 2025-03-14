@@ -1,7 +1,7 @@
-package authentication
+package services_auth
 
 import (
-  "pashmak.com/pashmak/initializers"
+//   "pashmak.com/pashmak/bootstrap"
   "pashmak.com/pashmak/models"
   "gorm.io/gorm"
   "math/rand"
@@ -23,14 +23,14 @@ func GnerateOTP()string{
   return fmt.Sprintf("%04d", otp)
 }
 
-func CheckExistance(email string) bool{
-  var user models.User
-  initializers.DB.First(&user, "email = ?", email)
+func (as *AuthService)CheckExistance(email string) bool{
+  var user models_auth.User
+  as.DB.First(&user, "email = ?", email)
   return user.ID != 0
 }
 
 func (as *AuthService)ValidateUser(email string) bool{
-  if CheckExistance(email){
+  if as.CheckExistance(email){
     userotp := GnerateOTP()
     fmt.Println(userotp)
     // TODO: store OTP in redis
