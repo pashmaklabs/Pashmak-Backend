@@ -1,19 +1,15 @@
 package routers_auth
 
-
 import (
-	"pashmak.com/pashmak/services"
-	"pashmak.com/pashmak/controllers"
 	"github.com/gin-gonic/gin"
-
+	"gorm.io/gorm"
+	"pashmak.com/pashmak/controllers"
+	"pashmak.com/pashmak/services"
 )
 
-var(
-	routeService = services_auth.NewAuthService()
-	routeController = controlllers_auth.NewAuthController(routeService)
-)
-
-func AuthRoutes(router *gin.Engine) {
+func AuthRoutes(router *gin.Engine, db *gorm.DB) {
 	//Add routes here
+	routeService := services_auth.NewAuthService(db)
+	routeController := controlllers_auth.NewAuthController(routeService)
 	router.POST("StartEmailAuth", routeController.StartEmailAuth)
 }

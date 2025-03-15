@@ -1,20 +1,20 @@
 package services_auth
 
 import (
-//   "pashmak.com/pashmak/bootstrap"
-  "pashmak.com/pashmak/models"
-  "gorm.io/gorm"
-  "math/rand"
-  "time"
-  "fmt"
+	"fmt"
+	"math/rand"
+	"time"
+
+	"gorm.io/gorm"
+	"pashmak.com/pashmak/models"
 )
 
 type AuthService struct{
   DB *gorm.DB
 }
 
-func NewAuthService() *AuthService{
-  return &AuthService{}
+func NewAuthService(db *gorm.DB) *AuthService{
+  return &AuthService{db}
 }
 
 func GnerateOTP()string{
