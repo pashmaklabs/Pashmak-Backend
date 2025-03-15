@@ -24,4 +24,4 @@ services:
 
 volumes:
   pashmak_postgres:
-  redis:
+  redis_data:
