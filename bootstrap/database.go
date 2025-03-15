@@ -13,10 +13,9 @@ type DatabaseDSN struct {
 	dbname		string
 	port		string
 }
-  
-var DB *gorm.DB
 
 func SetUpPostgres() *gorm.DB {
+	var DB *gorm.DB
 	var err error
 	postgres_dsn := DatabaseDSN{
 		host: POSTGRES_HOST, 

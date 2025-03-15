@@ -8,8 +8,9 @@ import (
 )
 
 func AuthRoutes(router *gin.Engine, db *gorm.DB) {
-	//Add routes here
 	routeService := services_auth.NewAuthService(db)
 	routeController := controlllers_auth.NewAuthController(routeService)
-	router.POST("StartEmailAuth", routeController.StartEmailAuth)
+	
+	//Add routes here
+	router.POST("/StartEmailAuth", routeController.StartEmailAuth)
 }
