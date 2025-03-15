@@ -1,4 +1,4 @@
-package initializers
+package bootstrap
 
 import (
 	"fmt"
@@ -16,10 +16,9 @@ type DatabaseDSN struct {
 	port		string
 }
   
-var DB *gorm.DB
-var RedisClient *redis.Client
 
 func SetUpPostgres() *gorm.DB {
+	var DB *gorm.DB
 	var err error
 	postgres_dsn := DatabaseDSN{
 		host: POSTGRES_HOST, 
@@ -39,7 +38,7 @@ func SetUpPostgres() *gorm.DB {
 }
 
 func SetupRedis() *redis.Client{
-	RedisClient = redis.NewClient(&redis.Options{
+	var RedisClient = redis.NewClient(&redis.Options{
         Addr:	  "localhost:6379",
         Password: "",
         DB:		  0,

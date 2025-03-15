@@ -4,22 +4,25 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"pashmak.com/pashmak/authentication"
-	"pashmak.com/pashmak/initializers"
+	"pashmak.com/pashmak/bootstrap"
+	"pashmak.com/pashmak/routers"
+)
+
+var (
+	router *gin.Engine
 )
 
 func init() {
-	initializers.LoadEnvVars()
-	db := initializers.SetUpPostgres()
-	initializers.MakeMigrations(db)
-	initializers.SetupRedis()
+	bootstrap.LoadEnvVars()
+	db := bootstrap.SetUpPostgres()
+	redis_client := bootstrap.SetupRedis()
+	bootstrap.MakeMigrations(db)
+	router = gin.Default()
+	
+	// Add each domain routes here	
+	routers_auth.AuthRoutes(router, db, redis_client)
 }
 
 func main() {
-	router := gin.Default()
-
-	// Add each domain routes here
-	authentication.AuthRoutes(router)
-
-	router.Run(fmt.Sprintf("localhost:%s", initializers.SERVER_PORT))
+	router.Run(fmt.Sprintf("localhost:%s", bootstrap.SERVER_PORT))
 }

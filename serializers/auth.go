@@ -1,4 +1,4 @@
-package authentication
+package serializers_auth
 
 type StartEmailAuthRequest struct{
 	Email string	`json:"email"`
