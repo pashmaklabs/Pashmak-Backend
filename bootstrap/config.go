@@ -12,14 +12,17 @@ var (
 )
 
 var (
-	POSTGRES_HOST string
-	POSTGRES_USER string
+	POSTGRES_HOST     string
+	POSTGRES_USER     string
 	POSTGRES_PASSWORD string
-	POSTGRES_DBNAME string
-	POSTGRES_PORT string
+	POSTGRES_DBNAME   string
+	POSTGRES_PORT     string
+	REDIS_PORT        string
+	REDIS_HOST        string
+	REDIS_PASSWORD    string
 )
 
-func LoadEnvVars(){
+func LoadEnvVars() {
 	// [INFO] overwrite existing envs
 	err := godotenv.Overload()
 	if err != nil {
@@ -31,4 +34,7 @@ func LoadEnvVars(){
 	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
+	REDIS_HOST = os.Getenv("REDIS_HOST")
+	REDIS_PORT = os.Getenv("REDIS_PORT")
+	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
 }
