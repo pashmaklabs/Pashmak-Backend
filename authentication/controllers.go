@@ -39,6 +39,7 @@ func (ac *AuthController) StartEmailAuth(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "success",
 			"message": "User not found",
+			"exists" : false,
 		})
 		return
 	}
@@ -46,6 +47,7 @@ func (ac *AuthController) StartEmailAuth(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{
 		"status":  "success",
 		"message": "User found",
+		"exists" : true,
 	})
 }
 
@@ -71,12 +73,14 @@ func (ac *AuthController)VerifyOTP(c *gin.Context){
 		c.JSON(http.StatusOK, gin.H{
 			"status": "success",
 			"message": "OTP mismatch",
+			
 		})
 	}
 	if resp{
 		c.JSON(http.StatusOK, gin.H{
 			"status": "success",
 			"message": "OTP match",
+			
 		})
 	}
 }

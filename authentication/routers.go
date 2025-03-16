@@ -12,6 +12,6 @@ var (
 
 func AddAuthRoutes(router *gin.Engine) {
 	//Add routes here
-	router.POST("/StartEmailAuth", authController.StartEmailAuth)
-	router.POST("/VerifyOTP", authController.VerifyOTP)
+	router.POST("/send-otp", authController.StartEmailAuth)
+	router.POST("/verify-otp", authController.VerifyOTP)
 }
