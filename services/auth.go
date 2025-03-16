@@ -11,6 +11,8 @@ import (
 	models_auth "pashmak.com/pashmak/models"
 )
 
+const DefaultOTPAge = 2 * time.Minute
+
 type AuthService struct {
 	DB          *gorm.DB
 	RedisClient *redis.Client
@@ -42,13 +44,23 @@ func (as *AuthService) CheckExistance(email string) (bool, error) {
 	return true, nil
 }
 
-func (as *AuthService)StoreOTPInRedis(email string) error{
-  userOTP := GenerateOTP()
-  ctx := context.Background()
-  if err := as.RedisClient.Set(ctx, email, userOTP, 2 * time.Minute).Err(); err != nil{
-    return fmt.Errorf("failed to store OTP in Redis: %w", err)
-  }
-  return nil
+func (as *AuthService) StoreOTPInRedis(email string, OTP_AGE ...time.Duration) error {
+	var otpAge time.Duration
+
+	if len(OTP_AGE) == 0 {
+		otpAge = DefaultOTPAge
+	} else {
+		otpAge = OTP_AGE[0]
+	}
+
+	userOTP := GenerateOTP()
+	ctx := context.Background()
+
+	if err := as.RedisClient.Set(ctx, email, userOTP, otpAge).Err(); err != nil {
+		return fmt.Errorf("failed to store OTP in Redis: %w", err)
+	}
+
+	return nil
 }
 
 func (as *AuthService) ValidateUser(email string) (bool, error) {
@@ -57,9 +69,9 @@ func (as *AuthService) ValidateUser(email string) (bool, error) {
 		return exists, fmt.Errorf("failed to check user existence: %w", err)
 	}
 
-  if err := as.StoreOTPInRedis(email); err != nil {
+	if err := as.StoreOTPInRedis(email); err != nil {
 		return exists, err
 	}
 
-  return exists, nil
+	return exists, nil
 }
