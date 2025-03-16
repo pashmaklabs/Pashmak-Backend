@@ -1,4 +1,4 @@
-package initializers
+package bootstrap
 
 import (
 	"fmt"
@@ -16,11 +16,8 @@ type DatabaseDSN struct {
 	port		string
 }
   
-var DB *gorm.DB
-var RedisClient *redis.Client
 
 func SetUpPostgres() *gorm.DB {
-	var err error
 	postgres_dsn := DatabaseDSN{
 		host: POSTGRES_HOST, 
 		user: POSTGRES_USER,
@@ -30,19 +27,18 @@ func SetUpPostgres() *gorm.DB {
 	}	
 	var dsn string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tehran",
 									postgres_dsn.host, postgres_dsn.user, postgres_dsn.password, postgres_dsn.dbname, postgres_dsn.port)
-	DB, err = gorm.Open(postgres.Open(dsn),  &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn),  &gorm.Config{})
 	if err != nil {
 		// TODO: set logger instead of Println
 		fmt.Println("failed to initialize database")
 	}
-	return DB
+	return db
 }
 
 func SetupRedis() *redis.Client{
-	RedisClient = redis.NewClient(&redis.Options{
-        Addr:	  "localhost:6379",
-		// TODO: Set redis password
-        Password: "",
+	var RedisClient = redis.NewClient(&redis.Options{
+        Addr:	  fmt.Sprintf("%s:%s", REDIS_HOST, REDIS_PORT),
+        Password: REDIS_PASSWORD,
         DB:		  0,
         Protocol: 2,
     })
