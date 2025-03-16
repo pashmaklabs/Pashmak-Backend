@@ -1,4 +1,4 @@
-package authentication
+package services_auth
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
-	"pashmak.com/pashmak/initializers"
-	"pashmak.com/pashmak/models"
+	"pashmak.com/pashmak/bootstrap"
+	models_auth "pashmak.com/pashmak/models"
 )
 
 type AuthService struct {
@@ -26,10 +26,9 @@ func NewAuthService(db *gorm.DB, redisClient *redis.Client) *AuthService {
 	}
 }
 
-func SendMail(Email string, userOTP string) {
+func SendMail(Email string, userOTP string) error {
 	from := "pashmak471@gmail.com"
-	password := initializers.EMAIL_PASSWORD
-
+	password := bootstrap.EMAIL_PASSWORD
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 
@@ -57,8 +56,9 @@ func SendMail(Email string, userOTP string) {
 
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{Email}, message)
 	if err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
+	return nil
 }
 
 func GenerateOTP() string {
@@ -67,11 +67,9 @@ func GenerateOTP() string {
 	return fmt.Sprintf("%04d", otp)
 }
 
-func (as *AuthService) CheckExistance(Email string) (bool, error) {
-	var user models.User
-	// fmt.Println(as.DB)
-	// FIXME: initializers.DB should be replaced with as.DB but it causes error
-	result := initializers.DB.First(&user, "email = ?", Email)
+func (as *AuthService) CheckExistance(email string) (bool, error) {
+	var user models_auth.User
+	result := as.DB.First(&user, "email = ?", email)
 
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -79,25 +77,30 @@ func (as *AuthService) CheckExistance(Email string) (bool, error) {
 		}
 		return false, result.Error
 	}
-	return user.ID != 0, nil
+	return true, nil
 }
 
-func (as *AuthService) ValidateUser(Email string) (bool, error) {
-	exists, err := as.CheckExistance(Email)
+func (as *AuthService) StoreOTPAndSendEmail(email string) error {
+	userOTP := GenerateOTP()
+	ctx := context.Background()
+	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
+		return fmt.Errorf("failed to store OTP in Redis: %w", err)
+	}
+	if err := SendMail(email, userOTP); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (as *AuthService) ValidateUser(email string) (bool, error) {
+	exists, err := as.CheckExistance(email)
 	if err != nil {
-		return false, fmt.Errorf("failed to check user existence: %w", err)
+		return exists, fmt.Errorf("failed to check user existence: %w", err)
 	}
 
-	if exists {
-		userOTP := GenerateOTP()
-		ctx := context.Background()
-		// FIXME: initializers.RedisClient should be replaced with as.RedisClient but it causes error
-		err = initializers.RedisClient.Set(ctx, Email, userOTP, 5*time.Minute).Err()
-		if err != nil {
-			return true, fmt.Errorf("failed to set OTP in Redis: %w", err)
-		}
-		SendMail(Email, userOTP)
-		return true, nil
+	if err := as.StoreOTPAndSendEmail(email); err != nil {
+		return exists, err
 	}
-	return false, nil
+
+	return exists, nil
 }

@@ -1,4 +1,4 @@
-package initializers
+package bootstrap
 
 import (
 	"gorm.io/gorm"
@@ -9,8 +9,7 @@ func getModels() []interface{}{
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
 		// authentication
-		&models.User{},
-		&models.UserOTP{},
+		&models_auth.User{},
 	}
 	return all_models
 }
