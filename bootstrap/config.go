@@ -49,5 +49,6 @@ func LoadEnvVars() {
 
 	REDIS_HOST = os.Getenv("REDIS_HOST")
 	REDIS_PORT = os.Getenv("REDIS_PORT")
+	REDIS_HOST = os.Getenv("REDIS_HOST")
 	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
 }
