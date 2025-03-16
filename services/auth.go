@@ -42,10 +42,10 @@ func (as *AuthService) CheckExistance(email string) (bool, error) {
 	return true, nil
 }
 
-func (as *AuthService)StoreInRedis(email string) error{
+func (as *AuthService)StoreOTPInRedis(email string) error{
   userOTP := GenerateOTP()
   ctx := context.Background()
-  if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil{
+  if err := as.RedisClient.Set(ctx, email, userOTP, 2 * time.Minute).Err(); err != nil{
     return fmt.Errorf("failed to store OTP in Redis: %w", err)
   }
   return nil
@@ -57,7 +57,7 @@ func (as *AuthService) ValidateUser(email string) (bool, error) {
 		return exists, fmt.Errorf("failed to check user existence: %w", err)
 	}
 
-  if err := as.StoreInRedis(email); err != nil {
+  if err := as.StoreOTPInRedis(email); err != nil {
 		return exists, err
 	}
 

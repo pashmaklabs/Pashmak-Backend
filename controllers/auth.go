@@ -2,6 +2,7 @@ package controlllers_auth
 
 import (
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	serializers_auth "pashmak.com/pashmak/serializers"
@@ -18,11 +19,11 @@ func NewAuthController(authService *services_auth.AuthService) *AuthController {
 
 func (ac *AuthController) SendOTP(c *gin.Context) {
 	// Read body
-	var body serializers_auth.StartEmailAuthRequest
+	var body serializers_auth.SendOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":    "error",
-			"message":   "error reading request body",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
 			"errorCode": "INVALID_REQUEST_BODY",
 		})
 		return
