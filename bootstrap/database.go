@@ -15,7 +15,6 @@ type DatabaseDSN struct {
 	dbname		string
 	port		string
 }
-  
 
 func SetUpPostgres() *gorm.DB {
 	postgres_dsn := DatabaseDSN{

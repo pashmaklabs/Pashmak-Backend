@@ -9,6 +9,7 @@ import (
 
 var (
 	SERVER_PORT string
+	
 	EMAIL_PASSWORD string
 	EMAIL_HOST string
 	EMAIL_PORT string
@@ -21,6 +22,7 @@ var (
 	POSTGRES_PASSWORD string
 	POSTGRES_DBNAME   string
 	POSTGRES_PORT     string
+
 	REDIS_PORT        string
 	REDIS_HOST        string
 	REDIS_PASSWORD    string
