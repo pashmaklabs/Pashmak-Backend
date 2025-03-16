@@ -7,13 +7,13 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	routers_auth "pashmak.com/pashmak/routers"
+	"pashmak.com/pashmak/routers"
 )
 
 var (
-	Router     *gin.Engine
-	DB         *gorm.DB
-	Redis      *redis.Client
+	Router *gin.Engine
+	DB *gorm.DB
+	Redis *redis.Client
 )
 
 func init() {
@@ -25,8 +25,8 @@ func init() {
 
 func main() {
 	Router = gin.Default()
-
-	// Add each domain routes here
+	
+	// Add each domain routes here	
 	routers_auth.AuthRoutes(Router, DB, Redis)
 
 	Router.Run(fmt.Sprintf("localhost:%s", bootstrap.SERVER_PORT))
