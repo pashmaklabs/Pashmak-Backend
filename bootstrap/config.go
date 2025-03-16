@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	SERVER_PORT string
+	SERVER_PORT    string
 	EMAIL_PASSWORD string
 )
 
@@ -30,9 +30,16 @@ func LoadEnvVars() {
 		log.Println("Error loading .env file")
 	}
 	SERVER_PORT = os.Getenv("SERVER_PORT")
+
+	EMAIL_PASSWORD = os.Getenv("EMAIL_PASSWORD")
+
 	POSTGRES_HOST = os.Getenv("POSTGRES_HOST")
 	POSTGRES_USER = os.Getenv("POSTGRES_USER")
 	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
+
+	REDIS_PORT = os.Getenv("REDIS_PORT")
+	REDIS_HOST = os.Getenv("REDIS_HOST")
+	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
 }
