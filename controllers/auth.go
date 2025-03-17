@@ -24,7 +24,6 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":    "error",
 			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
-			"errorCode": "INVALID_REQUEST_BODY",
 		})
 		return
 	}
@@ -39,10 +38,10 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		return
 	}
 	if !resp {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":    "error",
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "success",
 			"message":   "کاربر یافت نشد",
-			"errorCode": "USER_NOT_FOUND",
+			"userExists":    false,
 		})
 		return
 	}
@@ -50,7 +49,37 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "success",
 		"message":   "کاربر یافت شد",
-		"errorCode": "USER_FOUND",
+		"userExists":    true,
 	})
 
+}
+
+func (ac *AuthController) VerifyOTP(c *gin.Context) {
+	var body serializers_auth.VerifyOTPRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+	if resp {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"OTPMatch": true,
+		})
+	}else{
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"OTPMatch": false,
+		})
+	}
 }

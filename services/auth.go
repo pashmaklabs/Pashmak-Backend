@@ -27,10 +27,10 @@ func NewAuthService(db *gorm.DB, redisClient *redis.Client) *AuthService {
 }
 
 func SendMail(Email string, userOTP string) error {
-	from := "pashmak471@gmail.com"
+	from := bootstrap.EMAIL_ADDR
 	password := bootstrap.EMAIL_PASSWORD
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	smtpHost := bootstrap.EMAIL_HOST
+	smtpPort := bootstrap.EMAIL_PORT
 
 	htmlContent := fmt.Sprintf(`
 	<html>
@@ -103,4 +103,17 @@ func (as *AuthService) ValidateUser(email string) (bool, error) {
 	}
 
 	return exists, nil
+}
+
+func (as *AuthService) ValidateOTP(Email string, RecievedOTP string) (bool, error) {
+	ctx := context.Background()
+	realOTP, err := as.RedisClient.Get(ctx, Email).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to get OTP from redis: %w", err)
+	}
+
+	if realOTP != RecievedOTP {
+		return false, nil
+	}
+	return true, nil
 }
