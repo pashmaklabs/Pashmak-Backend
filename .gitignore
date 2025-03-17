@@ -88,3 +88,6 @@ Temporary Items
 
 # Environment variables
 .env
+
+# Private key
+*.pem
