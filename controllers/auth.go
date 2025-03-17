@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	serializers_auth "pashmak.com/pashmak/serializers"
-	services_auth "pashmak.com/pashmak/services"
+	services_auth "pashmak.com/pashmak/services/auth"
 )
 
 type AuthController struct {
