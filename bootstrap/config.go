@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -17,6 +18,8 @@ var (
 	POSTGRES_PASSWORD string
 	POSTGRES_DBNAME string
 	POSTGRES_PORT string
+	TOKEN_AGE int64
+	PRIVATE_KEY_PATH string
 )
 
 func LoadEnvVars(){
@@ -31,4 +34,9 @@ func LoadEnvVars(){
 	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
+	TOKEN_AGE, err = strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
+	if err != nil {
+        log.Println("Error converting TOKEN_AGE to int64")
+    }
+	PRIVATE_KEY_PATH = os.Getenv("PRIVATE_KEY_PATH")
 }
