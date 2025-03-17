@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	serializers_auth "pashmak.com/pashmak/serializers"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
@@ -18,31 +19,67 @@ func NewAuthController(authService *services_auth.AuthService) *AuthController {
 
 func (ac *AuthController) SendOTP(c *gin.Context) {
 	// Read body
-	var body serializers_auth.StartEmailAuthRequest
+	var body serializers_auth.SendOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":    "error",
-			"message":   "error reading request body",
-			"errorCode": "INVALID_REQUEST_BODY",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
 
-	// Pass to service
-	resp := ac.authService.ValidateUser(body.Email)
-
-	// Send response
+	// Pass to auth service
+	resp, err := ac.authService.ValidateUser(body.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
 	if !resp {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":    "error",
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "success",
 			"message":   "کاربر یافت نشد",
-			"errorCode": "USER_NOT_FOUND",
+			"userExists":    false,
 		})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "success",
 		"message":   "کاربر یافت شد",
-		"errorCode": "USER_FOUND",
+		"userExists":    true,
 	})
+
+}
+
+func (ac *AuthController) VerifyOTP(c *gin.Context) {
+	var body serializers_auth.VerifyOTPRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+	if resp {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"OTPMatch": true,
+		})
+	}else{
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"OTPMatch": false,
+		})
+	}
 }

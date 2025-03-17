@@ -2,6 +2,8 @@ package bootstrap
 
 import (
 	"fmt"
+
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -30,4 +32,14 @@ func SetUpPostgres() *gorm.DB {
 		fmt.Println("failed to initialize database")
 	}
 	return db
+}
+
+func SetupRedis() *redis.Client{
+	var RedisClient = redis.NewClient(&redis.Options{
+        Addr:	  fmt.Sprintf("%s:%s", REDIS_HOST, REDIS_PORT),
+        Password: REDIS_PASSWORD,
+        DB:		  0,
+        Protocol: 2,
+    })
+	return RedisClient
 }

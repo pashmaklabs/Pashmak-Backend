@@ -91,3 +91,5 @@ Temporary Items
 
 # Private key
 *.pem
+# VScode extensions setting
+.vscode
