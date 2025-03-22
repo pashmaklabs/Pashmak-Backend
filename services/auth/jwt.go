@@ -88,7 +88,7 @@ func (as *AuthService) ParseToken(tokenString string) (*CustomClaim, error) {
 
 	claim, ok := token.Claims.(*CustomClaim)
 	if !ok {	
-		return nil, err
+		return nil, errors.New("Couldn't parse claims")
 	}
 	return claim, nil
 }

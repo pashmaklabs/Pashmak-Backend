@@ -17,13 +17,13 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token == "" {
-			c.JSON(401, gin.H{"error": "Authorization header is required"})
+			c.JSON(401, gin.H{"error": "هدر authorization نیاز است."})
 			c.Abort()
 			return
 		} else {
 			claim, err := am.authService.VerifyJWT(token)
 			if err != nil {
-				c.JSON(401, gin.H{"error": "Invalid token"})
+				c.JSON(401, gin.H{"error": "توکن نامعتبر است."})
 				c.Abort()
 				return
 			}
