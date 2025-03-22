@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	SERVER_HOST string
 	SERVER_PORT string
 	
 	EMAIL_PASSWORD string
