@@ -36,7 +36,7 @@ func LoadEnvVars() {
 	// [INFO] overwrite existing envs
 	err := godotenv.Overload()
 	if err != nil {
-		log.Println("Error loading .env file")
+		log.Println("Error loading .env file: ", err.Error())
 	}
 	SERVER_PORT = os.Getenv("SERVER_PORT")
 
@@ -48,7 +48,7 @@ func LoadEnvVars() {
 
 	TOKEN_AGE, err = strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
 	if err != nil {
-        log.Println("Error converting TOKEN_AGE to int64")
+        log.Println("Error converting TOKEN_AGE to int64: ", err.Error())
     }
 	PRIVATE_KEY_PATH = os.Getenv("PRIVATE_KEY_PATH")
 
