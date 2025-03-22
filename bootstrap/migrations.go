@@ -10,6 +10,7 @@ func getModels() []interface{}{
 	all_models := []interface{}{
 		// authentication
 		&models_auth.User{},
+		&models_auth.JWTBlacklist{},
 	}
 	return all_models
 }

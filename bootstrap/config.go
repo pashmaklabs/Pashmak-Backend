@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -20,8 +21,11 @@ var (
 	POSTGRES_HOST     string
 	POSTGRES_USER     string
 	POSTGRES_PASSWORD string
-	POSTGRES_DBNAME   string
-	POSTGRES_PORT     string
+	POSTGRES_DBNAME string
+	POSTGRES_PORT string
+
+	TOKEN_AGE int64
+	PRIVATE_KEY_PATH string
 
 	REDIS_PORT        string
 	REDIS_HOST        string
@@ -42,6 +46,13 @@ func LoadEnvVars() {
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
 
+	TOKEN_AGE, err = strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
+	if err != nil {
+        log.Println("Error converting TOKEN_AGE to int64")
+    }
+	PRIVATE_KEY_PATH = os.Getenv("PRIVATE_KEY_PATH")
+
+
 	EMAIL_PASSWORD = os.Getenv("EMAIL_PASSWORD")
 	EMAIL_HOST = os.Getenv("EMAIL_HOST")
 	EMAIL_PORT = os.Getenv("EMAIL_PORT")
@@ -49,6 +60,5 @@ func LoadEnvVars() {
 
 	REDIS_HOST = os.Getenv("REDIS_HOST")
 	REDIS_PORT = os.Getenv("REDIS_PORT")
-	REDIS_HOST = os.Getenv("REDIS_HOST")
 	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
 }

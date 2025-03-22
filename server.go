@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	routers_auth "pashmak.com/pashmak/routers"
-	middlewares_global "pashmak.com/pashmak/middlewares"
+	middlewares_cors "pashmak.com/pashmak/middlewares/cors"
 )
 
 var (
@@ -28,7 +28,7 @@ func main() {
 
 	// FIXME: Should be checked if it's necessary in production or not
 	// Global middleware to set CORS headers
-	Router.Use(middlewares_global.SetCORSHeader)
+	Router.Use(middlewares_cors.SetCORSHeader)
 
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis)

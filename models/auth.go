@@ -13,3 +13,9 @@ type User struct {
 	CreatedAt	time.Time	`gorm:"autoCreateTime"`
 	UpdatedAt	time.Time	`gorm:"autoUpdateTime"`
 }
+
+type JWTBlacklist struct{
+	ID			uint		`gorm:"primaryKey;autoIncrement"`
+	JIT			string		`gorm:"unique;not null"`
+	ExpiresAt	int64		`gorm:"not null"` 
+}

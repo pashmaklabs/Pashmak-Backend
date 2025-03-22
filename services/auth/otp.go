@@ -26,6 +26,12 @@ func NewAuthService(db *gorm.DB, redisClient *redis.Client) *AuthService {
 	}
 }
 
+func (as *AuthService) GnerateOTP()string{
+  rand.NewSource(time.Now().UnixNano())
+  otp := rand.Intn(10000)
+  return fmt.Sprintf("%04d", otp)
+}
+
 func SendMail(Email string, userOTP string) error {
 	from := bootstrap.EMAIL_ADDR
 	password := bootstrap.EMAIL_PASSWORD

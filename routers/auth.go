@@ -5,7 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	controlllers_auth "pashmak.com/pashmak/controllers"
-	services_auth "pashmak.com/pashmak/services"
+	services_auth "pashmak.com/pashmak/services/auth"
 )
 
 func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client) {

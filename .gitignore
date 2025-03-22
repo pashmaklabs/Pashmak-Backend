@@ -89,5 +89,7 @@ Temporary Items
 # Environment variables
 .env
 
+# Private key
+*.pem
 # VScode extensions setting
 .vscode
