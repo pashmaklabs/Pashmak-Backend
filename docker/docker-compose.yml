@@ -32,6 +32,11 @@ services:
     restart: unless-stopped
     ports:
       - 8080:8080
+    env_file:
+      - ../.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - postgres
       - redis

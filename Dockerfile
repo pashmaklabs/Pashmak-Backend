@@ -12,7 +12,10 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY .env .
+RUN echo "http://dl-4.alpinelinux.org/alpine/v3.19/main" > /etc/apk/repositories && \
+    echo "http://dl-4.alpinelinux.org/alpine/v3.19/community" >> /etc/apk/repositories && \
+    apk update && apk add --no-cache ca-certificates
+
 COPY --from=builder /usr/local/bin/app .
 
 EXPOSE 8080
