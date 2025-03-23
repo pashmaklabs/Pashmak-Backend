@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
@@ -29,7 +30,7 @@ func SetUpPostgres() *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn),  &gorm.Config{})
 	if err != nil {
 		// TODO: set logger instead of Println
-		fmt.Println("failed to initialize database")
+		log.Println("failed to initialize database", err.Error())
 	}
 	return db
 }

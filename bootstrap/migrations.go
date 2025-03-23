@@ -1,6 +1,8 @@
 package bootstrap
 
 import (
+	"log"
+
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/models"
 )
@@ -18,6 +20,8 @@ func getModels() []interface{}{
 func MakeMigrations(db *gorm.DB) {
 	all_models := getModels()
 	for _, model := range all_models{
-		db.AutoMigrate(model)
+		if err := db.AutoMigrate(model); err != nil {
+			log.Println("Error migrating model: ", err.Error())
+		}
 	}
 }
