@@ -25,9 +25,7 @@ services:
       - pashmak_redis:/data
   
   backend:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    image: registry.hamdocker.ir/bluh-bluh/pashamk_backend_final:latest
     container_name: pashmak_backend
     restart: unless-stopped
     ports:
