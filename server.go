@@ -2,19 +2,20 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	routers_auth "pashmak.com/pashmak/routers"
 	middlewares_cors "pashmak.com/pashmak/middlewares/cors"
+	routers_auth "pashmak.com/pashmak/routers"
 )
 
 var (
-	Router     *gin.Engine
-	DB         *gorm.DB
-	Redis      *redis.Client
-	AppConfig  *bootstrap.AppConfig
+	Router    *gin.Engine
+	DB        *gorm.DB
+	Redis     *redis.Client
+	AppConfig *bootstrap.AppConfig
 )
 
 func init() {
