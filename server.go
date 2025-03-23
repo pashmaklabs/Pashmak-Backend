@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	Router     *gin.Engine
-	DB         *gorm.DB
-	Redis      *redis.Client
-	AppConfig  *bootstrap.AppConfig
+	Router    *gin.Engine
+	DB        *gorm.DB
+	Redis     *redis.Client
+	AppConfig *bootstrap.AppConfig
 )
 
 func init() {
@@ -37,5 +37,5 @@ func main() {
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 
-	Router.Run(fmt.Sprintf("%s:%s", AppConfig.ServerHost, AppConfig.ServerPort))
+	Router.Run(fmt.Sprintf(":%s", bootstrap.SERVER_PORT))
 }
