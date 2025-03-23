@@ -14,10 +14,11 @@ var (
 	Router     *gin.Engine
 	DB         *gorm.DB
 	Redis      *redis.Client
+	AppConfig  *bootstrap.AppConfig
 )
 
 func init() {
-	bootstrap.LoadEnvVars()
+	AppConfig = bootstrap.LoadEnvVars()
 	DB = bootstrap.SetUpPostgres()
 	Redis = bootstrap.SetupRedis()
 	bootstrap.MakeMigrations(DB)
@@ -31,7 +32,7 @@ func main() {
 	Router.Use(middlewares_cors.SetCORSHeader)
 
 	// Add each domain routes here
-	routers_auth.AuthRoutes(Router, DB, Redis)
+	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 
-	Router.Run(fmt.Sprintf("%s:%s", bootstrap.SERVER_HOST, bootstrap.SERVER_PORT))
+	Router.Run(fmt.Sprintf("%s:%s", AppConfig.ServerHost, AppConfig.ServerPort))
 }
