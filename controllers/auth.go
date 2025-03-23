@@ -5,16 +5,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"pashmak.com/pashmak/bootstrap"
 	serializers_auth "pashmak.com/pashmak/serializers"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
 type AuthController struct {
 	authService *services_auth.AuthService
+	AppConfig 	*bootstrap.AppConfig
 }
 
-func NewAuthController(authService *services_auth.AuthService) *AuthController {
-	return &AuthController{authService: authService}
+func NewAuthController(authService *services_auth.AuthService, appConfig *bootstrap.AppConfig) *AuthController {
+	return &AuthController{
+		authService: authService,
+		AppConfig: appConfig,
+	}
 }
 
 func (ac *AuthController) SendOTP(c *gin.Context) {
@@ -68,18 +73,39 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": err.Error(),
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		return 
 	}
 	if resp {
+		user, _ := ac.authService.GetUserByGmail(body.Email)
+		jwt, err := ac.authService.GenerateJWT(user)
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+			return
+		}
+		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
-			"OTPMatch": true,
+			"message": "ورود با موفقیت انجام شد.",
 		})
+		return
 	}else{
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
-			"OTPMatch": false,
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
+		return
 	}
+}
+
+func (ac *AuthController) ProtectedRouter(c *gin.Context){
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"message": "این یک api محافظت شده است :)",
+	})
+	return
 }
