@@ -33,5 +33,5 @@ func main() {
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis)
 
-	Router.Run(fmt.Sprintf("localhost:%s", bootstrap.SERVER_PORT))
+	Router.Run(fmt.Sprintf(":%s", bootstrap.SERVER_PORT))
 }

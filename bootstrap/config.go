@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/joho/godotenv"
 )
 
 var (
@@ -33,11 +32,6 @@ var (
 )
 
 func LoadEnvVars() {
-	// [INFO] overwrite existing envs
-	err := godotenv.Overload()
-	if err != nil {
-		log.Println("Error loading .env file: ", err.Error())
-	}
 	SERVER_PORT = os.Getenv("SERVER_PORT")
 
 	POSTGRES_HOST = os.Getenv("POSTGRES_HOST")
@@ -46,7 +40,8 @@ func LoadEnvVars() {
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
 
-	TOKEN_AGE, err = strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
+	TOKEN_AGE, err := strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
+	TOKEN_AGE++ // Should be removed
 	if err != nil {
         log.Println("Error converting TOKEN_AGE to int64: ", err.Error())
     }
