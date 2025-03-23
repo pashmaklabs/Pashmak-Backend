@@ -8,6 +8,8 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	serializers_auth "pashmak.com/pashmak/serializers"
 	services_auth "pashmak.com/pashmak/services/auth"
+	"errors"
+	"gorm.io/gorm"
 )
 
 type AuthController struct {
@@ -45,18 +47,18 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	if !resp {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "success",
-			"message":   "کاربر یافت نشد",
+			"message":   "رمز یکبار مصرف ارسال شد",
 			"userExists":    false,
 		})
 		return
+	} else{
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "success",
+			"message":   "رمز یکبار مصرف ارسال شد",
+			"userExists":    true,
+		})
+		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":    "success",
-		"message":   "کاربر یافت شد",
-		"userExists":    true,
-	})
-
 }
 
 func (ac *AuthController) VerifyOTP(c *gin.Context) {
@@ -78,7 +80,16 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		return 
 	}
 	if resp {
-		user, _ := ac.authService.GetUserByGmail(body.Email)
+		user, err := ac.authService.GetUserByGmail(body.Email)
+		exists := true
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			exists = false
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+		}
 		jwt, err := ac.authService.GenerateJWT(user)
 		if err != nil{
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -88,6 +99,9 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			return
 		}
 		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+		if !exists{
+			ac.authService.CreateUser(body.Email)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "ورود با موفقیت انجام شد.",
