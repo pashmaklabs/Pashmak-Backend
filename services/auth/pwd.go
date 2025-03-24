@@ -39,6 +39,8 @@ func (as *AuthService)LoginWithPassword(email string, newpassword string) (bool,
 	} else if (user == nil) {
 		return false, nil
 	} else {
+		// jwt, err := ac.authService.GenerateJWT(user)
+		// TODO: Generate jwt and set cookie
 		return true, nil
 	}
 }
