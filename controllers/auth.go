@@ -83,3 +83,28 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		})
 	}
 }
+
+func (ac *AuthController) ResendOTP(c *gin.Context) {
+	var body serializers_auth.ResendOTPRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	err := ac.authService.ResendOTP(body.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "کد ارسال شد",
+	})
+}

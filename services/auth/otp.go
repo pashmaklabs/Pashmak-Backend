@@ -123,3 +123,11 @@ func (as *AuthService) ValidateOTP(Email string, RecievedOTP string) (bool, erro
 	}
 	return true, nil
 }
+
+func (as *AuthService) ResendOTP(email string) error {
+	err := as.StoreOTPAndSendEmail(email)
+	if err != nil {
+		return err
+	}
+	return nil
+}
