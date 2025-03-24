@@ -98,6 +98,13 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
+		if err.Error() == "user has no password" {
+			c.JSON(http.StatusOK, gin.H{
+				"status":  "error",
+				"message": "کاربر رمز ندارد",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
@@ -108,7 +115,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	if !resp {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
-			"message": "کاربر فاقد پسورد می باشد",
+			"message": "رمز اشتباه است",
 		})
 		return
 	}
