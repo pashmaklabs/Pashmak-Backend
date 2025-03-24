@@ -153,3 +153,38 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 		return
 	}
 }
+
+func (ac *AuthController) LoginWithPassword(c *gin.Context) {
+	var body serializers_auth.LoginWithPasswordRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	// Pass to auth service
+	resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+	if !resp {
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "success",
+			"message":   "کاربر یافت نشد",
+			"userExists":    false,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "success",
+		"message":   "کاربر یافت شد",
+		"userExists":    true,
+	})
+}
