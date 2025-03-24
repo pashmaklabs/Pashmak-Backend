@@ -70,6 +70,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			"status":  "error",
 			"message": err.Error(),
 		})
+		return
 	}
 	if resp {
 		c.JSON(http.StatusOK, gin.H{
