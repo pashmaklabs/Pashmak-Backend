@@ -126,6 +126,7 @@ func (as *AuthService) ValidateOTP(Email string, RecievedOTP string) (bool, erro
 
 func (as *AuthService) ResendOTP(email string) error {
 	err := as.StoreOTPAndSendEmail(email)
+	// TODO: Add rate limiting
 	if err != nil {
 		return err
 	}
