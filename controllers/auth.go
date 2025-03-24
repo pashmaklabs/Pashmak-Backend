@@ -2,7 +2,7 @@ package controlllers_auth
 
 import (
 	"net/http"
-
+	"log"
 	"github.com/gin-gonic/gin"
 
 	"pashmak.com/pashmak/bootstrap"
@@ -131,4 +131,25 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context){
 		"message": "این یک api محافظت شده است :)",
 	})
 	return
+}
+
+func (ac *AuthController) ForgetPassword(c *gin.Context) {
+	var body serializers_auth.ForgetPasswordRequest
+	if c.Bind(&body) != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	resp, err := ac.authService.ForgetPassword(body.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "خطای غیر منتظره رخ داد.",
+		})
+		log.Println(err.Error())
+		return
+	}
 }
