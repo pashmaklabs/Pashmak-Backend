@@ -1,6 +1,7 @@
 package controlllers_auth
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,8 +34,9 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": err.Error(),
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println(err.Error())
 		return
 	}
 	if !resp {
@@ -98,8 +100,9 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": err.Error(),
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println(err.Error())
 		return
 	}
 	if !resp {
@@ -112,6 +115,6 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "ورود موفقیت آمیز",
+		"message": "ورود با موفقیت انجام شد.",
 	})
 }
