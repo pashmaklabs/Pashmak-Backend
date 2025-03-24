@@ -182,6 +182,6 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "پسورد با موفقیت تغییر کرد",
+		"message": "ورود موفقیت آمیز",
 	})
 }

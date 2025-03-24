@@ -39,7 +39,6 @@ func (as *AuthService)LoginWithPassword(email string, newpassword string) (bool,
 	} else if (user == nil) {
 		return false, nil
 	} else {
-		as.SetUserPassword(user, newpassword)
 		return true, nil
 	}
 }
