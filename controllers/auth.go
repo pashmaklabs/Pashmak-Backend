@@ -22,8 +22,8 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	var body serializers_auth.SendOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
@@ -39,17 +39,17 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	}
 	if !resp {
 		c.JSON(http.StatusOK, gin.H{
-			"status":    "success",
-			"message":   "کاربر یافت نشد",
-			"userExists":    false,
+			"status":     "success",
+			"message":    "کاربر یافت نشد",
+			"userExists": false,
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":    "success",
-		"message":   "کاربر یافت شد",
-		"userExists":    true,
+		"status":     "success",
+		"message":    "کاربر یافت شد",
+		"userExists": true,
 	})
 
 }
@@ -58,8 +58,8 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	var body serializers_auth.VerifyOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
@@ -73,12 +73,12 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	}
 	if resp {
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
+			"status":   "success",
 			"OTPMatch": true,
 		})
-	}else{
+	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
+			"status":   "success",
 			"OTPMatch": false,
 		})
 	}
@@ -88,13 +88,12 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	var body serializers_auth.LoginWithPasswordRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
 
-	// Pass to auth service
 	resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -105,16 +104,14 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	}
 	if !resp {
 		c.JSON(http.StatusOK, gin.H{
-			"status":    "success",
-			"message":   "کاربر یافت نشد",
-			"userExists":    false,
+			"status":  "success",
+			"message": "کاربر فاقد پسورد می باشد",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":    "success",
-		"message":   "کاربر یافت شد",
-		"userExists":    true,
+		"status":  "success",
+		"message": "پسورد با موفقیت تغییر کرد",
 	})
 }

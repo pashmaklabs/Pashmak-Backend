@@ -1,19 +1,45 @@
 package services_auth
 
 import (
-	"github.com/gin-gonic/gin"
+	"errors"
+
 	models_auth "pashmak.com/pashmak/models"
 )
 
-func (as *AuthService) CheckUserPassword(email string, password string) bool{
+func (as *AuthService) SetUserPassword(user *models_auth.User, newpassword string) error {
+	user.Password = newpassword
+	result := as.DB.Save(user)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func (as *AuthService) CheckUserPassword(email string, newpassword string) (*models_auth.User, error) {
 	var user models_auth.User
 	result := as.DB.First(&user, "email = ?", email)
 	if result.Error != nil {
-		return false
+		return nil, result.Error
 	}
-	return user.CheckPassword(password)
+	if user.Password == "" {
+		return nil, errors.New("user has no password")
+	}
+	// TODO: Hash password
+	if user.Password != newpassword {
+		return nil, nil
+	}
+	return &user, nil
 }
 
-func LoginWithPassword(email string, password string){
 
+
+func (as *AuthService)LoginWithPassword(email string, newpassword string) (bool, error) {
+	if user, err := as.CheckUserPassword(email, newpassword); err != nil {
+		return false, err
+	} else if (user == nil) {
+		return false, nil
+	} else {
+		as.SetUserPassword(user, newpassword)
+		return true, nil
+	}
 }
