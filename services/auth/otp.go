@@ -17,12 +17,14 @@ import (
 type AuthService struct {
 	DB          *gorm.DB
 	RedisClient *redis.Client
+	AppConfig   *bootstrap.AppConfig
 }
 
-func NewAuthService(db *gorm.DB, redisClient *redis.Client) *AuthService {
+func NewAuthService(db *gorm.DB, redisClient *redis.Client, appConfig *bootstrap.AppConfig) *AuthService {
 	return &AuthService{
 		DB:          db,
 		RedisClient: redisClient,
+		AppConfig:   appConfig,
 	}
 }
 
@@ -32,11 +34,11 @@ func (as *AuthService) GnerateOTP()string{
   return fmt.Sprintf("%04d", otp)
 }
 
-func SendMail(Email string, userOTP string) error {
-	from := bootstrap.EMAIL_ADDR
-	password := bootstrap.EMAIL_PASSWORD
-	smtpHost := bootstrap.EMAIL_HOST
-	smtpPort := bootstrap.EMAIL_PORT
+func (as *AuthService) SendMail(Email string, userOTP string) error {
+	from := as.AppConfig.EmailAddr
+	password := as.AppConfig.EmailPassword
+	smtpHost := as.AppConfig.EmailHost
+	smtpPort := as.AppConfig.EmailPort
 
 	htmlContent := fmt.Sprintf(`
 	<html>
@@ -92,7 +94,7 @@ func (as *AuthService) StoreOTPAndSendEmail(email string) error {
 	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
 		return fmt.Errorf("failed to store OTP in Redis: %w", err)
 	}
-	if err := SendMail(email, userOTP); err != nil {
+	if err := as.SendMail(email, userOTP); err != nil {
 		return err
 	}
 	return nil

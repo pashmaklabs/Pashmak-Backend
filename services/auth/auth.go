@@ -11,6 +11,11 @@ func (as *AuthService) GetUserByGmail(email string) (models_auth.User, error){
 	return user, result.Error
 }
 
+func (as *AuthService) CreateUser(email string) error{
+	result := as.DB.Create(&models_auth.User{Email: email})
+	return result.Error
+}
+
 func (as *AuthService) IsUserLoggedIn(c *gin.Context) bool{
 	_, exists := c.Get("user")
 	return exists

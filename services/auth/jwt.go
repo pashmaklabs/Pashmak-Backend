@@ -12,7 +12,6 @@ import (
 	"os"
 	"github.com/google/uuid"
 	"errors"
-	"fmt"
 )
 
 var signKey *rsa.PrivateKey
@@ -28,9 +27,6 @@ type CustomClaim struct {
 }
 
 func LoadPrivateKey() {
-	cwd, _ := os.Getwd()
-    fmt.Println("Current Working Directory:", cwd, "\n", bootstrap.PRIVATE_KEY_PATH)
-
     privateKeyFile, err := os.Open(bootstrap.PRIVATE_KEY_PATH)
     if err != nil {
         log.Fatalf("Error opening private key file: %v", err)
@@ -55,13 +51,13 @@ func LoadPrivateKey() {
     signKey = privateKeyImported
 }
 
-func generateJWT(user models_auth.User) (string, error){
+func (as *AuthService)GenerateJWT(user models_auth.User) (string, error){
 	Id := uuid.New().String()
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 	
 	t.Claims = &CustomClaim{
 		&jwt.StandardClaims{
-			Id: Id, ExpiresAt: time.Now().Add(time.Second * time.Duration(bootstrap.TOKEN_AGE)).Unix(),
+			Id: Id, ExpiresAt: time.Now().Add(time.Second * time.Duration(as.AppConfig.TokenAge)).Unix(),
 		},
 		&UserInfo{
 			Email: user.Email,
@@ -105,9 +101,10 @@ func (as *AuthService)VerifyJWT(tokenString string) (*CustomClaim, error) {
 
     _, err = as.GetJWTBlacklistByJTI(claim.StandardClaims.Id)
     if err != nil { 
-        return nil, err
+		return claim, nil
     }
-    return claim, nil
+	return nil, err
+    
 }
 
 func (as *AuthService) GetJWTBlacklistByJTI(jti string) (models_auth.JWTBlacklist, error) {
