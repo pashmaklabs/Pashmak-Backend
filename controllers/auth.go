@@ -3,7 +3,6 @@ package controlllers_auth
 import (
 	"log"
 	"net/http"
-	"log"
 	"github.com/gin-gonic/gin"
 
 	"pashmak.com/pashmak/bootstrap"
@@ -194,4 +193,30 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		"status":  "success",
 		"message": "ورود با موفقیت انجام شد.",
 	})
+}
+
+func (ac *AuthController) ForgetPassword(c *gin.Context) {
+	var body serializers_auth.ForgetPasswordRequest
+	if c.Bind(&body) != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	err := ac.authService.ForgetPassword(body.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "خطای غیر منتظره رخ داد.",
+		})
+		log.Println(err.Error())
+		return
+	}else{
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "کد تایید به ایمیل ارسال شد.",
+		})
+	}
 }

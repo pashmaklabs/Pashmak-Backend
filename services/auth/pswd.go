@@ -1,7 +1,10 @@
 package services_auth
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	models_auth "pashmak.com/pashmak/models"
 )
@@ -31,16 +34,31 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 	return &user, nil
 }
 
-
-
-func (as *AuthService)LoginWithPassword(email string, newpassword string) (bool, error) {
+func (as *AuthService) LoginWithPassword(email string, newpassword string) (bool, error) {
 	if user, err := as.CheckUserPassword(email, newpassword); err != nil {
 		return false, err
-	} else if (user == nil) {
+	} else if user == nil {
 		return false, nil
 	} else {
 		// jwt, err := ac.authService.GenerateJWT(user)
 		// TODO: Generate jwt and set cookie
 		return true, nil
 	}
+}
+
+func (as *AuthService) ForgetPassword(email string) error {
+	user, err := as.GetUserByGmail(email)
+	if err != nil {
+		return err
+	}
+	userOTP := GenerateOTP()
+	ctx := context.Background()
+	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
+		return fmt.Errorf("failed to store OTP in Redis: %w", err)
+	}
+	if err := SendMail(email, userOTP); err != nil {
+		return err
+	}
+
+	return nil
 }
