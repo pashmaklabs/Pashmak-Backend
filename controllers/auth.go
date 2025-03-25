@@ -220,3 +220,34 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 		})
 	}
 }
+
+func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
+	var body serializers_auth.ForgetPasswordVerifyRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+	}
+	if resp {
+		c.JSON(http.StatusOK, gin.H{
+			"status":   "success",
+			"OTPMatch": true,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status":   "success",
+			"OTPMatch": false,
+		})
+	}
+}

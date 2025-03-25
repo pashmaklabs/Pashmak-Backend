@@ -20,6 +20,11 @@ type LoginWithPasswordRequest struct {
 	Password string `json:"password"`
 }
 
-type ForgetPasswordRequest struct{
-	Email string	`json:"email"`
+type ForgetPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type ForgetPasswordVerifyRequest struct {
+	Email string `json:"email"`
+	OTP   string `json:"otp"`
 }
