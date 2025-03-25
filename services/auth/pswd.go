@@ -81,3 +81,13 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (bool, err
 
 	return true, nil
 }
+
+func (as *AuthService) ResetForgetPassword(email string, newpassword string) error {
+	// TODO: Check user session
+	
+	// Update database
+
+	// Send response
+
+	
+}
