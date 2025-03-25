@@ -238,6 +238,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
+		return
 	}
 	if resp {
 		c.JSON(http.StatusOK, gin.H{
@@ -269,16 +270,6 @@ func (ac *AuthController)ForgetPasswordReset(c *gin.Context) {
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
-	}
-	if resp {
-		c.JSON(http.StatusOK, gin.H{
-			"status":   "success",
-			"OTPMatch": true,
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"status":   "success",
-			"OTPMatch": false,
-		})
+		return
 	}
 }
