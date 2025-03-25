@@ -5,18 +5,41 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 )
 
+type AppConfig struct {
+	ServerHost string
+	ServerPort string
+	
+	EmailPassword string
+	EmailHost string
+	EmailPort string
+	EmailAddr string
+
+	PostgresHost     string
+	PostgresUser     string
+	PostgresPassword string
+	PostgresDBName string
+	PostgresPort string
+
+	TokenAge int64
+	PrivateKeyPath string
+
+	RedisPort        string
+	RedisHost        string
+	RedisPassword    string
+}
+
 var (
+	SERVER_HOST string
 	SERVER_PORT string
 	
 	EMAIL_PASSWORD string
 	EMAIL_HOST string
 	EMAIL_PORT string
 	EMAIL_ADDR string
-)
 
-var (
 	POSTGRES_HOST     string
 	POSTGRES_USER     string
 	POSTGRES_PASSWORD string
@@ -31,7 +54,13 @@ var (
 	REDIS_PASSWORD    string
 )
 
-func LoadEnvVars() {
+func LoadEnvVars() *AppConfig {
+	// [INFO] overwrite existing envs
+	err := godotenv.Overload()
+	if err != nil {
+		log.Println("Error loading .env file: ", err.Error())
+	}
+	SERVER_HOST = os.Getenv("SERVER_HOST")
 	SERVER_PORT = os.Getenv("SERVER_PORT")
 
 	POSTGRES_HOST = os.Getenv("POSTGRES_HOST")
@@ -56,4 +85,23 @@ func LoadEnvVars() {
 	REDIS_HOST = os.Getenv("REDIS_HOST")
 	REDIS_PORT = os.Getenv("REDIS_PORT")
 	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
+
+	return &AppConfig{
+		ServerHost: SERVER_HOST,
+		ServerPort: SERVER_PORT,
+		EmailPassword: EMAIL_PASSWORD,
+		EmailHost: EMAIL_HOST,
+		EmailPort: EMAIL_PORT,
+		EmailAddr: EMAIL_ADDR,
+		PostgresHost: POSTGRES_HOST,
+		PostgresUser: POSTGRES_USER,
+		PostgresPassword: POSTGRES_PASSWORD,
+		PostgresDBName: POSTGRES_DBNAME,
+		PostgresPort: POSTGRES_PORT,
+		TokenAge: TOKEN_AGE,
+		PrivateKeyPath: PRIVATE_KEY_PATH,
+		RedisPort: REDIS_PORT,
+		RedisHost: REDIS_HOST,
+		RedisPassword: REDIS_PASSWORD,
+	}
 }

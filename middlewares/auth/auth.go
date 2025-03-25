@@ -1,6 +1,8 @@
 package middlewares_auth
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
@@ -15,15 +17,21 @@ func NewAuthMiddleware(authService *services_auth.AuthService) *AuthMiddleware {
 
 func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			c.JSON(401, gin.H{"error": "هدر authorization نیاز است."})
+		token, err := c.Cookie("jwt_token")
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"status": "error",
+				"message": "ابتدا باید وارد شوید",
+			})
 			c.Abort()
 			return
 		} else {
 			claim, err := am.authService.VerifyJWT(token)
 			if err != nil {
-				c.JSON(401, gin.H{"error": "توکن نامعتبر است."})
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"status": "error",
+					"message": "در ورود مشکلی پیش آمده",
+				})
 				c.Abort()
 				return
 			}
