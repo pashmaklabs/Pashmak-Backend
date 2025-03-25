@@ -9,8 +9,8 @@ import (
 	models_auth "pashmak.com/pashmak/models"
 )
 
-func SendResetPasswordMail(email string, userOTP string) error {
-	err := SendMail(email, userOTP)
+func (as *AuthService)SendResetPasswordMail(email string, userOTP string) error {
+	err := as.SendMail(email, userOTP)
 	return err
 }
 
@@ -61,7 +61,7 @@ func (as *AuthService) ForgetPassword(email string) error {
 	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
 		return fmt.Errorf("failed to store OTP in Redis: %w", err)
 	}
-	if err := SendResetPasswordMail(email, userOTP); err != nil {
+	if err := as.SendResetPasswordMail(email, userOTP); err != nil {
 		return err
 	}
 
@@ -88,6 +88,6 @@ func (as *AuthService) ResetForgetPassword(email string, newpassword string) err
 	// Update database
 
 	// Send response
-
+	return nil
 	
 }

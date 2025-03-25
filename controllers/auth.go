@@ -134,27 +134,6 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context){
 	return
 }
 
-func (ac *AuthController) ForgetPassword(c *gin.Context) {
-	var body serializers_auth.ForgetPasswordRequest
-	if c.Bind(&body) != nil{
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
-		})
-		return
-	}
-
-	resp, err := ac.authService.ForgetPassword(body.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "خطای غیر منتظره رخ داد.",
-		})
-		log.Println(err.Error())
-		return
-	}
-}
-
 func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	var body serializers_auth.LoginWithPasswordRequest
 	if c.Bind(&body) != nil {
