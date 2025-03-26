@@ -39,15 +39,17 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 	return &user, nil
 }
 
-func (as *AuthService) LoginWithPassword(email string, newpassword string) (bool, error) {
+func (as *AuthService) LoginWithPassword(email string, newpassword string) (string, bool, error) {
 	if user, err := as.CheckUserPassword(email, newpassword); err != nil {
-		return false, err
+		return "", false, err
 	} else if user == nil {
-		return false, nil
+		return "", false, nil
 	} else {
-		// jwt, err := ac.authService.GenerateJWT(user)
-		// TODO: Generate jwt and set cookie
-		return true, nil
+		jwt, err := as.GenerateJWT(*user)
+		if err != nil {
+			return "", true, err
+		}
+		return jwt, true, nil
 	}
 }
 

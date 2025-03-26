@@ -144,7 +144,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		return
 	}
 
-	resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
+	jwt, resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		if err.Error() == "user has no password" {
 			c.JSON(http.StatusOK, gin.H{
@@ -167,7 +167,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		})
 		return
 	}
-
+	c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "ورود با موفقیت انجام شد.",
