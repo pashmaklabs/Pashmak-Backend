@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	models_auth "pashmak.com/pashmak/models"
 )
 
@@ -71,12 +72,16 @@ func (as *AuthService) ForgetPassword(email string) error {
 }
 
 func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, bool, error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel() // Ensures resources are cleaned up
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()
 	if err != nil {
-		if err.Error() == "redis: nil" {
+		if err == redis.Nil {
 			return "", false, errors.New("OTP expired")
 		}
+		if ctx.Err() == context.DeadlineExceeded {
+            return "", false, errors.New("operation timed out")
+        }
 		return "", false, fmt.Errorf("failed to get OTP from redis: %w", err)
 	}
 
@@ -85,11 +90,11 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
 	}
 	user, err := as.GetUserByGmail(email)
 	if err != nil {
-		return "", true, fmt.Errorf("failed to get user by email: %w", err)
+		return "", false, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	jwt, err := as.GenerateJWT(user)
 	if err != nil {
-		return "", true, fmt.Errorf("failed to generate JWT: %w", err)
+		return "", false, fmt.Errorf("failed to generate JWT: %w", err)
 	}
 	return jwt, true, nil
 }
