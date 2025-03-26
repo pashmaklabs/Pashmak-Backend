@@ -20,7 +20,6 @@ var (
 
 func init() {
 	AppConfig = bootstrap.LoadEnvVars()
-	AppConfig = bootstrap.LoadEnvVars()
 	DB = bootstrap.SetUpPostgres()
 	Redis = bootstrap.SetupRedis()
 	bootstrap.MakeMigrations(DB)
@@ -34,7 +33,6 @@ func main() {
 	Router.Use(middlewares_cors.SetCORSHeader)
 
 	// Add each domain routes here
-	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 
 	Router.Run(fmt.Sprintf(":%s", bootstrap.SERVER_PORT))
