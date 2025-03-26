@@ -214,6 +214,13 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 
 	jwt, resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
 	if err != nil {
+		if err.Error() == "OTP expired" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کد تایید منقضی شده است",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",

@@ -74,6 +74,9 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
 	ctx := context.Background()
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()
 	if err != nil {
+		if err.Error() == "redis: nil" {
+			return "", false, errors.New("OTP expired")
+		}
 		return "", false, fmt.Errorf("failed to get OTP from redis: %w", err)
 	}
 
@@ -82,11 +85,11 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
 	}
 	user, err := as.GetUserByGmail(email)
 	if err != nil {
-		return "", true, err
+		return "", true, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	jwt, err := as.GenerateJWT(user)
 	if err != nil {
-		return "", true, err
+		return "", true, fmt.Errorf("failed to generate JWT: %w", err)
 	}
 	return jwt, true, nil
 }
