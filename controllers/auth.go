@@ -210,7 +210,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		return
 	}
 
-	resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
+	jwt ,resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -224,6 +224,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 			"status":   "success",
 			"OTPMatch": true,
 		})
+		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"status":   "success",
@@ -241,8 +242,15 @@ func (ac *AuthController)ForgetPasswordReset(c *gin.Context) {
 		})
 		return
 	}
-
-	resp, err := ac.authService.ResetForgetPassword(body.Email, body.Password)
+	jwt, err := c.Cookie("jwt_token")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شما اجازه دسترسی به این صفحه را ندارید",
+		})
+		return
+	}
+	err = ac.authService.ResetForgetPassword(body.Password, jwt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -250,5 +258,11 @@ func (ac *AuthController)ForgetPasswordReset(c *gin.Context) {
 		})
 		log.Println(err.Error())
 		return
+	}
+	if err == nil{
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "رمز عبور با موفقیت تغییر یافت",
+		})
 	}
 }

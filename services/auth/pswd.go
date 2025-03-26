@@ -70,26 +70,40 @@ func (as *AuthService) ForgetPassword(email string) error {
 	return nil
 }
 
-func (as *AuthService) VerifyForgetPassword(email string, otp string) (bool, error) {
+func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, bool, error) {
 	ctx := context.Background()
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()
 	if err != nil {
-		return false, fmt.Errorf("failed to get OTP from redis: %w", err)
+		return "", false, fmt.Errorf("failed to get OTP from redis: %w", err)
 	}
 
 	if realOTP != otp {
-		return false, nil
+		return "", false, nil
 	}
-
-	return true, nil
+	user, err := as.GetUserByGmail(email)
+	if err != nil {
+		return "", true, err
+	}
+	jwt, err := as.GenerateJWT(user)
+	if err != nil {
+		return "", true, err
+	}
+	return jwt, true, nil
 }
 
-func (as *AuthService) ResetForgetPassword(email string, newpassword string) error {
+func (as *AuthService) ResetForgetPassword(newpassword string, jwt_token string) error {
 	// TODO: Check user session
-	
+	claim, err := as.VerifyJWT(jwt_token)
+	if err != nil {
+		return err
+	}
 	// Update database
-
-	// Send response
+	user, err := as.GetUserByGmail(claim.UserInfo.Email)
+	if err != nil {
+		return err
+	}
+	if err := as.SetUserPassword(&user, newpassword); err != nil {
+		return err
+	}
 	return nil
-	
 }
