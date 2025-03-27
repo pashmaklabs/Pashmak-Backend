@@ -252,15 +252,24 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 		})
 		return
 	}
-	jwt, err := c.Cookie("jwt_token")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
+	value, exists := c.Get("claim")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "شما اجازه دسترسی به این صفحه را ندارید",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println("Claim not found")
+		return
+	}
+	claim, ok := value.(*services_auth.CustomClaim)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		return
 	}
-	err = ac.authService.ResetForgetPassword(body.Password, jwt)
+	err := ac.authService.ResetForgetPassword(claim, body.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

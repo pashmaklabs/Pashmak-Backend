@@ -103,12 +103,7 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
 	return jwt, true, nil
 }
 
-func (as *AuthService) ResetForgetPassword(newpassword string, jwt_token string) error {
-	// TODO: Check user session
-	claim, err := as.VerifyJWT(jwt_token)
-	if err != nil {
-		return err
-	}
+func (as *AuthService) ResetForgetPassword(claim *CustomClaim, newpassword string) error {
 	// Update database
 	user, err := as.GetUserByGmail(claim.UserInfo.Email)
 	if err != nil {
