@@ -17,12 +17,12 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 	
 	auth := router.Group("/auth")
 	{
-		auth.POST("/send-otp", routeController.SendOTP)
-		auth.POST("/login/otp", routeController.VerifyOTP)
+		auth.POST("/otp/send", routeController.SendOTP)
+		auth.POST("/otp/verify", routeController.VerifyOTP)
 		auth.GET("/protected", routeMiddleware.LoginMiddleware(), routeController.ProtectedRouter)
-		auth.POST("/login/password", routeController.LoginWithPassword)
-		auth.POST("/login/forget-password", routeController.ForgetPassword)
-		auth.POST("/login/forget-password/verify", routeController.ForgetPasswordVerify)
-		auth.POST("/login/forget-password/reset", routeController.ForgetPasswordReset)
+		auth.POST("/password", routeController.LoginWithPassword)
+		auth.POST("/password/forget/send", routeController.ForgetPassword)
+		auth.POST("/password/forget/verify", routeController.ForgetPasswordVerify)
+		auth.POST("/password/forget/reset", routeController.ForgetPasswordReset)
 	}
 }
