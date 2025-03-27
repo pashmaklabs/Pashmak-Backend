@@ -229,15 +229,16 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		return
 	}
 	if resp {
-		c.JSON(http.StatusOK, gin.H{
-			"status":   "success",
-			"OTPMatch": true,
-		})
 		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
-	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"status":   "success",
-			"OTPMatch": false,
+			"status":  "success",
+			"message": "ورود با موفقیت انجام شد.",
+		})
+		return
+	} else {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
 	}
 }

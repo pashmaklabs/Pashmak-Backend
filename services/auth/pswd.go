@@ -60,8 +60,12 @@ func (as *AuthService) ForgetPassword(email string) error {
 	// 	return err
 	// }
 	userOTP := GenerateOTP()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
 	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+            return errors.New("operation timed out")
+        }
 		return fmt.Errorf("failed to store OTP in Redis: %w", err)
 	}
 	if err := as.SendResetPasswordMail(email, userOTP); err != nil {
