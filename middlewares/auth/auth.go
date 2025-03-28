@@ -20,21 +20,19 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("jwt_token")
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status": "error",
 				"message": "ابتدا باید وارد شوید",
 			})
-			c.Abort()
 			return
 		} else {
 			claim, err := am.authService.VerifyJWT(token)
 			if err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 					"status": "error",
 					"message": "در ورود مشکلی پیش آمده",
 				})
 				log.Println(err.Error())
-				c.Abort()
 				return
 			}
 			c.Set("user", &claim.UserInfo)
