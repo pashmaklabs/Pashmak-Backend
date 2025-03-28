@@ -1,6 +1,7 @@
 package middlewares_auth
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,7 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 					"status": "error",
 					"message": "در ورود مشکلی پیش آمده",
 				})
+				log.Println(err.Error())
 				c.Abort()
 				return
 			}

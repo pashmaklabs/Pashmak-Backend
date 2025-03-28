@@ -40,18 +40,19 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 	return &user, nil
 }
 
-func (as *AuthService) LoginWithPassword(email string, newpassword string) (string, bool, error) {
-	if user, err := as.CheckUserPassword(email, newpassword); err != nil {
-		return "", false, err
-	} else if user == nil {
-		return "", false, nil
-	} else {
-		jwt, err := as.GenerateJWT(*user)
-		if err != nil {
-			return "", true, err
-		}
-		return jwt, true, nil
+func (as *AuthService) LoginWithPassword(email string, newpassword string) (string, error) {
+	user, err := as.CheckUserPassword(email, newpassword)
+	if err != nil {
+		return "", err
+	} 
+	if user == nil {
+		return "", nil
 	}
+	jwt, err := as.GenerateJWT(*user)
+	if err != nil {
+		return "", err
+	}
+	return jwt, nil
 }
 
 func (as *AuthService) ForgetPassword(email string) error {
@@ -80,7 +81,7 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
     defer cancel() // Ensures resources are cleaned up
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if err == redis.Nil { // This format can be used instead of errors.Is(err, redis.Nil)
 			return "", false, errors.New("OTP expired")
 		}
 		if ctx.Err() == context.DeadlineExceeded {

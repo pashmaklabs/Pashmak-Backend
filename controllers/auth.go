@@ -146,7 +146,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		return
 	}
 
-	jwt, resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
+	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		if err.Error() == "user has no password" {
 			c.JSON(http.StatusOK, gin.H{
@@ -162,7 +162,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	if !resp {
+	if jwt == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "رمز اشتباه است",
@@ -232,7 +232,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
-			"message": "ورود با موفقیت انجام شد.",
+			"message": "رمز یکبار مصرف صحیح وارد شده.",
 		})
 		return
 	} else {
