@@ -23,5 +23,8 @@ func (as *AuthService)SignUp(Email string, Payload serializers_auth.SignUpReques
 		return err
 	}
 	user.Password = hashedpass
-
+	if err := as.DB.Save(&user).Error; err != nil {
+		return err 
+	}
+	return nil
 }

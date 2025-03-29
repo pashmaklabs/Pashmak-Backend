@@ -145,7 +145,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 	userinfo, exists := c.Get("user")
-	if exists == false {
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "شمامجاز به انجام این عملیات نمی باشید.",
@@ -163,7 +163,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "success",
-		"message":   resp,
+		"message":   "ثبت نام با موفقیت انجام شد.",
 	})
 	return
 }
