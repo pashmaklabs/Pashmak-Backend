@@ -16,6 +16,6 @@ type User struct {
 
 type JWTBlacklist struct{
 	ID			uint		`gorm:"primaryKey;autoIncrement"`
-	JIT			string		`gorm:"unique;not null"`
+	JTI			string		`gorm:"unique;not null"`
 	ExpiresAt	int64		`gorm:"not null"` 
 }

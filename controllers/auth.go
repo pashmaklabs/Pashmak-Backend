@@ -1,26 +1,28 @@
 package controlllers_auth
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"errors"
+
+	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	serializers_auth "pashmak.com/pashmak/serializers"
 	services_auth "pashmak.com/pashmak/services/auth"
-	"errors"
-	"gorm.io/gorm"
 )
 
 type AuthController struct {
 	authService *services_auth.AuthService
-	AppConfig 	*bootstrap.AppConfig
+	AppConfig   *bootstrap.AppConfig
 }
 
 func NewAuthController(authService *services_auth.AuthService, appConfig *bootstrap.AppConfig) *AuthController {
 	return &AuthController{
 		authService: authService,
-		AppConfig: appConfig,
+		AppConfig:   appConfig,
 	}
 }
 
@@ -29,8 +31,8 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	var body serializers_auth.SendOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
@@ -40,22 +42,23 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": err.Error(),
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println(err.Error())
 		return
 	}
 	if !resp {
 		c.JSON(http.StatusOK, gin.H{
-			"status":    "success",
-			"message":   "رمز یکبار مصرف ارسال شد",
-			"userExists":    false,
+			"status":     "success",
+			"message":    "رمز یکبار مصرف ارسال شد",
+			"userExists": false,
 		})
 		return
-	} else{
+	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"status":    "success",
-			"message":   "رمز یکبار مصرف ارسال شد",
-			"userExists":    true,
+			"status":     "success",
+			"message":    "رمز یکبار مصرف ارسال شد",
+			"userExists": true,
 		})
 		return
 	}
@@ -65,8 +68,8 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	var body serializers_auth.VerifyOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
@@ -93,7 +96,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		}
 		// TODO: Move logic to service
 		jwt, err := ac.authService.GenerateJWT(user)
-		if err != nil{
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
 				"message": "مشکل غیرمنتظره ای رخ داده است",
@@ -101,7 +104,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			return
 		}
 		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
-		if !exists{
+		if !exists {
 			err := ac.authService.CreateUser(body.Email)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -116,7 +119,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			"message": "ورود با موفقیت انجام شد.",
 		})
 		return
-	}else{
+	} else {
 		c.JSON(http.StatusForbidden, gin.H{
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
@@ -125,10 +128,159 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	}
 }
 
-func (ac *AuthController) ProtectedRouter(c *gin.Context){
+func (ac *AuthController) ProtectedRouter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
+		"status":  "success",
 		"message": "این یک api محافظت شده است :)",
 	})
 	return
+}
+
+func (ac *AuthController) LoginWithPassword(c *gin.Context) {
+	var body serializers_auth.LoginWithPasswordRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	jwt, resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
+	if err != nil {
+		if err.Error() == "user has no password" {
+			c.JSON(http.StatusOK, gin.H{
+				"status":  "error",
+				"message": "کاربر رمز ندارد",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+	if !resp {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "رمز اشتباه است",
+		})
+		return
+	}
+	c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "ورود با موفقیت انجام شد.",
+	})
+}
+
+func (ac *AuthController) ForgetPassword(c *gin.Context) {
+	var body serializers_auth.ForgetPasswordRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	err := ac.authService.ForgetPassword(body.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "خطای غیر منتظره رخ داد.",
+		})
+		log.Println(err.Error())
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "کد تایید به ایمیل ارسال شد.",
+		})
+	}
+}
+
+func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
+	var body serializers_auth.ForgetPasswordVerifyRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	jwt, resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
+	if err != nil {
+		if err.Error() == "OTP expired" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کد تایید منقضی شده است",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+	if resp {
+		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "ورود با موفقیت انجام شد.",
+		})
+		return
+	} else {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "رمز یکبار مصرف اشتباه وارد شده.",
+		})
+	}
+}
+
+func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
+	var body serializers_auth.ForgetPasswordResetRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+	value, exists := c.Get("claim")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println("Claim not found")
+		return
+	}
+	claim, ok := value.(*services_auth.CustomClaim)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		return
+	}
+	err := ac.authService.ResetForgetPassword(claim, body.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "رمز عبور با موفقیت تغییر یافت",
+		})
+	}
 }
