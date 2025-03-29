@@ -16,14 +16,12 @@ func (as *AuthService)SendResetPasswordMail(email string, userOTP string) error 
 }
 
 func (as *AuthService) SetUserPassword(user *models_auth.User, newpassword string) error {
-	// TODO: Hash password
 	hash, err := bcrypt.GenerateFromPassword([]byte(newpassword), 10)
 	if err != nil {
 		return err
 	}
 	user.Password = string(hash)
 	
-	// user.Password = newpassword
 	result := as.DB.Save(user)
 	if result.Error != nil {
 		return result.Error
@@ -40,7 +38,6 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 	if user.Password == "" {
 		return nil, errors.New("user has no password")
 	}
-	// TODO: Hash password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newpassword)); err != nil {
 		return nil, err
 	}

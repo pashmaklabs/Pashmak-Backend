@@ -36,6 +36,7 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 				return
 			}
 			c.Set("user", *claim.UserInfo) // Needs consideration
+			// [FIXME] : Why pass reference?
 			c.Set("claim", &claim)
 			c.Next()
 		}
