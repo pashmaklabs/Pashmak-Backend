@@ -146,12 +146,26 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		return
 	}
 
-	jwt, resp, err := ac.authService.LoginWithPassword(body.Email, body.Password)
+	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		if err.Error() == "user has no password" {
 			c.JSON(http.StatusOK, gin.H{
 				"status":  "error",
 				"message": "کاربر رمز ندارد",
+			})
+			return
+		}
+		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" { // TODO: Integrate errors
+			c.JSON(http.StatusOK, gin.H{
+				"status":  "error",
+				"message": "رمز عبور اشتباه است",
+			})
+			return
+		}
+		if err.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کاربر پیدا نشد",
 			})
 			return
 		}
@@ -162,7 +176,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	if !resp {
+	if jwt == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "رمز اشتباه است",
@@ -232,7 +246,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
-			"message": "ورود با موفقیت انجام شد.",
+			"message": "رمز یکبار مصرف صحیح وارد شده.",
 		})
 		return
 	} else {
@@ -252,24 +266,17 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 		})
 		return
 	}
-	value, exists := c.Get("claim")
+	value, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println("Claim not found")
 		return
 	}
-	claim, ok := value.(*services_auth.CustomClaim)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "مشکل غیرمنتظره ای رخ داده است",
-		})
-		return
-	}
-	err := ac.authService.ResetForgetPassword(claim, body.Password)
+	userinfo := value.(services_auth.UserInfo)
+	err := ac.authService.ResetForgetPassword(userinfo, body.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -302,7 +309,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		})
 		return
 	}
-	err := ac.authService.SignUp(userinfo.(*services_auth.UserInfo).Email, body)
+	err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email, body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
+	"golang.org/x/crypto/bcrypt"
 	"github.com/redis/go-redis/v9"
 	models_auth "pashmak.com/pashmak/models"
 )
@@ -16,7 +16,14 @@ func (as *AuthService)SendResetPasswordMail(email string, userOTP string) error 
 }
 
 func (as *AuthService) SetUserPassword(user *models_auth.User, newpassword string) error {
-	user.Password = newpassword
+	// TODO: Hash password
+	hash, err := bcrypt.GenerateFromPassword([]byte(newpassword), 10)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hash)
+	
+	// user.Password = newpassword
 	result := as.DB.Save(user)
 	if result.Error != nil {
 		return result.Error
@@ -34,31 +41,34 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 		return nil, errors.New("user has no password")
 	}
 	// TODO: Hash password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newpassword)); err != nil {
+		return nil, err
+	}
 	if user.Password != newpassword {
 		return nil, nil
 	}
 	return &user, nil
 }
 
-func (as *AuthService) LoginWithPassword(email string, newpassword string) (string, bool, error) {
-	if user, err := as.CheckUserPassword(email, newpassword); err != nil {
-		return "", false, err
-	} else if user == nil {
-		return "", false, nil
-	} else {
-		jwt, err := as.GenerateJWT(*user)
-		if err != nil {
-			return "", true, err
-		}
-		return jwt, true, nil
+func (as *AuthService) LoginWithPassword(email string, password string) (string, error) {
+	user, err := as.GetUserByGmail(email)
+	if err != nil {
+		return "", err
 	}
+	if user.Password == "" {
+		return "", errors.New("user has no password")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return "", err
+	}
+	jwt, err := as.GenerateJWT(user)
+	if err != nil {
+		return "", err
+	}
+	return jwt, nil
 }
 
 func (as *AuthService) ForgetPassword(email string) error {
-	// user, err := as.GetUserByGmail(email)
-	// if err != nil {
-	// 	return err
-	// }
 	userOTP := GenerateOTP()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
@@ -80,7 +90,7 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
     defer cancel() // Ensures resources are cleaned up
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if err == redis.Nil { // This format can be used instead of errors.Is(err, redis.Nil)
 			return "", false, errors.New("OTP expired")
 		}
 		if ctx.Err() == context.DeadlineExceeded {
@@ -103,9 +113,8 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
 	return jwt, true, nil
 }
 
-func (as *AuthService) ResetForgetPassword(claim *CustomClaim, newpassword string) error {
-	// Update database
-	user, err := as.GetUserByGmail(claim.UserInfo.Email)
+func (as *AuthService) ResetForgetPassword(userinfo UserInfo, newpassword string) error {
+	user, err := as.GetUserByGmail(userinfo.Email)
 	if err != nil {
 		return err
 	}
