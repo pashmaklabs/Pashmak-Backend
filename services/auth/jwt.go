@@ -99,10 +99,10 @@ func (as *AuthService)VerifyJWT(tokenString string) (*CustomClaim, error) {
         return nil, errors.New("Token is expired")
     }
 
-    _, err = as.GetJWTBlacklistByJTI(claim.StandardClaims.Id)
-    if err != nil { 
-		return claim, nil
-    }
+    // _, err = as.GetJWTBlacklistByJTI(claim.StandardClaims.Id)
+    // if err != nil { 
+	// 	return claim, nil
+    // }
 	return nil, err
     
 }
