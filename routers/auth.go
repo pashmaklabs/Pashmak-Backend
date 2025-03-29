@@ -20,5 +20,6 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 		auth.POST("/send-otp", routeController.SendOTP)
 		auth.POST("/login/otp", routeController.VerifyOTP)
 		auth.GET("/protected", routeMiddleware.LoginMiddleware(), routeController.ProtectedRouter)
+		auth.PATCH("/signup", routeController.SignUp)
 	}
 }

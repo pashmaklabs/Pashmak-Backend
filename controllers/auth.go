@@ -132,3 +132,28 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context){
 	})
 	return
 }
+
+func (ac *AuthController) SignUp(c *gin.Context) {
+	var body serializers_auth.SignUpRequest
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":    "error",
+			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+		})
+		return
+	}
+
+	resp, err := ac.authService.SignUp(body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "success",
+		"message":   resp,
+	})
+	return
+}

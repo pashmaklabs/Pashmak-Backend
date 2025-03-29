@@ -10,7 +10,14 @@ type SendOTPResponse struct {
 	ErrorCode string `json:"errorCode"`
 }
 
-type VerifyOTPRequest struct{
-	Email string	`json:"email"`
-	OTP string		`json:"otp"`
+type VerifyOTPRequest struct {
+	Email string `json:"email"`
+	OTP   string `json:"otp"`
+}
+
+type SignUpRequest struct {
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	PasswordConfirm string `json:"passwordConfirm"`
+	NameFamilyname  string `json:"nameFamilyname"`
 }
