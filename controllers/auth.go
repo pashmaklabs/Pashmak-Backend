@@ -302,7 +302,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		})
 		return
 	}
-	err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email, body)
+	err := ac.authService.SignUp(userinfo.(*services_auth.UserInfo).Email, body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

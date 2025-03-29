@@ -101,8 +101,8 @@ func (as *AuthService)VerifyJWT(tokenString string) (*CustomClaim, error) {
 
     // _, err = as.GetJWTBlacklistByJTI(claim.StandardClaims.Id)
     // if err != nil { 
-	// 	return claim, nil
-    // }
+		// }
+	return claim, nil
 	return nil, err
     
 }

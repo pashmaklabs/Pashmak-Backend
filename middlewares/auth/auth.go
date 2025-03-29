@@ -35,7 +35,7 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			c.Set("user", &claim.UserInfo)
+			c.Set("user", claim.UserInfo) // Needs consideration
 			c.Set("claim", &claim)
 			c.Next()
 		}
