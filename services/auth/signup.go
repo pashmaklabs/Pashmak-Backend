@@ -2,13 +2,26 @@ package services_auth
 
 import(
 	serializers_auth "pashmak.com/pashmak/serializers"
+	"errors"
 )
 
-func (as *AuthService)SignUp(Email string) (bool, error) {
+func (as *AuthService)SignUp(Email string, Payload serializers_auth.SignUpRequest) error {
 	user, err := as.GetUserByGmail(Email)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	
+	user.FirstName = Payload.FirstName
+	user.LastName = Payload.Lastname
+
+	if Payload.Password != Payload.PasswordConfirm {
+		return errors.New("passwords do not match")
+	}
+
+	hashedpass, err := as.HashPassword(Payload.Password)
+	if err != nil {
+		return err
+	}
+	user.Password = hashedpass
+
 }

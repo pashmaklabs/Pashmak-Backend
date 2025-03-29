@@ -152,11 +152,11 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		})
 		return
 	}
-	resp, err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email)
+	err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email, body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "مشکل",
+			"message": "مشکل غیر منتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
 		return
