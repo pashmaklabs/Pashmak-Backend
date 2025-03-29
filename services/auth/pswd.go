@@ -66,6 +66,11 @@ func (as *AuthService) LoginWithPassword(email string, password string) (string,
 }
 
 func (as *AuthService) ForgetPassword(email string) error {
+	err := as.CheckExistance(email)
+	if err != nil {
+		return err
+	}
+
 	userOTP := GenerateOTP()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
@@ -83,6 +88,10 @@ func (as *AuthService) ForgetPassword(email string) error {
 }
 
 func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, bool, error) {
+	err := as.CheckExistance(email)
+	if err != nil {
+		return "", false, err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel() // Ensures resources are cleaned up
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()

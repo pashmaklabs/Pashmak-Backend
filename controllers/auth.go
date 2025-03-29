@@ -27,7 +27,6 @@ func NewAuthController(authService *services_auth.AuthService, appConfig *bootst
 }
 
 func (ac *AuthController) SendOTP(c *gin.Context) {
-	// Read body
 	var body serializers_auth.SendOTPRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -37,7 +36,6 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		return
 	}
 
-	// Pass to auth service
 	resp, err := ac.authService.ValidateUser(body.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -47,21 +45,11 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	if !resp {
-		c.JSON(http.StatusOK, gin.H{
-			"status":     "success",
-			"message":    "رمز یکبار مصرف ارسال شد",
-			"userExists": false,
-		})
-		return
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"status":     "success",
-			"message":    "رمز یکبار مصرف ارسال شد",
-			"userExists": true,
-		})
-		return
-	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":     "success",
+		"message":    "رمز یکبار مصرف ارسال شد",
+		"userExists": resp,
+	})
 }
 
 func (ac *AuthController) VerifyOTP(c *gin.Context) {
@@ -133,7 +121,6 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context) {
 		"status":  "success",
 		"message": "این یک api محافظت شده است :)",
 	})
-	return
 }
 
 func (ac *AuthController) LoginWithPassword(c *gin.Context) {
@@ -148,6 +135,13 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کاربر پیدا نشد",
+			})
+			return
+		}
 		if err.Error() == "user has no password" {
 			c.JSON(http.StatusOK, gin.H{
 				"status":  "error",
@@ -162,25 +156,11 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "record not found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "کاربر پیدا نشد",
-			})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
-		return
-	}
-	if jwt == "" {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
-			"message": "رمز اشتباه است",
-		})
 		return
 	}
 	c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
@@ -202,6 +182,13 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 
 	err := ac.authService.ForgetPassword(body.Email)
 	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کاربر پیدا نشد",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "خطای غیر منتظره رخ داد.",
@@ -228,6 +215,13 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 
 	jwt, resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
 	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کاربر پیدا نشد",
+			})
+			return
+		}
 		if err.Error() == "OTP expired" {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
@@ -242,19 +236,20 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	if resp {
-		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
-			"message": "رمز یکبار مصرف صحیح وارد شده.",
-		})
-		return
-	} else {
+	if !resp {
 		c.JSON(http.StatusForbidden, gin.H{
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
+		return
 	}
+
+	c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "رمز یکبار مصرف صحیح وارد شده.",
+	})
+	return
 }
 
 func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
@@ -270,14 +265,20 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
-			"message": "مشکل غیرمنتظره ای رخ داده است",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
 		})
-		log.Println("Claim not found")
 		return
 	}
 	userinfo := value.(services_auth.UserInfo)
 	err := ac.authService.ResetForgetPassword(userinfo, body.Password)
 	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کاربر پیدا نشد",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",

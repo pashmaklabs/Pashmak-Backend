@@ -75,17 +75,10 @@ func GenerateOTP() string {
 	return fmt.Sprintf("%04d", otp)
 }
 
-func (as *AuthService) CheckExistance(email string) (bool, error) {
+func (as *AuthService) CheckExistance(email string) error {
 	var user models_auth.User
 	result := as.DB.First(&user, "email = ?", email)
-
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return false, nil
-		}
-		return false, result.Error
-	}
-	return true, nil
+	return result.Error
 }
 
 func (as *AuthService) StoreOTPAndSendEmail(email string) error {
@@ -101,16 +94,16 @@ func (as *AuthService) StoreOTPAndSendEmail(email string) error {
 }
 
 func (as *AuthService) ValidateUser(email string) (bool, error) {
-	exists, err := as.CheckExistance(email)
+	err := as.CheckExistance(email)
 	if err != nil {
-		return exists, fmt.Errorf("failed to check user existence: %w", err)
+		return false, fmt.Errorf("failed to check user existence: %w", err)
 	}
 
 	if err := as.StoreOTPAndSendEmail(email); err != nil {
-		return exists, err
+		return false, err
 	}
 
-	return exists, nil
+	return true, nil
 }
 
 func (as *AuthService) ValidateOTP(Email string, RecievedOTP string) (bool, error) {
