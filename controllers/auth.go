@@ -1,15 +1,17 @@
 package controlllers_auth
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"errors"
+
+	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	serializers_auth "pashmak.com/pashmak/serializers"
 	services_auth "pashmak.com/pashmak/services/auth"
-	"errors"
-	"gorm.io/gorm"
 )
 
 type AuthController struct {
@@ -142,13 +144,21 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		})
 		return
 	}
-
-	resp, err := ac.authService.SignUp(body)
+	userinfo, exists := c.Get("user")
+	if exists == false {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+	resp, err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": err.Error(),
+			"message": "مشکل",
 		})
+		log.Println(err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

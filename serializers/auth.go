@@ -16,7 +16,6 @@ type VerifyOTPRequest struct {
 }
 
 type SignUpRequest struct {
-	Email           string `json:"email"`
 	Password        string `json:"password"`
 	PasswordConfirm string `json:"passwordConfirm"`
 	NameFamilyname  string `json:"nameFamilyname"`
