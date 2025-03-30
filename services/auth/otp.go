@@ -95,7 +95,7 @@ func (as *AuthService) StoreOTPAndSendEmail(email string) error {
 
 func (as *AuthService) ValidateUser(email string) (bool, error) {
 	err := as.CheckExistance(email)
-	if err != nil {
+	if err != nil &&  err != gorm.ErrRecordNotFound{
 		return false, fmt.Errorf("failed to check user existence: %w", err)
 	}
 
@@ -103,6 +103,9 @@ func (as *AuthService) ValidateUser(email string) (bool, error) {
 		return false, err
 	}
 
+	if err == gorm.ErrRecordNotFound {
+		return false, nil
+	}
 	return true, nil
 }
 

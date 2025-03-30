@@ -12,7 +12,7 @@ func (as *AuthService)SignUp(Email string, Payload serializers_auth.SignUpReques
 	}
 
 	user.FirstName = Payload.FirstName
-	user.LastName = Payload.Lastname
+	user.LastName = Payload.LastName
 	if Payload.Password != Payload.PasswordConfirm {
 		return errors.New("passwords do not match")
 	}

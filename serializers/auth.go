@@ -36,7 +36,7 @@ type ForgetPasswordResetRequest struct {
 
 type SignUpRequest struct {
 	FirstName       string `json:"firstname"`
-	Lastname        string `json:"lastname"`
+	LastName        string `json:"lastname"`
 	Password        string `json:"password"`
 	PasswordConfirm string `json:"passwordConfirm"`
 }
