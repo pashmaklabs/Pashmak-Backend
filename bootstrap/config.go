@@ -4,11 +4,13 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
+	PashmakApiUrl string
 	ServerHost string
 	ServerPort string
 	
@@ -29,9 +31,12 @@ type AppConfig struct {
 	RedisPort        string
 	RedisHost        string
 	RedisPassword    string
+
+	AllowdOrigins	string
 }
 
 var (
+	PASHMAK_API_URL string
 	SERVER_HOST string
 	SERVER_PORT string
 	
@@ -60,6 +65,7 @@ func LoadEnvVars() *AppConfig {
 	if err != nil {
 		log.Println("Error loading .env file: ", err.Error())
 	}
+	PASHMAK_API_URL = os.Getenv("PASHMAK_API_URL")
 	SERVER_HOST = os.Getenv("SERVER_HOST")
 	SERVER_PORT = os.Getenv("SERVER_PORT")
 
@@ -86,7 +92,15 @@ func LoadEnvVars() *AppConfig {
 	REDIS_PORT = os.Getenv("REDIS_PORT")
 	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
 
+	ALLOWD_ORIGINS_SLICE := []string {
+		"http://localhost", 
+		"http://127.0.0.1",
+		"https://pashmak.darkube.app",
+	}
+	AllowdOrigins := strings.Join(ALLOWD_ORIGINS_SLICE, ",")
+
 	return &AppConfig{
+		PashmakApiUrl: PASHMAK_API_URL,
 		ServerHost: SERVER_HOST,
 		ServerPort: SERVER_PORT,
 		EmailPassword: EMAIL_PASSWORD,
@@ -103,5 +117,6 @@ func LoadEnvVars() *AppConfig {
 		RedisPort: REDIS_PORT,
 		RedisHost: REDIS_HOST,
 		RedisPassword: REDIS_PASSWORD,
+		AllowdOrigins: AllowdOrigins,
 	}
 }

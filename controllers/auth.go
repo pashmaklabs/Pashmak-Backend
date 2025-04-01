@@ -103,8 +103,9 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			})
 			return
 		}
-		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
-		if !exists {
+		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+		c.SetSameSite(http.SameSiteNoneMode)
+		if !exists{
 			err := ac.authService.CreateUser(body.Email)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -169,7 +170,8 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		})
 		return
 	}
-	c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+	c.SetSameSite(http.SameSiteNoneMode)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "ورود با موفقیت انجام شد.",
@@ -229,7 +231,8 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		return
 	}
 	if resp {
-		c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+		c.SetSameSite(http.SameSiteNoneMode)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "ورود با موفقیت انجام شد.",

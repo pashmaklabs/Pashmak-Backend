@@ -28,12 +28,11 @@ func init() {
 func main() {
 	Router = gin.Default()
 
-	// FIXME: Should be checked if it's necessary in production or not
-	// Global middleware to set CORS headers
-	Router.Use(middlewares_cors.SetCORSHeader)
+	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
+	Router.Use(corsMiddleware.SetCORSHeader())
 
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 
-	Router.Run(fmt.Sprintf(":%s", bootstrap.SERVER_PORT))
+	Router.Run(fmt.Sprintf(":%s", AppConfig.ServerPort))
 }
