@@ -6,7 +6,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DBNAME=pashmak_postgres
+      - POSTGRES_DB=pashmak_postgres
     volumes:
       - type: volume
         source: pashmak_postgres
@@ -25,7 +25,7 @@ services:
       - pashmak_redis:/data
   
   backend:
-    image: registry.hamdocker.ir/bluh-bluh/pashamk_backend_final:latest
+    image: registry.hamdocker.ir/bluh-bluh/pashmak-backend:latest
     container_name: pashmak_backend
     restart: unless-stopped
     ports:
