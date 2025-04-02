@@ -245,6 +245,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 	}
 
 	c.SetCookie("jwt_token", jwt, int(ac.AppConfig.TokenAge), "/", "", false, true)
+	// TODO: TokenAge for this part should be a short period of time
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "رمز یکبار مصرف صحیح وارد شده.",
