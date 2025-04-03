@@ -3,6 +3,7 @@ package services_auth
 import (
 	"github.com/gin-gonic/gin"
 	models_auth "pashmak.com/pashmak/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (as *AuthService) GetUserByGmail(email string) (models_auth.User, error){
@@ -19,4 +20,12 @@ func (as *AuthService) CreateUser(email string) error{
 func (as *AuthService) IsUserLoggedIn(c *gin.Context) bool{
 	_, exists := c.Get("user")
 	return exists
+}
+
+func (as *AuthService) HashPassword(password string) (string, error){
+	hashedpass, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedpass), nil
 }

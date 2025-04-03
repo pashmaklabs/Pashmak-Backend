@@ -93,3 +93,6 @@ Temporary Items
 *.pem
 # VScode extensions setting
 .vscode
+
+# KubeConfig
+KubeConfig.yaml

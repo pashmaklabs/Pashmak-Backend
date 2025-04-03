@@ -24,5 +24,6 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 		auth.POST("/password/forget/send", routeController.ForgetPassword)
 		auth.POST("/password/forget/verify", routeController.ForgetPasswordVerify)
 		auth.POST("/password/forget/reset", routeMiddleware.LoginMiddleware(), routeController.ForgetPasswordReset)
+		auth.PATCH("/signup", routeMiddleware.LoginMiddleware(), routeController.SignUp)
 	}
 }

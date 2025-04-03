@@ -33,3 +33,10 @@ type ForgetPasswordResetRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type SignUpRequest struct {
+	FirstName       string `json:"firstname"`
+	LastName        string `json:"lastname"`
+	Password        string `json:"password"`
+	PasswordConfirm string `json:"passwordConfirm"`
+}
