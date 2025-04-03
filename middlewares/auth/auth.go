@@ -18,7 +18,7 @@ func NewAuthMiddleware(authService *services_auth.AuthService) *AuthMiddleware {
 
 func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, err := c.Cookie("jwt_token")
+		token, err := c.Cookie("pashmak_authentication")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status": "error",
