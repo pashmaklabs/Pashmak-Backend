@@ -144,14 +144,14 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 			return
 		}
 		if err.Error() == "user has no password" {
-			c.JSON(http.StatusOK, gin.H{
+			c.JSON(http.StatusFailedDependency, gin.H{
 				"status":  "error",
 				"message": "کاربر رمز ندارد",
 			})
 			return
 		}
 		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" { // TODO: Integrate errors
-			c.JSON(http.StatusOK, gin.H{
+			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
 				"message": "رمز عبور اشتباه است",
 			})
