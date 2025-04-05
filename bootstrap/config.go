@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -32,7 +31,7 @@ type AppConfig struct {
 	RedisHost        string
 	RedisPassword    string
 
-	AllowdOrigins	string
+	AllowdOrigins	[]string
 }
 
 var (
@@ -92,10 +91,11 @@ func LoadEnvVars() *AppConfig {
 	REDIS_PORT = os.Getenv("REDIS_PORT")
 	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
 
-	ALLOWD_ORIGINS_SLICE := []string {
+	AllowdOrigins := []string {
+		"http://localhost:5174", 
+		"http://localhost:5173", 
 		"https://pashmak.darkube.app",
 	}
-	AllowdOrigins := strings.Join(ALLOWD_ORIGINS_SLICE, ",")
 
 	return &AppConfig{
 		PashmakApiUrl: PASHMAK_API_URL,
