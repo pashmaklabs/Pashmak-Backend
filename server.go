@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-
+	"log"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -27,7 +27,7 @@ func init() {
 
 func main() {
 	Router = gin.Default()
-
+	log.Println("+", "password", "+")
 	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
 	Router.Use(corsMiddleware.SetCORSHeader())
 

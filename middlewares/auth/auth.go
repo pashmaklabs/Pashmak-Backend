@@ -24,6 +24,7 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 				"status": "error",
 				"message": "ابتدا باید وارد شوید",
 			})
+			// log.Println(err.Error())
 			return
 		} else {
 			claim, err := am.authService.VerifyJWT(token)

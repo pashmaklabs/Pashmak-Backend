@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
-	"golang.org/x/crypto/bcrypt"
+
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 	models_auth "pashmak.com/pashmak/models"
 )
 
@@ -46,7 +48,7 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 	}
 	return &user, nil
 }
-
+// TODO: postman domain
 func (as *AuthService) LoginWithPassword(email string, password string) (string, error) {
 	user, err := as.GetUserByGmail(email)
 	if err != nil {
@@ -56,6 +58,8 @@ func (as *AuthService) LoginWithPassword(email string, password string) (string,
 		return "", errors.New("user has no password")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		log.Println(user.Password)
+		log.Println("+", password, "+")
 		return "", err
 	}
 	jwt, err := as.GenerateJWT(user)
