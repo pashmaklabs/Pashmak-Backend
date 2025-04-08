@@ -110,6 +110,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		return
 	} else {
 		c.JSON(http.StatusForbidden, gin.H{
+			// FIXME: Change status code
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
@@ -149,6 +150,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 				"message": "کاربر رمز ندارد",
 			})
 			return
+			// Fixme: this error has security issues
 		}
 		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" { // TODO: Integrate errors
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -249,6 +251,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		return
 	} else {
 		c.JSON(http.StatusForbidden, gin.H{
+			// FIXME: Change status code
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
