@@ -310,6 +310,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 	userinfo, exists := c.Get("user")
+	log.Println(userinfo.(services_auth.UserInfo).Email)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
