@@ -1,4 +1,4 @@
-package controlllers_auth
+package controllers_auth
 
 import (
 	"log"

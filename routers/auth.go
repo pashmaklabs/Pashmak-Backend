@@ -5,14 +5,15 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	controlllers_auth "pashmak.com/pashmak/controllers"
+	controllers_auth "pashmak.com/pashmak/controllers/auth"
+	controllers_users "pashmak.com/pashmak/controllers/users"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
 func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig *bootstrap.AppConfig) {
 	routeService := services_auth.NewAuthService(db, redis, appConfig)
-	routeController := controlllers_auth.NewAuthController(routeService, appConfig)
+	routeController := controllers_auth.NewAuthController(routeService, appConfig)
 	routeMiddleware := middlewares_auth.NewAuthMiddleware(routeService)
 	
 	auth := router.Group("/auth")
@@ -25,5 +26,12 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 		auth.POST("/password/forget/verify", routeController.ForgetPasswordVerify)
 		auth.POST("/password/forget/reset", routeMiddleware.LoginMiddleware(), routeController.ForgetPasswordReset)
 		auth.PATCH("/signup", routeMiddleware.LoginMiddleware(), routeController.SignUp)
+	}
+
+
+	usersController := controllers_users.
+	users := router.Group("/users")
+	{
+		users.GET("/me", routeMiddleware.LoginMiddleware(), )
 	}
 }
