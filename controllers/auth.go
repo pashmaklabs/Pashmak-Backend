@@ -91,8 +91,9 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			})
 			return
 		}
-		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", c.Request.Host, true, false)
+		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "", true, false)
 		c.SetSameSite(http.SameSiteNoneMode)
+		
 		if !exists {
 			err := ac.authService.CreateUser(body.Email)
 			if err != nil {
@@ -164,7 +165,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", c.Request.Host, true, false)
+	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "", true, false)
 	c.SetSameSite(http.SameSiteNoneMode)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
@@ -240,7 +241,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 	}
 	if resp {
 		// TODO: TokenAge for this part should be a short period of time
-		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", c.Request.Host, true, false)
+		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "", true, false)
 		c.SetSameSite(http.SameSiteNoneMode)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
