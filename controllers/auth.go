@@ -93,7 +93,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		}
 		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
 		c.SetSameSite(http.SameSiteNoneMode)
-		if !exists{
+		if !exists {
 			err := ac.authService.CreateUser(body.Email)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -109,8 +109,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(http.StatusForbidden, gin.H{
-			// FIXME: Change status code
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
@@ -137,25 +136,10 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
-		if err.Error() == "record not found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "کاربر پیدا نشد",
-			})
-			return
-		}
-		if err.Error() == "user has no password" {
-			c.JSON(http.StatusFailedDependency, gin.H{
-				"status":  "error",
-				"message": "کاربر رمز ندارد",
-			})
-			return
-			// Fixme: this error has security issues
-		}
-		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" { // TODO: Integrate errors
+		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" || err.Error() == "user has no password" || err.Error() == "record not found" { // TODO: Integrate errors
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
-				"message": "رمز عبور اشتباه است",
+				"message": "نام کاربری یا رمز عبور اشتباه است",
 			})
 			return
 		}
@@ -250,8 +234,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(http.StatusForbidden, gin.H{
-			// FIXME: Change status code
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
@@ -304,13 +287,14 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 	var body serializers_auth.SignUpRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
 	userinfo, exists := c.Get("user")
-	log.Println(userinfo.(services_auth.UserInfo).Email)
+	// FIXME: user email is nil
+	// log.Println(userinfo.(services_auth.UserInfo).Email)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -328,8 +312,8 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":    "success",
-		"message":   "ثبت نام با موفقیت انجام شد.",
+		"status":  "success",
+		"message": "ثبت نام با موفقیت انجام شد.",
 	})
 	return
 }
