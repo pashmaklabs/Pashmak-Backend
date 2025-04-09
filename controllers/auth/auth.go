@@ -10,7 +10,7 @@ import (
 
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	serializers_auth "pashmak.com/pashmak/serializers"
+	serializers_auth "pashmak.com/pashmak/serializers/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 

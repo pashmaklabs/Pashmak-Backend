@@ -6,9 +6,10 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	controllers_auth "pashmak.com/pashmak/controllers/auth"
-	controllers_users "pashmak.com/pashmak/controllers/users"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
+
+	
 )
 
 func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig *bootstrap.AppConfig) {
@@ -29,9 +30,4 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 	}
 
 
-	usersController := controllers_users.
-	users := router.Group("/users")
-	{
-		users.GET("/me", routeMiddleware.LoginMiddleware(), )
-	}
 }

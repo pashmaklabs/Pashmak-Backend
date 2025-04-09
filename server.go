@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	middlewares_cors "pashmak.com/pashmak/middlewares/cors"
-	routers_auth "pashmak.com/pashmak/routers"
+	routers_auth "pashmak.com/pashmak/routers/auth"
 )
 
 var (

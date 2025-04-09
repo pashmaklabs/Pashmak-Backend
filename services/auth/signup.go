@@ -1,7 +1,7 @@
 package services_auth
 
 import(
-	serializers_auth "pashmak.com/pashmak/serializers"
+	serializers_auth "pashmak.com/pashmak/serializers/auth"
 	"errors"
 )
 

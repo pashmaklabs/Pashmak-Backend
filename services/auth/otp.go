@@ -14,6 +14,8 @@ import (
 	models_auth "pashmak.com/pashmak/models"
 )
 
+
+// TODO: move basic services_auth setup to another file(not in otp!)
 type AuthService struct {
 	DB          *gorm.DB
 	RedisClient *redis.Client
