@@ -1,8 +1,10 @@
 package serializers_profile
 
+import "time"
+
 type CurrentProfileResponse struct {
-	Name      string
+	FirstName string
 	LastName  string
-	BirthDate string //handle
+	BirthDate time.Time //handle
 	AboutMe   string
 }
