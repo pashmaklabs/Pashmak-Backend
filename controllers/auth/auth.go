@@ -107,7 +107,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			log.Println(err.Error())
 			return
 		}else{
-			c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+			c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 			c.SetSameSite(http.SameSiteNoneMode)
 		}
 		
@@ -159,7 +159,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 	c.SetSameSite(http.SameSiteNoneMode)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
@@ -234,7 +234,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		return
 	}
 	if resp {
-		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 		c.SetSameSite(http.SameSiteNoneMode)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",

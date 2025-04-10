@@ -32,6 +32,9 @@ type AppConfig struct {
 	RedisPassword    string
 
 	AllowdOrigins	[]string
+	CookieDomain string
+
+	Environment string
 }
 
 var (
@@ -56,6 +59,8 @@ var (
 	REDIS_PORT        string
 	REDIS_HOST        string
 	REDIS_PASSWORD    string
+
+	CookieDomain string
 )
 
 func LoadEnvVars() *AppConfig {
@@ -98,6 +103,13 @@ func LoadEnvVars() *AppConfig {
 		"https://pashmak.darkube.app",
 	}
 
+	Environment := os.Getenv("GO_ENV")
+	if Environment == "development" {
+		CookieDomain = "darkube.app"
+	}else{
+		CookieDomain = ""
+	}
+
 	return &AppConfig{
 		PashmakApiUrl: PASHMAK_API_URL,
 		ServerHost: SERVER_HOST,
@@ -117,5 +129,6 @@ func LoadEnvVars() *AppConfig {
 		RedisHost: REDIS_HOST,
 		RedisPassword: REDIS_PASSWORD,
 		AllowdOrigins: AllowdOrigins,
+		CookieDomain: CookieDomain,
 	}
 }
