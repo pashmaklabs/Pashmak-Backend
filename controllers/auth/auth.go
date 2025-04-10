@@ -68,41 +68,50 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println(err.Error())
 		return
 	}
 	if resp {
-		user, err := ac.authService.GetUserByGmail(body.Email)
-		exists := true
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		var exists bool = true
+		
+		if err := ac.authService.CheckExistance(body.Email); errors.Is(err, gorm.ErrRecordNotFound) {
 			exists = false
 		} else if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
 				"message": "مشکل غیرمنتظره ای رخ داده است",
 			})
+			log.Println(err.Error())
 			return
 		}
-		// TODO: Move logic to service
-		jwt, err := ac.authService.GenerateJWT(user)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":  "error",
-				"message": "مشکل غیرمنتظره ای رخ داده است",
-			})
-			return
-		}
-		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
-		c.SetSameSite(http.SameSiteNoneMode)
-		if !exists{
+		if !exists {
 			err := ac.authService.CreateUser(body.Email)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"status":  "error",
 					"message": "مشکل غیرمنتظره ای رخ داده است",
 				})
+				log.Println(err.Error())
 				return
 			}
 		}
+
+		user, _ := ac.authService.GetUserByGmail(body.Email)
+		// TODO: Move logic to service
+		
+		if jwt, err := ac.authService.GenerateJWT(user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+			log.Println(err.Error())
+			return
+		}else{
+			c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+			c.SetSameSite(http.SameSiteNoneMode)
+		}
+		
+		
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "ورود با موفقیت انجام شد.",
@@ -304,12 +313,13 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 	var body serializers_auth.SignUpRequest
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
 	userinfo, exists := c.Get("user")
+	
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -317,7 +327,8 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		})
 		return
 	}
-	err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email, body)
+	userpayload := userinfo.(services_auth.UserInfo)
+	err := ac.authService.SignUp(userpayload, body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -327,8 +338,8 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":    "success",
-		"message":   "ثبت نام با موفقیت انجام شد.",
+		"status":  "success",
+		"message": "ثبت نام با موفقیت انجام شد.",
 	})
 	return
 }

@@ -1,12 +1,15 @@
 package services_auth
 
-import(
-	serializers_auth "pashmak.com/pashmak/serializers/auth"
+import (
 	"errors"
+	"log"
+
+	serializers_auth "pashmak.com/pashmak/serializers/auth"
 )
 
-func (as *AuthService)SignUp(Email string, Payload serializers_auth.SignUpRequest) error {
-	user, err := as.GetUserByGmail(Email)
+func (as *AuthService)SignUp(userinfo UserInfo, Payload serializers_auth.SignUpRequest) error {
+	user, err := as.GetUserByGmail(userinfo.Email)
+	log.Println("user", userinfo.Email)
 	if err != nil {
 		return err
 	}
