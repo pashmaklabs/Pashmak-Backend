@@ -13,20 +13,20 @@ import (
 )
 
 func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig *bootstrap.AppConfig) {
-	routeService := services_auth.NewAuthService(db, redis, appConfig)
-	routeController := controllers_auth.NewAuthController(routeService, appConfig)
-	routeMiddleware := middlewares_auth.NewAuthMiddleware(routeService)
+	authService := services_auth.NewAuthService(db, redis, appConfig)
+	authController := controllers_auth.NewAuthController(authService, appConfig)
+	authMiddleware := middlewares_auth.NewAuthMiddleware(authService)
 	
 	auth := router.Group("/auth")
 	{
-		auth.POST("/otp/send", routeController.SendOTP)
-		auth.POST("/otp/verify", routeController.VerifyOTP)
-		auth.GET("/protected", routeMiddleware.LoginMiddleware(), routeController.ProtectedRouter)
-		auth.POST("/password", routeController.LoginWithPassword)
-		auth.POST("/password/forget/send", routeController.ForgetPassword)
-		auth.POST("/password/forget/verify", routeController.ForgetPasswordVerify)
-		auth.POST("/password/forget/reset", routeMiddleware.LoginMiddleware(), routeController.ForgetPasswordReset)
-		auth.PATCH("/signup", routeMiddleware.LoginMiddleware(), routeController.SignUp)
+		auth.POST("/otp/send", authController.SendOTP)
+		auth.POST("/otp/verify", authController.VerifyOTP)
+		auth.GET("/protected", authMiddleware.LoginMiddleware(), authController.ProtectedRouter)
+		auth.POST("/password", authController.LoginWithPassword)
+		auth.POST("/password/forget/send", authController.ForgetPassword)
+		auth.POST("/password/forget/verify", authController.ForgetPasswordVerify)
+		auth.POST("/password/forget/reset", authMiddleware.LoginMiddleware(), authController.ForgetPasswordReset)
+		auth.PATCH("/signup", authMiddleware.LoginMiddleware(), authController.SignUp)
 	}
 
 
