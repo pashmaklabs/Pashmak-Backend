@@ -3,6 +3,7 @@ package controllers_profile
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	services_auth "pashmak.com/pashmak/services/auth"
@@ -17,7 +18,7 @@ func NewProfileController(profileService *services_profile.ProfileService) *Prof
 	return &ProfileController{ProfileService: profileService}
 }
 
-func (pc *ProfileController) GetProfile(c *gin.Context) {
+func (pc *ProfileController) GetMyProfile(c *gin.Context) {
 	value, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusForbidden, gin.H{
@@ -26,13 +27,25 @@ func (pc *ProfileController) GetProfile(c *gin.Context) {
 		})
 	}
 	userinfo := value.(services_auth.UserInfo)
-	profile, err := pc.ProfileService.GetProfile(userinfo.ID)
+	profile, err := pc.ProfileService.GetMyProfile(userinfo.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
+	}
+	c.IndentedJSON(http.StatusOK, profile)
+}
+
+func (pc *ProfileController) GetProfileByID(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	profile, err := pc.ProfileService.GetProfileByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
 	}
 	c.IndentedJSON(http.StatusOK, profile)
 }

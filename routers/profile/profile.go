@@ -8,7 +8,7 @@ import (
 	controllers_profile "pashmak.com/pashmak/controllers/profile"
 	services_profile "pashmak.com/pashmak/services/profile"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
-	
+
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
@@ -20,6 +20,7 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConf
 
 	profile := router.Group("/profiles")
 	{
-		profile.GET("/me", authMiddleware.LoginMiddleware(), profileController.GetProfile)
+		profile.GET("/me", authMiddleware.LoginMiddleware(), profileController.GetMyProfile)
+		profile.GET("/:id", profileController.GetProfileByID)
 	}
 }

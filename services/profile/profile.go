@@ -20,13 +20,24 @@ func NewProfileService(db *gorm.DB, appConfig *bootstrap.AppConfig) *ProfileServ
 }
 
 
-func (ps * ProfileService) GetProfile(id uint) (serializers_profile.CurrentProfileResponse, error){
+func (ps * ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentProfileResponse, error){
 	var user models_auth.User
 	result := ps.DB.First(&user, "id = ?", id)
 	return serializers_profile.CurrentProfileResponse{
 		FirstName: user.FirstName,
 		LastName: user.LastName,
+		Email: user.Email,
 		BirthDate: user.BirthDate,
+		AboutMe: user.AboutMe,
+	}, result.Error
+}
+
+func (ps *ProfileService) GetProfileByID(id uint)(serializers_profile.GetProfileByIDResponse, error){
+	var user models_auth.User
+	result := ps.DB.First(&user, "id = ?", id)
+	return serializers_profile.GetProfileByIDResponse{
+		FirstName: user.FirstName,
+		LastName: user.LastName,
 		AboutMe: user.AboutMe,
 	}, result.Error
 }

@@ -324,3 +324,4 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		"message": "ثبت نام با موفقیت انجام شد.",
 	})
 }
+	
