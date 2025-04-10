@@ -8,8 +8,6 @@ import (
 	controllers_auth "pashmak.com/pashmak/controllers/auth"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
-
-	
 )
 
 func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig *bootstrap.AppConfig) {
@@ -28,6 +26,4 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 		auth.POST("/password/forget/reset", authMiddleware.LoginMiddleware(), authController.ForgetPasswordReset)
 		auth.PATCH("/signup", authMiddleware.LoginMiddleware(), authController.SignUp)
 	}
-
-
 }
