@@ -115,6 +115,9 @@ func (as *AuthService) ValidateOTP(Email string, RecievedOTP string) (bool, erro
 	ctx := context.Background()
 	realOTP, err := as.RedisClient.Get(ctx, Email).Result()
 	if err != nil {
+		if err == redis.Nil{
+			return false, err
+		}
 		return false, fmt.Errorf("failed to get OTP from redis: %w", err)
 	}
 

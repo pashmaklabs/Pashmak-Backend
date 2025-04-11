@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 
 	"errors"
 
@@ -64,6 +65,13 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 
 	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
 	if err != nil {
+		if err == redis.Nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "کد یکبار مصرف منقضی شده است",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
