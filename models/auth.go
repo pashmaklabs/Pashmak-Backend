@@ -10,10 +10,10 @@ type User struct {
 	LastName  string    `gorm:"default:''"`
 	Email     string    `gorm:"unique;not null"`
 	Password  string    `gorm:"default:''"`
-	BirthDate time.Time
-	AboutMe   string    `gorm:"default:''"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	Image_url string    `gorm:"default:''"`
+	Score     uint
 }
 
 type JWTBlacklist struct {

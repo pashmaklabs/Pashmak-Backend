@@ -25,6 +25,7 @@ func (pc *ProfileController) GetMyProfile(c *gin.Context) {
 			"status":  "error",
 			"message": "شمامجاز به انجام این عملیات نمی باشید.",
 		})
+		return
 	}
 	userinfo := value.(services_auth.UserInfo)
 	profile, err := pc.ProfileService.GetMyProfile(userinfo.ID)
@@ -34,6 +35,7 @@ func (pc *ProfileController) GetMyProfile(c *gin.Context) {
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
+		return
 	}
 	c.IndentedJSON(http.StatusOK, profile)
 }
@@ -46,6 +48,11 @@ func (pc *ProfileController) GetProfileByID(c *gin.Context) {
 			"status": "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println(err.Error())
+		return
 	}
-	c.IndentedJSON(http.StatusOK, profile)
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"message": profile,
+	})
 }

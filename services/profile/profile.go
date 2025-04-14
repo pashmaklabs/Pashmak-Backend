@@ -27,17 +27,19 @@ func (ps * ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentPro
 		FirstName: user.FirstName,
 		LastName: user.LastName,
 		Email: user.Email,
-		BirthDate: user.BirthDate,
-		AboutMe: user.AboutMe,
+		Image_url: user.Image_url,
 	}, result.Error
 }
 
 func (ps *ProfileService) GetProfileByID(id uint)(serializers_profile.GetProfileByIDResponse, error){
 	var user models_auth.User
 	result := ps.DB.First(&user, "id = ?", id)
+	if result.Error != nil{
+
+	}
 	return serializers_profile.GetProfileByIDResponse{
 		FirstName: user.FirstName,
 		LastName: user.LastName,
-		AboutMe: user.AboutMe,
+		Image_url: user.Image_url,
 	}, result.Error
 }

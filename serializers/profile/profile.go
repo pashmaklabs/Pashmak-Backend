@@ -1,18 +1,16 @@
 package serializers_profile
 
-import "time"
-
 type CurrentProfileResponse struct {
 	FirstName string
 	LastName  string
 	Email     string
-	BirthDate time.Time //handle
-	AboutMe   string
+	Image_url string
+	Score     uint
 }
 
 type GetProfileByIDResponse struct {
 	FirstName string
 	LastName  string
-	AboutMe   string
+	Image_url string
+	Score     uint
 }
-
