@@ -301,6 +301,7 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 
 func (ac *AuthController) SignUp(c *gin.Context) {
 	var body serializers_auth.SignUpRequest
+	// TODO: check password confirmation match in backend
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
