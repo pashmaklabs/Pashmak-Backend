@@ -1,16 +1,17 @@
-package controlllers_auth
+package controllers_auth
 
 import (
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 
 	"errors"
 
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	serializers_auth "pashmak.com/pashmak/serializers"
+	serializers_auth "pashmak.com/pashmak/serializers/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
@@ -64,53 +65,68 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 
 	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
 	if err != nil {
+		if err == redis.Nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "کد یکبار مصرف منقضی شده است",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println(err.Error())
 		return
 	}
 	if resp {
-		user, err := ac.authService.GetUserByGmail(body.Email)
-		exists := true
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		var exists bool = true
+		
+		if err := ac.authService.CheckExistance(body.Email); errors.Is(err, gorm.ErrRecordNotFound) {
 			exists = false
 		} else if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
 				"message": "مشکل غیرمنتظره ای رخ داده است",
 			})
+			log.Println(err.Error())
 			return
 		}
-		// TODO: Move logic to service
-		jwt, err := ac.authService.GenerateJWT(user)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":  "error",
-				"message": "مشکل غیرمنتظره ای رخ داده است",
-			})
-			return
-		}
-		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
-		c.SetSameSite(http.SameSiteNoneMode)
-		if !exists{
+		if !exists {
 			err := ac.authService.CreateUser(body.Email)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"status":  "error",
 					"message": "مشکل غیرمنتظره ای رخ داده است",
 				})
+				log.Println(err.Error())
 				return
 			}
 		}
+
+		user, _ := ac.authService.GetUserByGmail(body.Email)
+		// TODO: Move logic to service
+		
+		if jwt, err := ac.authService.GenerateJWT(user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+			log.Println(err.Error())
+			return
+		}else{
+			c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
+			c.SetSameSite(http.SameSiteNoneMode)
+		}
+		
+		
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "ورود با موفقیت انجام شد.",
 		})
 		return
 	} else {
-		c.JSON(http.StatusForbidden, gin.H{
-			// FIXME: Change status code
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
@@ -137,25 +153,10 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
-		if err.Error() == "record not found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "کاربر پیدا نشد",
-			})
-			return
-		}
-		if err.Error() == "user has no password" {
-			c.JSON(http.StatusFailedDependency, gin.H{
-				"status":  "error",
-				"message": "کاربر رمز ندارد",
-			})
-			return
-			// Fixme: this error has security issues
-		}
-		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" { // TODO: Integrate errors
+		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" || err.Error() == "user has no password" || err.Error() == "record not found" { // TODO: Integrate errors
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
-				"message": "رمز عبور اشتباه است",
+				"message": "نام کاربری یا رمز عبور اشتباه است",
 			})
 			return
 		}
@@ -166,7 +167,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+	c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 	c.SetSameSite(http.SameSiteNoneMode)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
@@ -241,8 +242,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		return
 	}
 	if resp {
-		// TODO: TokenAge for this part should be a short period of time
-		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", "darkube.app", true, false)
+		c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 		c.SetSameSite(http.SameSiteNoneMode)
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
@@ -250,8 +250,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(http.StatusForbidden, gin.H{
-			// FIXME: Change status code
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "رمز یکبار مصرف اشتباه وارد شده.",
 		})
@@ -302,14 +301,16 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 
 func (ac *AuthController) SignUp(c *gin.Context) {
 	var body serializers_auth.SignUpRequest
+	// TODO: check password confirmation match in backend
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":    "error",
-			"message":   "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"status":  "error",
+			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
 		return
 	}
 	userinfo, exists := c.Get("user")
+	
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -317,7 +318,8 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		})
 		return
 	}
-	err := ac.authService.SignUp(userinfo.(services_auth.UserInfo).Email, body)
+	userpayload := userinfo.(services_auth.UserInfo)
+	err := ac.authService.SignUp(userpayload, body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -327,8 +329,8 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":    "success",
-		"message":   "ثبت نام با موفقیت انجام شد.",
+		"status":  "success",
+		"message": "ثبت نام با موفقیت انجام شد.",
 	})
-	return
 }
+	

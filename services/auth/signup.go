@@ -1,16 +1,16 @@
 package services_auth
 
-import(
-	serializers_auth "pashmak.com/pashmak/serializers"
+import (
 	"errors"
+
+	serializers_auth "pashmak.com/pashmak/serializers/auth"
 )
 
-func (as *AuthService)SignUp(Email string, Payload serializers_auth.SignUpRequest) error {
-	user, err := as.GetUserByGmail(Email)
+func (as *AuthService) SignUp(userinfo UserInfo, Payload serializers_auth.SignUpRequest) error {
+	user, err := as.GetUserByGmail(userinfo.Email)
 	if err != nil {
 		return err
 	}
-	// FIXME: Error in query of GetUserByGmail(email is nil)
 	user.FirstName = Payload.FirstName
 	user.LastName = Payload.LastName
 	if Payload.Password != Payload.PasswordConfirm {
@@ -23,7 +23,7 @@ func (as *AuthService)SignUp(Email string, Payload serializers_auth.SignUpReques
 	}
 	user.Password = hashedpass
 	if err := as.DB.Save(&user).Error; err != nil {
-		return err 
+		return err
 	}
 	return nil
 }

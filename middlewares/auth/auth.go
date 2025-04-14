@@ -15,7 +15,8 @@ type AuthMiddleware struct {
 func NewAuthMiddleware(authService *services_auth.AuthService) *AuthMiddleware {
 	return &AuthMiddleware{authService: authService}
 }
-
+// TODO: When someone is logged in, he can't login again using auth endpoints
+// TODO: When someone is not logged in, he can't logout
 func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("pashmak_authentication")
