@@ -278,7 +278,7 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 	userinfo := value.(services_auth.UserInfo)
 	err := ac.authService.ResetForgetPassword(userinfo, body.Password)
 	if err != nil {
-		if err.Error() == "record not found" {
+		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
 				"message": "کاربر پیدا نشد",
