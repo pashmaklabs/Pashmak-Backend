@@ -1,7 +1,6 @@
 package services_auth
 
 import (
-	"errors"
 	"fmt"
 
 	serializers_auth "pashmak.com/pashmak/serializers/auth"
@@ -15,7 +14,7 @@ func (as *AuthService) SignUp(userinfo UserInfo, Payload serializers_auth.SignUp
 	user.FirstName = Payload.FirstName
 	user.LastName = Payload.LastName
 	if Payload.Password != Payload.PasswordConfirm {
-		return errors.New("passwords do not match")
+		return ErrAuth.ErrPasswordMismatch
 	}
 
 	hashedpass, err := as.HashPassword(Payload.Password)

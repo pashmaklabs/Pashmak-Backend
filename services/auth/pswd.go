@@ -2,7 +2,6 @@ package services_auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 	"golang.org/x/crypto/bcrypt"
@@ -36,7 +35,7 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 		return nil, result.Error
 	}
 	if user.Password == "" {
-		return nil, errors.New("user has no password")
+		return nil, ErrAuth.ErrNoPassword
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newpassword)); err != nil {
 		return nil, err
@@ -53,7 +52,7 @@ func (as *AuthService) LoginWithPassword(email string, password string) (string,
 		return "", err
 	}
 	if user.Password == "" {
-		return "", errors.New("user has no password")
+		return "", ErrAuth.ErrNoPassword
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", err
@@ -76,7 +75,7 @@ func (as *AuthService) ForgetPassword(email string) error {
     defer cancel()
 	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-            return errors.New("operation timed out")
+            return ErrAuth.ErrOperationTimeOut
         }
 		return fmt.Errorf("failed to store OTP in Redis: %w", err)
 	}
@@ -97,10 +96,10 @@ func (as *AuthService) VerifyForgetPassword(email string, otp string) (string, b
 	realOTP, err := as.RedisClient.Get(ctx, email).Result()
 	if err != nil {
 		if err == redis.Nil { // This format can be used instead of errors.Is(err, redis.Nil)
-			return "", false, errors.New("OTP expired")
+			return "", false, ErrAuth.ErrOTPExpired
 		}
 		if ctx.Err() == context.DeadlineExceeded {
-            return "", false, errors.New("operation timed out")
+            return "", false, ErrAuth.ErrOperationTimeOut
         }
 		return "", false, fmt.Errorf("failed to get OTP from redis: %w", err)
 	}

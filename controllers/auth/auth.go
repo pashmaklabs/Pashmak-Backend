@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 
 	"errors"
 
@@ -153,7 +154,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
-		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" || err.Error() == "user has no password" || err.Error() == "record not found" { // TODO: Integrate errors
+		if err == bcrypt.ErrMismatchedHashAndPassword || err == services_auth.ErrAuth.ErrNoPassword || err == gorm.ErrRecordNotFound { // TODO: Integrate errors
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status":  "error",
 				"message": "نام کاربری یا رمز عبور اشتباه است",
@@ -187,7 +188,7 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 
 	err := ac.authService.ForgetPassword(body.Email)
 	if err != nil {
-		if err.Error() == "record not found" {
+		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
 				"message": "کاربر پیدا نشد",
@@ -220,14 +221,14 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 
 	jwt, resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
 	if err != nil {
-		if err.Error() == "record not found" {
+		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
 				"message": "کاربر پیدا نشد",
 			})
 			return
 		}
-		if err.Error() == "OTP expired" {
+		if err == services_auth.ErrAuth.ErrOTPExpired {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
 				"message": "کد تایید منقضی شده است",
