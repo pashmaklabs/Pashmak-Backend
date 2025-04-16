@@ -7,7 +7,7 @@ import (
 	"time"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/redis/go-redis/v9"
-	models_auth "pashmak.com/pashmak/models"
+	models_auth "pashmak.com/pashmak/models/auth"
 )
 
 func (as *AuthService)SendResetPasswordMail(email string, userOTP string) error {

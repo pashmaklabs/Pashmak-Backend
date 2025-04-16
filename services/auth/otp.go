@@ -11,7 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	models_auth "pashmak.com/pashmak/models"
+	models_auth "pashmak.com/pashmak/models/auth"
 )
 
 

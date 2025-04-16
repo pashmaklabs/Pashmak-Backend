@@ -4,7 +4,8 @@ import (
 	"log"
 
 	"gorm.io/gorm"
-	"pashmak.com/pashmak/models"
+	"pashmak.com/pashmak/models/auth"
+	"pashmak.com/pashmak/models/comment"
 )
 
 func getModels() []interface{}{
@@ -13,6 +14,7 @@ func getModels() []interface{}{
 		// authentication
 		&models_auth.User{},
 		&models_auth.JWTBlacklist{},
+		&models_comment.Comment{},
 	}
 	return all_models
 }

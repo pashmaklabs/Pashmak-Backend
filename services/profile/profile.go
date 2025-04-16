@@ -3,7 +3,7 @@ package services_profile
 import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	models_auth "pashmak.com/pashmak/models"
+	models_auth "pashmak.com/pashmak/models/auth"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
 )
 
