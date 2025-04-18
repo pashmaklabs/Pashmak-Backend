@@ -7,12 +7,11 @@ import (
 )
 
 type Comment struct {
-	ID        uint             `gorm:"primaryKey;autoIncrement"`
-	Content   string          `gorm:"not null;size:1000"`
-	Rating    uint           `gorm:"default:0"`
-	User      models_auth.User
+	ID      uint             `gorm:"primaryKey;autoIncrement"`
+	Content string           `gorm:"not null;size:1000"`
+	Rating  uint             `gorm:"default:0"`
+	UserID  uint             `gorm:"not null"`
+	User    models_auth.User `gorm:"foreignKey:UserID"`
 	// Place               // Place Model
-	CreatedAt time.Time      `gorm:"autoCreateTime"`
-	Likes     uint          `gorm:"default:0"`
-	Dislikes  uint          `gorm:"default:0"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
