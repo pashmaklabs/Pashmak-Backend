@@ -15,3 +15,10 @@ type Comment struct {
 	// Place               // Place Model
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
+
+type Reaction struct {
+	ID uint `gorm:"primaryKey;autoIncrement"`
+	CommentID uint
+	ReactionType int
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+}
