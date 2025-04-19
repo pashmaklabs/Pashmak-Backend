@@ -3,7 +3,7 @@ package services_comment
 import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	models_comment "pashmak.com/pashmak/models/comment"
+	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 )
 
@@ -23,8 +23,8 @@ func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentServ
 func (cs *CommentService)GetCommentsByPlaceToken(token string)([]serializers_comment.CommentResponse, error){
 	// result := cs.DB.Model(&models_comment.Comment{}).Where(query interface{}, args ...interface{})
 	var comments []serializers_comment.CommentResponse
-    err := cs.DB.Model(&models_comment.Comment{}).
-        Preload("User").
+    err := cs.DB.Model(&models_place.Comment{}).
+        Preload("Users").
         Preload("Reactions").
         Where("place_id = ?", token).
         Order("created_at DESC").

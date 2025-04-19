@@ -4,7 +4,7 @@ import (
 	"time"
 
 	models_auth "pashmak.com/pashmak/models/auth"
-	models_comment "pashmak.com/pashmak/models/comment"
+	models_place "pashmak.com/pashmak/models/place"
 )
 
 type CommentResponse struct {
@@ -14,5 +14,5 @@ type CommentResponse struct {
 	User      models_auth.User
 	PlaceID   uint
 	CreatedAt time.Time
-	Reactions []models_comment.Reaction
+	Reactions []models_place.Reaction
 }
