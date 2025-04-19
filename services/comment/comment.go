@@ -28,10 +28,8 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 	err := cs.DB.
 		Select("comments.id, comments.content, comments.rating, comments.user_id, comments.place_id, comments.created_at").
 		Where("place_id = ?", token).
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "first_name", "email") // Select only ID and Username from User
-		}).
 		Preload("Place").
+		Preload("User").
 		Preload("Reactions").
 		Find(&comments).Error
 
@@ -43,7 +41,6 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 		return nil, errors.New("no comments found")
 	}
 
-	// Map comments to DTO
 	commentDTOs := make([]serializers_comment.CommentResponse, len(comments))
 	for i, comment := range comments {
 		commentDTOs[i] = serializers_comment.CommentResponse{
@@ -55,7 +52,9 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 			User: serializers_comment.UserResponse{
 				ID:        comment.User.ID,
 				FirstName: comment.User.FirstName,
-				Email:     comment.User.Email,
+				LastName: comment.User.LastName,
+                Avatar:    comment.User.Avatar_url,
+                
 			},
 			CreatedAt: comment.CreatedAt,
 		}

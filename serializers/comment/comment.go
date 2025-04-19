@@ -28,5 +28,6 @@ type CommentResponse struct {
 type UserResponse struct {
 	ID        uint   `json:"id"`
 	FirstName string `json:"first_name"`
-	Email     string `json:"email"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"avatar_url"`
 }

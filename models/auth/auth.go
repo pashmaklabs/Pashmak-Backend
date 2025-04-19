@@ -12,7 +12,7 @@ type User struct {
 	Password  string    `gorm:"default:''"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-	Image_url string    `gorm:"default:''"`
+	Avatar_url string    `gorm:"default:''"`
 	Score     uint
 }
 
