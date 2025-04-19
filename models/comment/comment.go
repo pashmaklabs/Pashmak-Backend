@@ -12,14 +12,15 @@ type Comment struct {
 	Rating  uint             `gorm:"default:0"`
 	UserID  uint             `gorm:"not null"`
 	User    models_auth.User `gorm:"foreignKey:UserID"`
-	// Place               // Place Model
+	// PlaceID   uint             `gorm:"not null"` // Foreign key for Place
+	// Place     Place            `gorm:"foreignKey:PlaceID"`
 	CreatedAt time.Time  `gorm:"autoCreateTime"`
 	Reactions []Reaction `gorm:"foreignKey:CommentID"`
 }
 
 type Reaction struct {
-	ID           uint `gorm:"primaryKey;autoIncrement"`
-	CommentID    uint
-	ReactionType int
+	ID           uint      `gorm:"primaryKey;autoIncrement"`
+	CommentID    uint      `gorm:"not null"`
+	ReactionType int       `gorm:"not null"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }

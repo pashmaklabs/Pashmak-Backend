@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/models/auth"
 	"pashmak.com/pashmak/models/comment"
+	models_place "pashmak.com/pashmak/models/place"
 )
 
 func getModels() []interface{}{
@@ -15,6 +16,7 @@ func getModels() []interface{}{
 		&models_auth.User{},
 		&models_auth.JWTBlacklist{},
 		&models_comment.Comment{},
+		&models_place.Place{},
 	}
 	return all_models
 }
@@ -26,4 +28,5 @@ func MakeMigrations(db *gorm.DB) {
 			log.Println("Error migrating model: ", err.Error())
 		}
 	}
+	db.Exec("CREATE INDEX idx_comments_place_id ON comments (place_id)")
 }

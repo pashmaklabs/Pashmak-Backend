@@ -3,7 +3,6 @@ package controllers_comment
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	services_comment "pashmak.com/pashmak/services/comment"
@@ -19,9 +18,9 @@ func NewCommentController(commentservice *services_comment.CommentService) *Comm
 	}
 }
 
-func (cc *CommentController) GetCommentsByToken(c *gin.Context) {
-	token, _ := strconv.Atoi(c.Param("token"))
-	comments, err := cc.CommentService.GetCommentsByToken(token)
+func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
+	token := c.Param("token")
+	comments, err := cc.CommentService.GetCommentsByPlaceToken(token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
@@ -32,6 +31,6 @@ func (cc *CommentController) GetCommentsByToken(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"message": profile,
+		"message": comments,
 	})
 }
