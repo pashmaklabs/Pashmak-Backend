@@ -31,6 +31,6 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"message": comments,
+		"comments": comments,
 	})
 }

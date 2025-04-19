@@ -16,6 +16,7 @@ func getModels() []interface{}{
 		&models_auth.JWTBlacklist{},
 		&models_place.Comment{},
 		&models_place.Place{},
+		&models_place.Reaction{},
 	}
 	return all_models
 }

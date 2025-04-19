@@ -2,17 +2,31 @@ package serializers_comment
 
 import (
 	"time"
-
-	models_auth "pashmak.com/pashmak/models/auth"
-	models_place "pashmak.com/pashmak/models/place"
 )
 
+// type CommentResponse struct {
+// 	ID        uint                    `json:"id"`
+// 	Content   string                  `json:"content"`
+// 	Rating    uint                    `json:"rating"`
+// 	UserID    uint                    `json:"user_id"`
+// 	User      models_auth.User        `json:"user"`
+// 	PlaceID   uint                    `json:"place_id"`
+// 	CreatedAt time.Time               `json:"created_at"`
+// 	Reactions []models_place.Reaction `json:"reactions"`
+// }
+
 type CommentResponse struct {
-	ID        uint
-	Content   string
-	Rating    uint
-	User      models_auth.User
-	PlaceID   uint
-	CreatedAt time.Time
-	Reactions []models_place.Reaction
+	ID        uint         `json:"id"`
+	Content   string       `json:"content"`
+	Rating    uint         `json:"rating"`
+	PlaceID   uint         `json:"place_id"`
+	PlaceName string       `json:"place_name"`
+	User      UserResponse `json:"user"`
+	CreatedAt time.Time    `json:"created_at"`
+}
+
+type UserResponse struct {
+	ID        uint   `json:"id"`
+	FirstName string `json:"first_name"`
+	Email     string `json:"email"`
 }

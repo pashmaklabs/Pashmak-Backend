@@ -1,10 +1,13 @@
 package services_comment
 
 import (
+	"errors"
+
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
+	// serializers_comment "pashmak.com/pashmak/serializers/comment"
 )
 
 type CommentService struct {
@@ -12,24 +15,51 @@ type CommentService struct {
 	AppConfig *bootstrap.AppConfig
 }
 
-
-func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentService{
+func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentService {
 	return &CommentService{
-		DB : db,
+		DB:        db,
 		AppConfig: appconfig,
 	}
 }
 
-func (cs *CommentService)GetCommentsByPlaceToken(token string)([]serializers_comment.CommentResponse, error){
-	// result := cs.DB.Model(&models_comment.Comment{}).Where(query interface{}, args ...interface{})
-	var comments []serializers_comment.CommentResponse
-    err := cs.DB.Model(&models_place.Comment{}).
-        Preload("Users").
-        Preload("Reactions").
-        Where("place_id = ?", token).
-        Order("created_at DESC").
-        // Limit(limit).
-        // Offset(offset).
-        Find(&comments).Error
-    return comments, err
+func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_comment.CommentResponse, error) {
+	var comments []models_place.Comment
+
+	err := cs.DB.
+		Select("comments.id, comments.content, comments.rating, comments.user_id, comments.place_id, comments.created_at").
+		Where("place_id = ?", token).
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "first_name", "email") // Select only ID and Username from User
+		}).
+		Preload("Place").
+		Preload("Reactions").
+		Find(&comments).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(comments) == 0 {
+		return nil, errors.New("no comments found")
+	}
+
+	// Map comments to DTO
+	commentDTOs := make([]serializers_comment.CommentResponse, len(comments))
+	for i, comment := range comments {
+		commentDTOs[i] = serializers_comment.CommentResponse{
+			ID:        comment.ID,
+			Content:   comment.Content,
+			Rating:    comment.Rating,
+			PlaceID:   comment.PlaceID,
+			PlaceName: comment.Place.Name,
+			User: serializers_comment.UserResponse{
+				ID:        comment.User.ID,
+				FirstName: comment.User.FirstName,
+				Email:     comment.User.Email,
+			},
+			CreatedAt: comment.CreatedAt,
+		}
+	}
+
+	return commentDTOs, nil
 }
