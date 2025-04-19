@@ -13,12 +13,13 @@ type Comment struct {
 	UserID  uint             `gorm:"not null"`
 	User    models_auth.User `gorm:"foreignKey:UserID"`
 	// Place               // Place Model
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	CreatedAt time.Time  `gorm:"autoCreateTime"`
+	Reactions []Reaction `gorm:"foreignKey:CommentID"`
 }
 
 type Reaction struct {
-	ID uint `gorm:"primaryKey;autoIncrement"`
-	CommentID uint
+	ID           uint `gorm:"primaryKey;autoIncrement"`
+	CommentID    uint
 	ReactionType int
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }
