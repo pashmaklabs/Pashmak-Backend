@@ -14,6 +14,6 @@ func CommentRoutes(router *gin.Engine, db *gorm.DB, appconfig *bootstrap.AppConf
 
 	comment := router.Group("/comments")
 	{
-		comment.GET("/:id", commentController.)
+		comment.GET("/:token", commentController.GetCommentsByToken)
 	}
 }

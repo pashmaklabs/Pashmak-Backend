@@ -3,6 +3,7 @@ package services_comment
 import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
+	models_comment "pashmak.com/pashmak/models/comment"
 )
 
 type CommentService struct {
@@ -16,4 +17,8 @@ func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentServ
 		DB : db,
 		AppConfig: appconfig,
 	}
+}
+
+func (cs *CommentService)GetCommentsByToken(token string){
+	result := cs.DB.Model(&models_comment.Comment{}).Where(query interface{}, args ...interface{})
 }
