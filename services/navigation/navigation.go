@@ -25,6 +25,7 @@ func NewNavigationService(db *gorm.DB, appconfig *bootstrap.AppConfig) *Navigati
 
 
 func (ns *NavigationService) FetchRoute(startLat, startLon, endLat, endLon string) (*serializers_navigation.WaypointsResponse, error) {
+	// FIXME: Send request tp nearest api instead of below line
 	osrmURL := fmt.Sprintf("http://router.project-osrm.org/route/v1/driving/%s,%s;%s,%s?overview=false&geometries=geojson",
 		url.QueryEscape(startLon), url.QueryEscape(startLat),
 		url.QueryEscape(endLon), url.QueryEscape(endLat))

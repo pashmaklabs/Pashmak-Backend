@@ -1,6 +1,7 @@
 package controllers_navigation
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,15 +31,25 @@ func (rc *NavigationController) GetRoute(c *gin.Context) {
 	endLon := c.Query("end_lon")
 
 	if startLat == "" || startLon == "" || endLat == "" || endLon == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing parameters"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "URL نامعتبر است",
+		})
 		return
 	}
 
 	route, err := rc.NavigationService.FetchRoute(startLat, startLon, endLat, endLon)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, route)
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"result": route,
+	})
 }
