@@ -5,8 +5,10 @@ import (
 
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
+	models_auth "pashmak.com/pashmak/models/auth"
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
+	services_auth "pashmak.com/pashmak/services/auth"
 )
 
 type CommentService struct {
@@ -57,4 +59,31 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 	}
 
 	return commentDTOs, nil
+}
+
+func (cs *CommentService) GetUserByGmail(email string) (models_auth.User, error){
+	var user models_auth.User
+	result := cs.DB.First(&user, "email = ?", email)
+	return user, result.Error
+}
+
+func (cs *CommentService) CreateComment(placeToken string, user services_auth.UserInfo) error{
+	
+
+	
+
+	userInfo, err := cs.GetUserByGmail(user.Email)
+	if err != nil{
+		return err
+	}
+
+	result := cs.DB.Create(&models_place.Comment{
+		UserID: user.ID,
+		User: userInfo,
+		Reactions: []models_place.Reaction{},
+	})
+}
+
+func (cs *CommentService) AddNewComment(placeToken string, user services_auth.UserInfo)(error){
+	
 }

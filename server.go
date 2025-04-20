@@ -36,7 +36,7 @@ func main() {
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 	routers_profile.ProfileRoutes(Router, DB, Redis, AppConfig)
-	routers_comment.CommentRoutes(Router, DB, AppConfig)
+	routers_comment.CommentRoutes(Router, DB, Redis, AppConfig)
 
 	Router.Run(fmt.Sprintf(":%s", AppConfig.ServerPort))
 }

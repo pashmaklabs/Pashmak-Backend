@@ -29,3 +29,8 @@ type UserResponse struct {
 	LastName  string `json:"last_name"`
 	Avatar    string `json:"avatar_url"`
 }
+
+
+type AddCommentRequest struct{
+	Content string	`json:"content"`
+}
