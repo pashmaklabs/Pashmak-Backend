@@ -33,4 +33,5 @@ type UserResponse struct {
 
 type AddCommentRequest struct{
 	Content string	`json:"content"`
+	Rating	uint	`json:"rating"`
 }

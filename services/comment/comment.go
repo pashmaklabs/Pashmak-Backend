@@ -2,6 +2,7 @@ package services_comment
 
 import (
 	"errors"
+	"strconv"
 
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
@@ -67,23 +68,26 @@ func (cs *CommentService) GetUserByGmail(email string) (models_auth.User, error)
 	return user, result.Error
 }
 
-func (cs *CommentService) CreateComment(placeToken string, user services_auth.UserInfo) error{
-	
 
-	
-
+func (cs *CommentService) AddNewComment(placeToken string, user services_auth.UserInfo, payload serializers_comment.AddCommentRequest)(error){
 	userInfo, err := cs.GetUserByGmail(user.Email)
 	if err != nil{
 		return err
 	}
 
+	placeTokenInt, err := strconv.ParseUint(placeToken, 10, 32)
+	if err != nil{
+		return err
+	}
+
 	result := cs.DB.Create(&models_place.Comment{
+		Content: payload.Content,
+		Rating: payload.Rating,
 		UserID: user.ID,
 		User: userInfo,
+		PlaceID: uint(placeTokenInt),
 		Reactions: []models_place.Reaction{},
 	})
-}
 
-func (cs *CommentService) AddNewComment(placeToken string, user services_auth.UserInfo)(error){
-	
+	return result.Error
 }

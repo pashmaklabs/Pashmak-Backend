@@ -49,11 +49,12 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 func (cc *CommentController) AddNewComment(c *gin.Context){
 	var body serializers_comment.AddCommentRequest
 
-	if c.Bind(body) != nil{
+	if err := c.Bind(&body); err != nil{
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
 			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
 		})
+		log.Println(err)
 		return
 	}
 
@@ -68,7 +69,7 @@ func (cc *CommentController) AddNewComment(c *gin.Context){
 		return
 	}
 	userpayload := userinfo.(services_auth.UserInfo)
-	err := cc.CommentService.AddNewComment(placeToken, userpayload)
+	err := cc.CommentService.AddNewComment(placeToken, userpayload, body)
 	if err != nil{
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
@@ -77,4 +78,9 @@ func (cc *CommentController) AddNewComment(c *gin.Context){
 		log.Println(err.Error())
 		return
 	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"status": "success",
+		"message": "دیدگاه با موفقیت ثبت شد",
+	})
 }

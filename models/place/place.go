@@ -22,8 +22,8 @@ type Comment struct {
 	User      models_auth.User `gorm:"foreignKey:UserID"`
 	PlaceID   uint             `gorm:"not null"`
 	Place     Place            `gorm:"foreignKey:PlaceID"`
-	CreatedAt time.Time        `gorm:"autoCreateTime"`
 	Reactions []Reaction       `gorm:"foreignKey:CommentID"`
+	CreatedAt time.Time        `gorm:"autoCreateTime"`
 }
 
 type Reaction struct {
