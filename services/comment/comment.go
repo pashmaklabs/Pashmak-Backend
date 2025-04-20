@@ -7,7 +7,6 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
-	// serializers_comment "pashmak.com/pashmak/serializers/comment"
 )
 
 type CommentService struct {
@@ -26,7 +25,6 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 	var comments []models_place.Comment
 
 	err := cs.DB.
-		Select("comments.id, comments.content, comments.rating, comments.user_id, comments.place_id, comments.created_at").
 		Where("place_id = ?", token).
 		Preload("Place").
 		Preload("User").
@@ -47,8 +45,6 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 			ID:        comment.ID,
 			Content:   comment.Content,
 			Rating:    comment.Rating,
-			PlaceID:   comment.PlaceID,
-			PlaceName: comment.Place.Name,
 			User: serializers_comment.UserResponse{
 				ID:        comment.User.ID,
 				FirstName: comment.User.FirstName,

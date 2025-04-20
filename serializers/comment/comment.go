@@ -19,8 +19,6 @@ type CommentResponse struct {
 	ID        uint         `json:"id"`
 	Content   string       `json:"content"`
 	Rating    uint         `json:"rating"`
-	PlaceID   uint         `json:"place_id"`
-	PlaceName string       `json:"place_name"`
 	User      UserResponse `json:"user"`
 	CreatedAt time.Time    `json:"created_at"`
 }
