@@ -24,6 +24,13 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 	token := c.Param("token")
 	comments, err := cc.CommentService.GetCommentsByPlaceToken(token)
 	if err != nil {
+		if err.Error() == "no comments found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "success",
+				"message": "دیدگاهی برای این مکان ثبت نشده است",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
@@ -38,6 +45,7 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 }
 
 func (cc *CommentController) SetNewReaction(c *gin.Context){
+	// TODO: Should be implemented
 	reactionType := c.Query("type")
 
 	if reactionType == "like"{

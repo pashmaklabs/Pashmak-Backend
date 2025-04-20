@@ -4,11 +4,11 @@ import (
 	"log"
 
 	"gorm.io/gorm"
-	"pashmak.com/pashmak/models/auth"
+	models_auth "pashmak.com/pashmak/models/auth"
 	models_place "pashmak.com/pashmak/models/place"
 )
 
-func getModels() []interface{}{
+func getModels() []interface{} {
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
 		// authentication
@@ -23,10 +23,11 @@ func getModels() []interface{}{
 
 func MakeMigrations(db *gorm.DB) {
 	all_models := getModels()
-	for _, model := range all_models{
+	for _, model := range all_models {
 		if err := db.AutoMigrate(model); err != nil {
 			log.Println("Error migrating model: ", err.Error())
 		}
 	}
+	// INFO: Database indexing for efficiency of comments querying
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_comments_place_id ON comments (place_id)")
 }
