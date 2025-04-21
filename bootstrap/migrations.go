@@ -29,5 +29,5 @@ func MakeMigrations(db *gorm.DB) {
 		}
 	}
 	// INFO: Database indexing for efficiency of comments querying
-	db.Exec("CREATE INDEX IF NOT EXISTS idx_comments_place_id ON comments (place_id)")
+	// db.Exec("CREATE INDEX IF NOT EXISTS idx_comments_place_id ON comments (place_id)")
 }

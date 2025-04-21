@@ -29,9 +29,8 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 
 	err := cs.DB.
 		Where("place_id = ?", token).
-		Preload("Place").
-		Preload("User").
-		Preload("Reactions").
+		Preload("User").      // use if you want to use comment.User
+		Preload("Reactions"). // use if you want to use comment.Reaction
 		Find(&comments).Error
 
 	if err != nil {
@@ -45,15 +44,14 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 	commentDTOs := make([]serializers_comment.CommentResponse, len(comments))
 	for i, comment := range comments {
 		commentDTOs[i] = serializers_comment.CommentResponse{
-			ID:        comment.ID,
-			Content:   comment.Content,
-			Rating:    comment.Rating,
+			ID:      comment.ID,
+			Content: comment.Content,
+			Rating:  comment.Rating,
 			User: serializers_comment.UserResponse{
 				ID:        comment.User.ID,
 				FirstName: comment.User.FirstName,
-				LastName: comment.User.LastName,
-                Avatar:    comment.User.Avatar_url,
-                
+				LastName:  comment.User.LastName,
+				Avatar:    comment.User.Avatar_url,
 			},
 			CreatedAt: comment.CreatedAt,
 		}
@@ -62,30 +60,29 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 	return commentDTOs, nil
 }
 
-func (cs *CommentService) GetUserByGmail(email string) (models_auth.User, error){
+func (cs *CommentService) GetUserByGmail(email string) (models_auth.User, error) {
 	var user models_auth.User
 	result := cs.DB.First(&user, "email = ?", email)
 	return user, result.Error
 }
 
-
-func (cs *CommentService) AddNewComment(placeToken string, user services_auth.UserInfo, payload serializers_comment.AddCommentRequest)(error){
+func (cs *CommentService) AddNewComment(placeToken string, user services_auth.UserInfo, payload serializers_comment.AddCommentRequest) error {
 	userInfo, err := cs.GetUserByGmail(user.Email)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	placeTokenInt, err := strconv.ParseUint(placeToken, 10, 32)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	result := cs.DB.Create(&models_place.Comment{
-		Content: payload.Content,
-		Rating: payload.Rating,
-		UserID: user.ID,
-		User: userInfo,
-		PlaceID: uint(placeTokenInt),
+		Content:   payload.Content,
+		Rating:    payload.Rating,
+		UserID:    user.ID,
+		User:      userInfo,
+		PlaceID:   uint(placeTokenInt),
 		Reactions: []models_place.Reaction{},
 	})
 

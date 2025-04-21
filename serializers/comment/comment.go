@@ -4,22 +4,12 @@ import (
 	"time"
 )
 
-// type CommentResponse struct {
-// 	ID        uint                    `json:"id"`
-// 	Content   string                  `json:"content"`
-// 	Rating    uint                    `json:"rating"`
-// 	UserID    uint                    `json:"user_id"`
-// 	User      models_auth.User        `json:"user"`
-// 	PlaceID   uint                    `json:"place_id"`
-// 	CreatedAt time.Time               `json:"created_at"`
-// 	Reactions []models_place.Reaction `json:"reactions"`
-// }
-
 type CommentResponse struct {
 	ID        uint         `json:"id"`
 	Content   string       `json:"content"`
 	Rating    uint         `json:"rating"`
 	User      UserResponse `json:"user"`
+	// 	Reactions []models_place.Reaction `json:"reactions"`
 	CreatedAt time.Time    `json:"created_at"`
 }
 
