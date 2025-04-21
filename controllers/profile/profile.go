@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_profile "pashmak.com/pashmak/services/profile"
 )
@@ -44,6 +45,13 @@ func (pc *ProfileController) GetProfileByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	profile, err := pc.ProfileService.GetProfileByID(uint(id))
 	if err != nil {
+		if err == gorm.ErrRecordNotFound{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "کاربر پیدا نشد",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
