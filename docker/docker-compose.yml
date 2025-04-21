@@ -1,6 +1,26 @@
 services:
+  
+  # this service is just for development and testing purposes and you just need to run it once
+  # so currently we are not planning to use it in production
+  osm2pgsql:
+    image: iboates/osm2pgsql:2.1.1
+    environment:
+      PGPASSWORD: postgres
+    command: >
+      osm2pgsql
+      --slim
+      --drop
+      --cache 1000
+      -d pashmak_postgres
+      -U postgres
+      -H postgis
+      -P 5432
+      https://download.geofabrik.de/asia/iran-latest.osm.pbf
+    depends_on:
+      - postgres
+
   postgres:
-    image: postgres:16-bookworm
+    image: postgis/postgis:17-3.5-alpine
     container_name: pashmak_postgres
     restart: unless-stopped
     environment:
@@ -13,7 +33,7 @@ services:
         target: /var/lib/postgresql/data
     ports:
       - 5432:5432
-
+    
   redis:
     image: redis:7.4.2
     container_name: pashmak_redis
