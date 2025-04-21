@@ -9,6 +9,7 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	middlewares_cors "pashmak.com/pashmak/middlewares/cors"
 	routers_auth "pashmak.com/pashmak/routers/auth"
+	routers_navigation "pashmak.com/pashmak/routers/navigation"
 	routers_comment "pashmak.com/pashmak/routers/comment"
 	routers_profile "pashmak.com/pashmak/routers/profile"
 )
@@ -36,6 +37,7 @@ func main() {
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 	routers_profile.ProfileRoutes(Router, DB, Redis, AppConfig)
+	routers_navigation.NavigationRoutes(Router, DB, AppConfig)
 	routers_comment.CommentRoutes(Router, DB, Redis, AppConfig)
 
 	Router.Run(fmt.Sprintf(":%s", AppConfig.ServerPort))
