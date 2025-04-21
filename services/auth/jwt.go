@@ -1,7 +1,7 @@
 package services_auth
 
 import (
-	models_auth "pashmak.com/pashmak/models"
+	models_auth "pashmak.com/pashmak/models/auth"
 	"github.com/golang-jwt/jwt"
 	"pashmak.com/pashmak/bootstrap"
 	"crypto/x509"
