@@ -3,7 +3,7 @@ package services_profile
 import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	models_auth "pashmak.com/pashmak/models"
+	models_auth "pashmak.com/pashmak/models/auth"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
 )
 
@@ -27,7 +27,7 @@ func (ps * ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentPro
 		FirstName: user.FirstName,
 		LastName: user.LastName,
 		Email: user.Email,
-		Image_url: user.Image_url,
+		Avatar_url: user.Avatar_url,
 	}, result.Error
 }
 
@@ -40,6 +40,6 @@ func (ps *ProfileService) GetProfileByID(id uint)(serializers_profile.GetProfile
 	return serializers_profile.GetProfileByIDResponse{
 		FirstName: user.FirstName,
 		LastName: user.LastName,
-		Image_url: user.Image_url,
+		Avatar_url: user.Avatar_url,
 	}, result.Error
 }

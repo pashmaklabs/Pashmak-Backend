@@ -2,7 +2,7 @@ package services_auth
 
 import (
 	"github.com/gin-gonic/gin"
-	models_auth "pashmak.com/pashmak/models"
+	models_auth "pashmak.com/pashmak/models/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
