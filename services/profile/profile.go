@@ -43,3 +43,24 @@ func (ps *ProfileService) GetProfileByID(id uint)(serializers_profile.GetProfile
 		Avatar_url: user.Avatar_url,
 	}, result.Error
 }
+
+func (ps *ProfileService) GetUserByGmail(email string) (models_auth.User, error){
+	var user models_auth.User
+	result := ps.DB.First(&user, "email = ?", email)
+	return user, result.Error
+}
+
+func (ps *ProfileService) UpdateProfile(firstname string, lastname string, avatarUrl string, email string)(error){
+	user, err := ps.GetUserByGmail(email)
+	if err != nil {
+		return err
+	}
+	user.FirstName = firstname
+	user.LastName = lastname
+	user.Avatar_url = avatarUrl
+
+	if err := ps.DB.Save(&user).Error; err != nil {
+		return err
+	}
+	return nil
+}
