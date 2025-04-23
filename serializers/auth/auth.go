@@ -1,42 +1,38 @@
-package serializers_auth
+package serializers_authtype
+
 
 type SendOTPRequest struct {
-	Email string `json:"email"`
-}
-
-type SendOTPResponse struct {
-	Status    string `json:"status"`
-	Message   string `json:"message"`
-	ErrorCode string `json:"errorCode"`
+    Email string `json:"email" binding:"required,email"`
 }
 
 type VerifyOTPRequest struct {
-	Email string `json:"email"`
-	OTP   string `json:"otp"`
+    Email string `json:"email" binding:"required,email"`
+    OTP   string `json:"otp" binding:"required,min=6,max=6"`
 }
 
 type LoginWithPasswordRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required,min=8"`
 }
 
 type ForgetPasswordRequest struct {
-	Email string `json:"email"`
+    Email string `json:"email" binding:"required,email"`
 }
 
 type ForgetPasswordVerifyRequest struct {
-	Email string `json:"email"`
-	OTP   string `json:"otp"`
+    Email string `json:"email" binding:"required,email"`
+    OTP   string `json:"otp" binding:"required,min=6,max=6"`
 }
 
 type ForgetPasswordResetRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required,min=8,containsany=!@#$%^&*,containsuppercase,containsnumber"`
 }
 
 type SignUpRequest struct {
-	FirstName       string `json:"firstname" binding:"required,min=2,max=50"`
+    FirstName       string `json:"firstname" binding:"required,min=2,max=50"`
     LastName        string `json:"lastname" binding:"required,min=2,max=50"`
-    Password        string `json:"password" binding:"required,min=8"`
-    PasswordConfirm string `json:"passwordConfirm" binding:"required,min=8"`
+    Email           string `json:"email" binding:"required,email"`
+    Password        string `json:"password" binding:"required,min=8,containsany=!@#$%^&*,containsuppercase,containsnumber"`
+    PasswordConfirm string `json:"passwordConfirm" binding:"required,min=8,eqfield=Password"`
 }

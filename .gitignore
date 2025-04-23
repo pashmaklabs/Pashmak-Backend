@@ -96,3 +96,6 @@ Temporary Items
 
 # KubeConfig
 KubeConfig.yaml
+
+# Linux swap file
+*.swp

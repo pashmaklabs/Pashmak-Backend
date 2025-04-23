@@ -4,14 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	middlewares_cors "pashmak.com/pashmak/middlewares/cors"
 	routers_auth "pashmak.com/pashmak/routers/auth"
-	routers_navigation "pashmak.com/pashmak/routers/navigation"
 	routers_comment "pashmak.com/pashmak/routers/comment"
+	routers_navigation "pashmak.com/pashmak/routers/navigation"
 	routers_profile "pashmak.com/pashmak/routers/profile"
+	"pashmak.com/pashmak/serializers"
 )
 
 var (
@@ -33,6 +36,14 @@ func main() {
 
 	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
 	Router.Use(corsMiddleware.SetCORSHeader())
+
+	// Set up the Gin validator with custom validation rules
+	validate := validator.New()
+    serializers.RegisterCustomValidators(validate)
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		serializers.RegisterCustomValidators(v)
+	}
+
 
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)

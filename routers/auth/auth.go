@@ -25,7 +25,10 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 		auth.POST("/password", authController.LoginWithPassword)
 		auth.POST("/password/forget/send", authController.ForgetPassword)
 		auth.POST("/password/forget/verify", authController.ForgetPasswordVerify)
-		auth.POST("/password/forget/reset", authMiddleware.LoginMiddleware(), authController.ForgetPasswordReset)
+		auth.POST("/password/forget/reset",
+			authMiddleware.LoginMiddleware(), 
+			middlewares_validation.ValidationMiddleware(serializers_auth.ForgetPasswordResetRequest{}),
+			authController.ForgetPasswordReset)
 		// TODO: Why not put?
 		auth.PATCH("/signup",
 			authMiddleware.LoginMiddleware(),
