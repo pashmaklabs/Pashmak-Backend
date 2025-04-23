@@ -14,12 +14,10 @@ var errorMessages = map[string]string{
 	"OTP.numeric":                  "OTP is a 4 digit number!",
 }
 
-// ValidationMiddleware validates the request body against the provided struct type
 func ValidationMiddleware[T any]() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req T
 
-		// Bind JSON payload
 		if err := c.ShouldBindJSON(&req); err != nil {
 			// Handle binding errors (e.g., malformed JSON)
 			if _, ok := err.(validator.ValidationErrors); !ok {
@@ -39,7 +37,7 @@ func ValidationMiddleware[T any]() gin.HandlerFunc {
 				if msg, exists := errorMessages[key]; exists {
 					errors[e.Field()] = msg
 				} else {
-					errors[e.Field()] = e.Error() // Fallback to default validator message
+					errors[e.Field()] = e.Error()
 				}
 			}
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -51,7 +49,6 @@ func ValidationMiddleware[T any]() gin.HandlerFunc {
 			return
 		}
 
-		// Store validated struct in context
 		c.Set("validated", req)
 		c.Next()
 	}

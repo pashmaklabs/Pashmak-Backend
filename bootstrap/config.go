@@ -80,7 +80,6 @@ func LoadEnvVars() *AppConfig {
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
 
 	TOKEN_AGE, err := strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
-	TOKEN_AGE++ // Should be removed
 	if err != nil {
         log.Println("Error converting TOKEN_AGE to int64: ", err.Error())
     }
