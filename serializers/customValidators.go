@@ -1,25 +1,19 @@
 package serializers
 
-import "github.com/go-playground/validator/v10"
+import (
+	"github.com/dlclark/regexp2"
+	"github.com/go-playground/validator/v10"
+)
+
+var PasswordRegex = regexp2.MustCompile(`^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$`, regexp2.None)
 
 func RegisterCustomValidators(v *validator.Validate) {
-    v.RegisterValidation("containsuppercase", func(fl validator.FieldLevel) bool {
+    v.RegisterValidation("password_complexity", func(fl validator.FieldLevel) bool {
         password := fl.Field().String()
-        for _, char := range password {
-            if char >= 'A' && char <= 'Z' {
-                return true
-            }
-        }
-        return false
-    })
 
-    v.RegisterValidation("containsnumber", func(fl validator.FieldLevel) bool {
-        password := fl.Field().String()
-        for _, char := range password {
-            if char >= '0' && char <= '9' {
-                return true
-            }
+        if match, _ := PasswordRegex.MatchString(password); !match {
+            return false
         }
-        return false
+        return true
     })
 }

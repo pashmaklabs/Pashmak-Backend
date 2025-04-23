@@ -6,12 +6,12 @@ type SendOTPRequest struct {
 
 type VerifyOTPRequest struct {
 	Email string `json:"email" binding:"required,email"`
-	OTP   string `json:"otp" binding:"required,min=4,max=4"`
+	OTP   string `json:"otp" binding:"required,min=4,max=4,numeric"`
 }
 
 type LoginWithPasswordRequest struct {
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8,containsany=!@#$%^&*,containsuppercase,containsnumber"`
+	Password string `json:"password" binding:"required,password_complexity"`
 }
 
 type ForgetPasswordRequest struct {
@@ -20,7 +20,7 @@ type ForgetPasswordRequest struct {
 
 type ForgetPasswordVerifyRequest struct {
 	Email string `json:"email" binding:"required,email"`
-	OTP   string `json:"otp" binding:"required,min=4,max=4"`
+	OTP   string `json:"otp" binding:"required,min=4,max=4,numeric"`
 }
 
 type ForgetPasswordResetRequest struct {

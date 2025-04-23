@@ -18,6 +18,18 @@ func ValidationMiddleware(v interface{}) gin.HandlerFunc {
 				errors := make(map[string]string)
 				for _, e := range validationErrs {
 					errors[e.Field()] = e.Tag()
+					if e.Field() == "Password" && e.Tag() == "password_complexity" {
+                        errors[e.Field()] = "Password must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character!"
+                    }
+					if e.Field() == "Email" && e.Tag() == "email" {
+                        errors[e.Field()] = "Email has wrong format!"
+                    }
+					if e.Field() == "OTP" {
+						if e.Tag() == "min" || e.Tag() == "numeric"{
+							errors[e.Field()] = "OTP is a 4 digit number!"
+						}
+                        
+                    }
 				}
 				c.JSON(http.StatusBadRequest, gin.H{
 					"status":  "error",
