@@ -6,7 +6,7 @@ import (
 	serializers_auth "pashmak.com/pashmak/serializers/auth"
 )
 
-func (as *AuthService) SignUp(userinfo UserInfo, Payload *serializers_auth.SignUpRequest) error {
+func (as *AuthService) SignUp(userinfo UserInfo, Payload serializers_auth.SignUpRequest) error {
 	user, err := as.GetUserByGmail(userinfo.Email)
 	if err != nil {
 		return err

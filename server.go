@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	// "net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -34,6 +35,11 @@ func init() {
 
 func main() {
 	Router = gin.Default()
+
+	// Router.Use(func(c *gin.Context) {
+	// 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20) // 1MB limit
+	// 	c.Next()
+	// })
 
 	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
 	Router.Use(corsMiddleware.SetCORSHeader())

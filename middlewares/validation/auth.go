@@ -1,56 +1,58 @@
 package middlewares_validation
 
 import (
-	"log"
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidationMiddleware(v interface{}) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		value := reflect.New(reflect.TypeOf(v)).Interface()
+var errorMessages = map[string]string{
+	"Password.password_complexity": "Password must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character!",
+	"Email.email":                  "Email has wrong format!",
+	"OTP.min":                      "OTP is a 4 digit number!",
+	"OTP.numeric":                  "OTP is a 4 digit number!",
+}
 
-		if err := c.ShouldBindJSON(value); err != nil {
-			if validationErrs, ok := err.(validator.ValidationErrors); ok {
-				errors := make(map[string]string)
-				for _, e := range validationErrs {
-					errors[e.Field()] = e.Tag()
-					if e.Field() == "Password" && e.Tag() == "password_complexity" {
-                        errors[e.Field()] = "Password must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character!"
-                    }
-					if e.Field() == "Email" && e.Tag() == "email" {
-                        errors[e.Field()] = "Email has wrong format!"
-                    }
-					if e.Field() == "OTP" {
-						if e.Tag() == "min" || e.Tag() == "numeric"{
-							errors[e.Field()] = "OTP is a 4 digit number!"
-						}
-                        
-                    }
-				}
+// ValidationMiddleware validates the request body against the provided struct type
+func ValidationMiddleware[T any]() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req T
+
+		// Bind JSON payload
+		if err := c.ShouldBindJSON(&req); err != nil {
+			// Handle binding errors (e.g., malformed JSON)
+			if _, ok := err.(validator.ValidationErrors); !ok {
 				c.JSON(http.StatusBadRequest, gin.H{
 					"status":  "error",
-					"message": "داده‌های ورودی نامعتبر است",
-					"errors":  errors,
+					"message": "در خواندن بدنه ی درخواست مشکلی پیش آمده است",
+					"errors":  map[string]string{"payload": err.Error()},
 				})
 				c.Abort()
 				return
 			}
+
+			// Handle validation errors
+			errors := make(map[string]string)
+			for _, e := range err.(validator.ValidationErrors) {
+				key := e.Field() + "." + e.Tag()
+				if msg, exists := errorMessages[key]; exists {
+					errors[e.Field()] = msg
+				} else {
+					errors[e.Field()] = e.Error() // Fallback to default validator message
+				}
+			}
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status":  "error",
-				"message": "مشکل غیر منتظره ای پیش آمده است",
+				"message": "داده‌های ورودی نامعتبر است",
+				"errors":  errors,
 			})
-			log.Println("Error in ValidationMiddleware!")
 			c.Abort()
 			return
 		}
 
-		// Store the validated struct in the context
-		c.Set("validated", value)
+		// Store validated struct in context
+		c.Set("validated", req)
 		c.Next()
-
 	}
 }

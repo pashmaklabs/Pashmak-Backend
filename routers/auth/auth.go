@@ -20,29 +20,29 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 	auth := router.Group("/auth")
 	{
 		auth.POST("/otp/send",
-			middlewares_validation.ValidationMiddleware(serializers_auth.SendOTPRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.SendOTPRequest](),
 			authController.SendOTP)
 		auth.POST("/otp/verify",
-			middlewares_validation.ValidationMiddleware(serializers_auth.VerifyOTPRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.VerifyOTPRequest](),
 			authController.VerifyOTP)
 		auth.GET("/protected", authMiddleware.LoginMiddleware(), authController.ProtectedRouter)
 		auth.POST("/password", 
-			middlewares_validation.ValidationMiddleware(serializers_auth.LoginWithPasswordRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.LoginWithPasswordRequest](),
 			authController.LoginWithPassword)
 		auth.POST("/password/forget/send",
-			middlewares_validation.ValidationMiddleware(serializers_auth.SendOTPRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.SendOTPRequest](),
 			authController.ForgetPassword)
 		auth.POST("/password/forget/verify",
-			middlewares_validation.ValidationMiddleware(serializers_auth.VerifyOTPRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.ForgetPasswordVerifyRequest](),
 			authController.ForgetPasswordVerify)
 		auth.POST("/password/forget/reset",
 			authMiddleware.LoginMiddleware(), 
-			middlewares_validation.ValidationMiddleware(serializers_auth.ForgetPasswordResetRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.ForgetPasswordResetRequest](),
 			authController.ForgetPasswordReset)
 		// TODO: Why not put?
 		auth.PATCH("/signup",
 			authMiddleware.LoginMiddleware(),
-			middlewares_validation.ValidationMiddleware(serializers_auth.SignUpRequest{}),
+			middlewares_validation.ValidationMiddleware[serializers_auth.SignUpRequest](),
             authController.SignUp,
         )
 	}

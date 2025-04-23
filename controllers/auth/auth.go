@@ -30,7 +30,7 @@ func NewAuthController(authService *services_auth.AuthService, appConfig *bootst
 func (ac *AuthController) SendOTP(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.SendOTPRequest)
+	body, ok := validatedData.(serializers_auth.SendOTPRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -59,7 +59,7 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.VerifyOTPRequest)
+	body, ok := validatedData.(serializers_auth.VerifyOTPRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -150,7 +150,7 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context) {
 func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.LoginWithPasswordRequest)
+	body, ok := validatedData.(serializers_auth.LoginWithPasswordRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -187,7 +187,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 func (ac *AuthController) ForgetPassword(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.ForgetPasswordRequest)
+	body, ok := validatedData.(serializers_auth.ForgetPasswordRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -223,7 +223,7 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.ForgetPasswordVerifyRequest)
+	body, ok := validatedData.(serializers_auth.ForgetPasswordVerifyRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -275,7 +275,7 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.ForgetPasswordResetRequest)
+	body, ok := validatedData.(serializers_auth.ForgetPasswordResetRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -321,7 +321,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 	// TODO: check password confirmation match in backend
 	validatedData, exists := c.Get("validated")
 
-	body, ok := validatedData.(*serializers_auth.SignUpRequest)
+	body, ok := validatedData.(serializers_auth.SignUpRequest)
 	if !ok || !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
