@@ -7,6 +7,8 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	controllers_auth "pashmak.com/pashmak/controllers/auth"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
+	middlewares_validation "pashmak.com/pashmak/middlewares/validation"
+	serializers_auth "pashmak.com/pashmak/serializers/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
@@ -25,6 +27,10 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 		auth.POST("/password/forget/verify", authController.ForgetPasswordVerify)
 		auth.POST("/password/forget/reset", authMiddleware.LoginMiddleware(), authController.ForgetPasswordReset)
 		// TODO: Why not put?
-		auth.PATCH("/signup", authMiddleware.LoginMiddleware(), authController.SignUp)
+		auth.PATCH("/signup",
+			authMiddleware.LoginMiddleware(),
+			middlewares_validation.ValidationMiddleware(serializers_auth.SignUpRequest{}),
+            authController.SignUp,
+        )
 	}
 }

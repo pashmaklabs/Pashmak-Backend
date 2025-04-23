@@ -35,8 +35,8 @@ type ForgetPasswordResetRequest struct {
 }
 
 type SignUpRequest struct {
-	FirstName       string `json:"firstname"`
-	LastName        string `json:"lastname"`
-	Password        string `json:"password"`
-	PasswordConfirm string `json:"passwordConfirm"`
+	FirstName       string `json:"firstname" binding:"required,min=2,max=50"`
+    LastName        string `json:"lastname" binding:"required,min=2,max=50"`
+    Password        string `json:"password" binding:"required,min=8"`
+    PasswordConfirm string `json:"passwordConfirm" binding:"required,min=8"`
 }
