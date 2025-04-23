@@ -28,12 +28,15 @@ func NewAuthController(authService *services_auth.AuthService, appConfig *bootst
 }
 
 func (ac *AuthController) SendOTP(c *gin.Context) {
-	var body serializers_auth.SendOTPRequest
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.SendOTPRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
 
@@ -54,12 +57,15 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 }
 
 func (ac *AuthController) VerifyOTP(c *gin.Context) {
-	var body serializers_auth.VerifyOTPRequest
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.VerifyOTPRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
 
@@ -142,12 +148,15 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context) {
 }
 
 func (ac *AuthController) LoginWithPassword(c *gin.Context) {
-	var body serializers_auth.LoginWithPasswordRequest
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.LoginWithPasswordRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
 
@@ -176,12 +185,15 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 }
 
 func (ac *AuthController) ForgetPassword(c *gin.Context) {
-	var body serializers_auth.ForgetPasswordRequest
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.ForgetPasswordRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
 
@@ -209,15 +221,17 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 }
 
 func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
-	var body serializers_auth.ForgetPasswordVerifyRequest
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.ForgetPasswordVerifyRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
-
 	jwt, resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -259,14 +273,18 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 }
 
 func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
-	var body serializers_auth.ForgetPasswordResetRequest
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.ForgetPasswordResetRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
+	
 	value, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -300,15 +318,19 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 }
 
 func (ac *AuthController) SignUp(c *gin.Context) {
-	var body serializers_auth.SignUpRequest
 	// TODO: check password confirmation match in backend
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+
+	body, ok := validatedData.(*serializers_auth.SignUpRequest)
+	if !ok || !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
+		log.Println("Error in retrieving and casting validated data!")
 		return
 	}
+
 	userinfo, exists := c.Get("user")
 	
 	if !exists {

@@ -84,7 +84,7 @@ func (as *AuthService) ParseToken(tokenString string) (*CustomClaim, error) {
 
 	claim, ok := token.Claims.(*CustomClaim)
 	if !ok {	
-		return nil, errors.New("Couldn't parse claims")
+		return nil, errors.New("couldn't parse claims")
 	}
 	return claim, nil
 }
@@ -96,7 +96,7 @@ func (as *AuthService)VerifyJWT(tokenString string) (*CustomClaim, error) {
     }
 
     if claim.StandardClaims.ExpiresAt < time.Now().Unix() {
-        return nil, errors.New("Token is expired")
+        return nil, errors.New("token is expired")
     }
 
 
