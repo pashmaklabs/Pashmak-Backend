@@ -7,7 +7,7 @@ import (
 type CommentResponse struct {
 	ID        uint         `json:"id"`
 	Content   string       `json:"content"`
-	Rating    uint         `json:"rating"`
+	Rating    uint         `json:"rating" binding:"required,min=0,max=5"`
 	User      UserResponse `json:"user"`
 	// 	Reactions []models_place.Reaction `json:"reactions"`
 	CreatedAt time.Time    `json:"created_at"`

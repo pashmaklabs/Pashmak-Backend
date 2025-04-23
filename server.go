@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -42,6 +43,8 @@ func main() {
     serializers.RegisterCustomValidators(validate)
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		serializers.RegisterCustomValidators(v)
+	}else{
+		log.Println("Validator engine cannot be cast to validator.Validate")
 	}
 
 
