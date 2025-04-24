@@ -10,7 +10,7 @@ import (
 func SetUpMinio() *minio.Client{
 	minioClient, err := minio.New(MINIO_HOST, &minio.Options{
 		Creds:  credentials.NewStaticV4(MINIO_USER, MINIO_PASSWORD, ""),
-		Secure: true,
+		Secure: false,
 	})
 	if err != nil{
 		log.Fatalln(err)

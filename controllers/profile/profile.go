@@ -1,6 +1,7 @@
 package controllers_profile
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -63,4 +64,50 @@ func (pc *ProfileController) GetProfileByID(c *gin.Context) {
 		"status": "success",
 		"message": profile,
 	})
+}
+
+func (pc *ProfileController) GetUserAvatarObjectName(c *gin.Context){
+	userID := c.Param("id")
+    if userID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "userID is required"})
+        return
+    }
+
+    // Get optional resize height
+    heightStr := c.Query("h")
+    var height int
+    if heightStr != "" {
+        h, err := strconv.Atoi(heightStr)
+        if err != nil || h <= 0 || h > 1024 { // Limit max size
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid height parameter"})
+            return
+        }
+        height = h
+    }
+
+    avatarStream, eTag, err := pc.ProfileService.GetAvatarViaPresignedURL(c, userID, height)
+	if err != nil {
+		switch err {
+		case services_profile.ErrNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "avatar not found"})
+		case services_profile.ErrPermissionDenied:
+			c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		case services_profile.ErrMinioUnavailable:
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "storage unavailable"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve avatar"})
+		}
+		return
+	}
+    defer avatarStream.Close()
+
+    c.Header("ETag", eTag)
+    c.Header("Cache-Control", "public, max-age=3600")
+    c.Header("Content-Type", "image/png")
+
+	_, err = io.Copy(c.Writer, avatarStream)
+    if err != nil {
+        // Log the error but don't send a response, as headers are already written
+        log.Printf("Error streaming avatar for user %s: %v", userID, err)
+    }
 }
