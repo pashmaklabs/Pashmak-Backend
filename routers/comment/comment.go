@@ -7,6 +7,8 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	controllers_comment "pashmak.com/pashmak/controllers/comment"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
+	middlewares_validation "pashmak.com/pashmak/middlewares/validation"
+	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
 )
@@ -21,6 +23,8 @@ func CommentRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconf
 	{
 		comment.GET("/:token", commentController.GetCommentsByPlaceToken)
 		comment.POST("/:token/reaction", authMiddleware.LoginMiddleware(), commentController.SetNewReaction)
-		comment.POST("/:token/add-comment", authMiddleware.LoginMiddleware(), commentController.AddNewComment)
+		comment.POST("/:token/add-comment",
+			middlewares_validation.ValidationMiddleware[serializers_comment.AddCommentRequest](),
+			authMiddleware.LoginMiddleware(), commentController.AddNewComment)
 	}
 }
