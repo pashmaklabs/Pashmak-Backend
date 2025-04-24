@@ -1,6 +1,7 @@
 package services_profile
 
 import (
+	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
@@ -9,37 +10,38 @@ import (
 
 type ProfileService struct {
 	DB        *gorm.DB
+	Minio     *minio.Client
 	AppConfig *bootstrap.AppConfig
 }
 
-func NewProfileService(db *gorm.DB, appConfig *bootstrap.AppConfig) *ProfileService {
+func NewProfileService(db *gorm.DB, minio *minio.Client, appConfig *bootstrap.AppConfig) *ProfileService {
 	return &ProfileService{
 		DB:        db,
+		Minio:     minio,
 		AppConfig: appConfig,
 	}
 }
 
-
-func (ps * ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentProfileResponse, error){
+func (ps *ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentProfileResponse, error) {
 	var user models_auth.User
 	result := ps.DB.First(&user, "id = ?", id)
 	return serializers_profile.CurrentProfileResponse{
-		FirstName: user.FirstName,
-		LastName: user.LastName,
-		Email: user.Email,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		Email:      user.Email,
 		Avatar_url: user.Avatar_url,
 	}, result.Error
 }
 
-func (ps *ProfileService) GetProfileByID(id uint)(serializers_profile.GetProfileByIDResponse, error){
+func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfileByIDResponse, error) {
 	var user models_auth.User
 	result := ps.DB.First(&user, "id = ?", id)
-	if result.Error != nil{
+	if result.Error != nil {
 
 	}
 	return serializers_profile.GetProfileByIDResponse{
-		FirstName: user.FirstName,
-		LastName: user.LastName,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
 		Avatar_url: user.Avatar_url,
 	}, result.Error
 }
