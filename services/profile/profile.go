@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -66,7 +66,6 @@ func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfil
 	}, result.Error
 }
 
-// change funvtion name
 func (ps *ProfileService) GetAvatar(ctx context.Context, fileName string, height int) (io.ReadCloser, string, error) {
 	if fileName == "" {
 		return nil, "", ErrInvalidFile
@@ -120,27 +119,29 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 		if result.Error == gorm.ErrRecordNotFound {
 			return gin.H{}, ErrNotFound
 		}
-		log.Println(result.Error)
+		return gin.H{}, result.Error
 	}
 
 	file, err := ctx.FormFile("photo")
 	if err != nil {
-		return gin.H{}, fmt.Errorf("failed to get file from form: %w", err)
+		return nil, fmt.Errorf("failed to get file from form: %w", err)
 	}
 
-	// check file type
+
+	ext := filepath.Ext(file.Filename)
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+		return nil, ErrInvalidFile
+	}
 
 	if file.Size > 1<<24 {
-		return gin.H{}, ErrInvalidSize
+		return nil, ErrInvalidSize
 	}
 
 	fileReader, err := file.Open()
 	if err != nil {
-		return gin.H{}, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer fileReader.Close()
-
-	ext := filepath.Ext(file.Filename)
 
 	timedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -151,20 +152,34 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 		objectName,
 		fileReader,
 		file.Size,
-		minio.PutObjectOptions{ContentType: "application/octet-stream"},
+		minio.PutObjectOptions{ContentType: "image/" + strings.TrimPrefix(ext, ".")},
 	)
 	if err != nil {
-		return gin.H{}, fmt.Errorf("failed to put object to minio: %w", err)
+		return nil, fmt.Errorf("failed to put object to minio: %w", err)
 	}
+
+	// TODO: Remove hardcoded URL
+	// TODO: Remove old avatar if exists
+	// TODO: Validate MIME Type
+	// TODO: Sanitize File Content: Use an image processing library (e.g., imaging or bimg) to validate and sanitize the image, ensuring it's a valid image and not malicious.
+	// TODO: Compress using webp
+	// TODO: Resize the image to a standard size (e.g., 256x256 pixels) using an image processing library.
+	// TODO: Authenticate Requests
+	// TODO: Rate Limiting
+	// TODO: Split file validation, compression, and upload logic into helper functions
+
 
 	user.Avatar_url = fmt.Sprintf("localhost:8080/profiles/avatar/%s", objectName)
 	saveres := ps.DB.Save(user)
 	if saveres.Error != nil {
-		return gin.H{}, saveres.Error
+		return nil, saveres.Error
 	}
 	return gin.H{
-		"message":    "File uploaded successfully",
-		"objectName": objectName,
-		"info":       info,
+		"status":  "success",
+		"message": "File uploaded successfully",
+		"data": map[string]interface{}{
+			"objectName": objectName,
+			"info":       info,
+		},
 	}, nil
 }

@@ -1,7 +1,6 @@
 package controllers_profile
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -149,7 +148,10 @@ func (pc *ProfileController) UploadUserAvatar(c *gin.Context) {
 			return
 		}
 		if err == services_profile.ErrInvalidFile {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "فرمت فایل نامعتبر است"})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "فرمت فایل نامعتبر است. لطفا یک فایل تصویری ارسال کنید",
+			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
