@@ -67,14 +67,13 @@ func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfil
 }
 
 // change funvtion name
-func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, fileName string, height int) (io.ReadCloser, string, error) {
+func (ps *ProfileService) GetAvatar(ctx context.Context, fileName string, height int) (io.ReadCloser, string, error) {
 	if fileName == "" {
 		return nil, "", ErrInvalidFile
 	}
 
 	obj, err := ps.Minio.GetObject(ctx, "profile-photos", fileName, minio.GetObjectOptions{})
 	if err != nil {
-		log.Println(err)
 		return nil, "", ErrMinioUnavailable
 	}
 

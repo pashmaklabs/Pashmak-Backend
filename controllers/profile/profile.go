@@ -1,6 +1,7 @@
 package controllers_profile
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -66,36 +67,52 @@ func (pc *ProfileController) GetProfileByID(c *gin.Context) {
 	})
 }
 
-func (pc *ProfileController) GetUserAvatarObjectName(c *gin.Context) {
-	userID := c.Param("id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "userID is required"})
-		return
-	}
+func (pc *ProfileController) GetUserAvatarObject(c *gin.Context) {
+	fileName := c.Param("file_uuid")
 
 	// Get optional resize height
 	heightStr := c.Query("h")
-	var height int
+	height, err := strconv.Atoi(heightStr)
 	if heightStr != "" {
-		h, err := strconv.Atoi(heightStr)
-		if err != nil || h <= 0 || h > 1024 { // Limit max size
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid height parameter"})
+		if err != nil || height <= 0 || height > 2048 { // Limit max size
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "ارتفاع تصویر نامعتبر است. باید یک عدد بین 1 تا 2048 باشد",
+			})
 			return
 		}
-		height = h
 	}
 
-	avatarStream, eTag, err := pc.ProfileService.GetAvatarViaPresignedURL(c, userID, height)
+	avatarStream, eTag, err := pc.ProfileService.GetAvatar(c, fileName, height)
 	if err != nil {
 		switch err {
+		case services_profile.ErrInvalidFile:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "فرمت فایل نامعتبر است",
+			})
 		case services_profile.ErrNotFound:
-			c.JSON(http.StatusNotFound, gin.H{"error": "avatar not found"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "کاربر یا تصویر آواتار پیدا نشد",
+			})
 		case services_profile.ErrPermissionDenied:
-			c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+			c.JSON(http.StatusForbidden, gin.H{
+				"status":  "error",
+				"message": "شما مجاز به مشاهده این تصویر نیستید",
+			})
 		case services_profile.ErrMinioUnavailable:
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "storage unavailable"})
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":  "error",
+				"message": "سرویس ذخیره‌سازی آواتار در دسترس نیست",
+			})
+			log.Println("Minio service unavailable:", err)
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve avatar"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+			log.Println("Error getting avatar for file", fileName, ":", err)
 		}
 		return
 	}
@@ -107,8 +124,7 @@ func (pc *ProfileController) GetUserAvatarObjectName(c *gin.Context) {
 
 	_, err = io.Copy(c.Writer, avatarStream)
 	if err != nil {
-		// Log the error but don't send a response, as headers are already written
-		log.Printf("Error streaming avatar for user %s: %v", userID, err)
+		log.Println("Error writing avatar using Copy func:", err)
 	}
 }
 
