@@ -6,8 +6,6 @@ import (
 	"errors"
 	"io"
 	"log"
-	"net/http"
-	// "time"
 
 	"github.com/disintegration/imaging"
 	"github.com/minio/minio-go/v7"
@@ -73,15 +71,8 @@ func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, userID s
 		return nil, "", ErrMinioUnavailable
 	}
 
-	// Create a new http.Response to maintain compatibility with the rest of the function
-	resp := &http.Response{
-		Body:       obj,
-		StatusCode: http.StatusOK,
-		Header:     make(http.Header),
-	}
-
 	// Check if object exists by trying to get stats
-	_, err = obj.Stat()
+	objInfo, err := obj.Stat()
 	if err != nil {
 		if minio.ToErrorResponse(err).Code == "NoSuchKey" {
 			return nil, "", ErrNotFound
@@ -90,27 +81,14 @@ func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, userID s
 	}
 
 	
-
-	if resp.StatusCode == http.StatusNotFound {
-        resp.Body.Close()
-        return nil, "", ErrNotFound
-    }
-
-    if resp.StatusCode != http.StatusOK {
-        resp.Body.Close()
-        return nil, "", ErrMinioUnavailable
-    }
-
-    eTag := resp.Header.Get("ETag")
-
     // If no resizing requested, return the response body directly
     if height == 0 {
-        return resp.Body, eTag, nil
+        return obj, objInfo.ETag, nil
     }
 
     // Read and resize the image
-    data, err := io.ReadAll(resp.Body)
-    resp.Body.Close()
+    data, err := io.ReadAll(obj)
+    obj.Close()
     if err != nil {
         return nil, "", err
     }
@@ -127,7 +105,7 @@ func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, userID s
         return nil, "", err
     }
 
-    return io.NopCloser(buf), eTag, nil
+    return io.NopCloser(buf), objInfo.ETag, nil
 }
 
 func (ps *ProfileService) UploadUserAvatar() {
