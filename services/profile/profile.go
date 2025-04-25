@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"path/filepath"
+	"time"
 
 	"github.com/disintegration/imaging"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
@@ -16,10 +21,11 @@ import (
 )
 
 var (
-    ErrInvalidFile       = errors.New("invalid file type or size")
-    ErrPermissionDenied  = errors.New("permission denied")
-    ErrNotFound          = errors.New("avatar not found")
-    ErrMinioUnavailable  = errors.New("minio unavailable")
+	ErrInvalidFile      = errors.New("invalid file type or size")
+	ErrPermissionDenied = errors.New("permission denied")
+	ErrNotFound         = errors.New("avatar not found")
+	ErrMinioUnavailable = errors.New("minio unavailable")
+	ErrInvalidSize      = errors.New("file too large")
 )
 
 type ProfileService struct {
@@ -60,12 +66,13 @@ func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfil
 	}, result.Error
 }
 
-func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, userID string, height int)(io.ReadCloser, string, error){
-	if userID == "" {
-        return nil, "", ErrInvalidFile
-    }
-	objectPath := userID + ".png"
-	obj, err := ps.Minio.GetObject(ctx, "profile-photos", objectPath, minio.GetObjectOptions{})
+// change funvtion name
+func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, fileName string, height int) (io.ReadCloser, string, error) {
+	if fileName == "" {
+		return nil, "", ErrInvalidFile
+	}
+
+	obj, err := ps.Minio.GetObject(ctx, "profile-photos", fileName, minio.GetObjectOptions{})
 	if err != nil {
 		log.Println(err)
 		return nil, "", ErrMinioUnavailable
@@ -80,34 +87,85 @@ func (ps *ProfileService) GetAvatarViaPresignedURL(ctx context.Context, userID s
 		return nil, "", ErrMinioUnavailable
 	}
 
-	
-    // If no resizing requested, return the response body directly
-    if height == 0 {
-        return obj, objInfo.ETag, nil
-    }
+	// If no resizing requested, return the response body directly
+	if height == 0 {
+		return obj, objInfo.ETag, nil
+	}
 
-    // Read and resize the image
-    data, err := io.ReadAll(obj)
-    obj.Close()
-    if err != nil {
-        return nil, "", err
-    }
+	// Read and resize the image
+	data, err := io.ReadAll(obj)
+	obj.Close()
+	if err != nil {
+		return nil, "", err
+	}
 
-    img, err := imaging.Decode(bytes.NewReader(data))
-    if err != nil {
-        return nil, "", err
-    }
+	img, err := imaging.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, "", err
+	}
 
-    resized := imaging.Resize(img, height, 0, imaging.Lanczos)
-    buf := new(bytes.Buffer)
-    err = imaging.Encode(buf, resized, imaging.PNG)
-    if err != nil {
-        return nil, "", err
-    }
+	resized := imaging.Resize(img, height, 0, imaging.Lanczos)
+	buf := new(bytes.Buffer)
+	err = imaging.Encode(buf, resized, imaging.PNG)
+	if err != nil {
+		return nil, "", err
+	}
 
-    return io.NopCloser(buf), objInfo.ETag, nil
+	return io.NopCloser(buf), objInfo.ETag, nil
 }
 
-func (ps *ProfileService) UploadUserAvatar() {
+func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (resp gin.H, err error) {
+	var user models_auth.User
+	result := ps.DB.First(&user, "id = ?", userID)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return gin.H{}, ErrNotFound
+		}
+		log.Println(result.Error)
+	}
 
-}	
+	file, err := ctx.FormFile("photo")
+	if err != nil {
+		return gin.H{}, fmt.Errorf("failed to get file from form: %w", err)
+	}
+
+	// check file type
+
+	if file.Size > 1<<24 {
+		return gin.H{}, ErrInvalidSize
+	}
+
+	fileReader, err := file.Open()
+	if err != nil {
+		return gin.H{}, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer fileReader.Close()
+
+	ext := filepath.Ext(file.Filename)
+
+	timedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	objectName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	info, err := ps.Minio.PutObject(
+		timedCtx,
+		"profile-photos",
+		objectName,
+		fileReader,
+		file.Size,
+		minio.PutObjectOptions{ContentType: "application/octet-stream"},
+	)
+	if err != nil {
+		return gin.H{}, fmt.Errorf("failed to put object to minio: %w", err)
+	}
+
+	user.Avatar_url = fmt.Sprintf("localhost:8080/profiles/avatar/%s", objectName)
+	saveres := ps.DB.Save(user)
+	if saveres.Error != nil {
+		return gin.H{}, saveres.Error
+	}
+	return gin.H{
+		"message":    "File uploaded successfully",
+		"objectName": objectName,
+		"info":       info,
+	}, nil
+}

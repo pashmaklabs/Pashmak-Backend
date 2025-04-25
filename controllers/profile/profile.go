@@ -46,46 +46,46 @@ func (pc *ProfileController) GetProfileByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	profile, err := pc.ProfileService.GetProfileByID(uint(id))
 	if err != nil {
-		if err == gorm.ErrRecordNotFound{
+		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "کاربر پیدا نشد",
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
+		"status":  "success",
 		"message": profile,
 	})
 }
 
-func (pc *ProfileController) GetUserAvatarObjectName(c *gin.Context){
+func (pc *ProfileController) GetUserAvatarObjectName(c *gin.Context) {
 	userID := c.Param("id")
-    if userID == "" {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "userID is required"})
-        return
-    }
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userID is required"})
+		return
+	}
 
-    // Get optional resize height
-    heightStr := c.Query("h")
-    var height int
-    if heightStr != "" {
-        h, err := strconv.Atoi(heightStr)
-        if err != nil || h <= 0 || h > 1024 { // Limit max size
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid height parameter"})
-            return
-        }
-        height = h
-    }
+	// Get optional resize height
+	heightStr := c.Query("h")
+	var height int
+	if heightStr != "" {
+		h, err := strconv.Atoi(heightStr)
+		if err != nil || h <= 0 || h > 1024 { // Limit max size
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid height parameter"})
+			return
+		}
+		height = h
+	}
 
-    avatarStream, eTag, err := pc.ProfileService.GetAvatarViaPresignedURL(c, userID, height)
+	avatarStream, eTag, err := pc.ProfileService.GetAvatarViaPresignedURL(c, userID, height)
 	if err != nil {
 		switch err {
 		case services_profile.ErrNotFound:
@@ -99,15 +99,50 @@ func (pc *ProfileController) GetUserAvatarObjectName(c *gin.Context){
 		}
 		return
 	}
-    defer avatarStream.Close()
+	defer avatarStream.Close()
 
-    c.Header("ETag", eTag)
-    c.Header("Cache-Control", "public, max-age=3600")
-    c.Header("Content-Type", "image/png")
+	c.Header("ETag", eTag)
+	c.Header("Cache-Control", "public, max-age=3600")
+	c.Header("Content-Type", "image/png")
 
 	_, err = io.Copy(c.Writer, avatarStream)
-    if err != nil {
-        // Log the error but don't send a response, as headers are already written
-        log.Printf("Error streaming avatar for user %s: %v", userID, err)
-    }
+	if err != nil {
+		// Log the error but don't send a response, as headers are already written
+		log.Printf("Error streaming avatar for user %s: %v", userID, err)
+	}
+}
+
+func (pc *ProfileController) UploadUserAvatar(c *gin.Context) {
+	userID := c.Param("id")
+	if _, err := strconv.Atoi(userID); err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+			return
+	}
+	
+	resp, err := pc.ProfileService.UploadUserAvatar(c, userID)
+	if err != nil {
+		if err == services_profile.ErrNotFound {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		if err == services_profile.ErrInvalidSize {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "سایز فایل نامعتبر است. ماکسیمم مقدار مجاز ۱۶ مگابایت است",
+			})
+			return
+		}
+		if err == services_profile.ErrInvalidFile {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "فرمت فایل نامعتبر است"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, resp)
 }
