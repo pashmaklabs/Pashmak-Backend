@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"path/filepath"
 	"strings"
 	"time"
@@ -64,6 +65,46 @@ func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfil
 		LastName:   user.LastName,
 		Avatar_url: user.Avatar_url,
 	}, result.Error
+}
+
+func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, error){
+	ext := filepath.Ext(file.Filename)
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+		return "", ErrInvalidFile
+	}
+
+	if file.Size > 1<<24 {
+		return "", ErrInvalidSize
+	}
+	return ext, nil
+}
+
+func (ps *ProfileService) uploadImage(file *multipart.FileHeader, ext string, user models_auth.User)(string, minio.UploadInfo, error){
+	fileReader, err := file.Open()
+	if err != nil {
+		return "", minio.UploadInfo{}, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer fileReader.Close()
+
+	timedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	objectName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	info, err := ps.Minio.PutObject(
+		timedCtx,
+		"profile-photos",
+		objectName,
+		fileReader,
+		file.Size,
+		minio.PutObjectOptions{ContentType: "image/" + strings.TrimPrefix(ext, ".")},
+	)
+
+	user.Avatar_url = fmt.Sprintf("localhost:8080/profiles/avatar/%s", objectName)
+	saveres := ps.DB.Save(user)
+	if saveres.Error != nil {
+		return "", minio.UploadInfo{}, saveres.Error
+	}
+
+	return objectName, info, nil
 }
 
 func (ps *ProfileService) GetAvatar(ctx context.Context, fileName string, height int) (io.ReadCloser, string, error) {
@@ -127,36 +168,24 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 		return nil, fmt.Errorf("failed to get file from form: %w", err)
 	}
 
-
-	ext := filepath.Ext(file.Filename)
-	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
-		return nil, ErrInvalidFile
-	}
-
-	if file.Size > 1<<24 {
-		return nil, ErrInvalidSize
-	}
-
-	fileReader, err := file.Open()
+	ext, err := ps.validateImage(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("failed to validate image: %w", err)
 	}
-	defer fileReader.Close()
-
-	timedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	objectName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
-	info, err := ps.Minio.PutObject(
-		timedCtx,
-		"profile-photos",
-		objectName,
-		fileReader,
-		file.Size,
-		minio.PutObjectOptions{ContentType: "image/" + strings.TrimPrefix(ext, ".")},
-	)
+	
+	objectName, info, err := ps.uploadImage(file, ext, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to put object to minio: %w", err)
 	}
+
+	return gin.H{
+		"status":  "success",
+		"message": "File uploaded successfully",
+		"data": map[string]interface{}{
+			"objectName": objectName,
+			"info":       info,
+		},
+	}, nil
 
 	// TODO: Remove hardcoded URL
 	// TODO: Remove old avatar if exists
@@ -169,17 +198,6 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 	// TODO: Split file validation, compression, and upload logic into helper functions
 
 
-	user.Avatar_url = fmt.Sprintf("localhost:8080/profiles/avatar/%s", objectName)
-	saveres := ps.DB.Save(user)
-	if saveres.Error != nil {
-		return nil, saveres.Error
-	}
-	return gin.H{
-		"status":  "success",
-		"message": "File uploaded successfully",
-		"data": map[string]interface{}{
-			"objectName": objectName,
-			"info":       info,
-		},
-	}, nil
+	
+	
 }
