@@ -42,6 +42,7 @@ func main() {
 	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
 	Router.Use(corsMiddleware.SetCORSHeader())
 
+	
 	// Set up the Gin validator with custom validation rules
 	validate := validator.New()
 	serializers.RegisterCustomValidators(validate)

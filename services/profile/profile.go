@@ -97,8 +97,11 @@ func (ps *ProfileService) uploadImage(file *multipart.FileHeader, ext string, us
 		file.Size,
 		minio.PutObjectOptions{ContentType: "image/" + strings.TrimPrefix(ext, ".")},
 	)
+	if err != nil{
+		return "",  minio.UploadInfo{}, nil
+	}
 
-	user.Avatar_url = fmt.Sprintf("localhost:8080/profiles/avatar/%s", objectName)
+	user.Avatar_url = fmt.Sprintf("%s/profiles/avatar/%s", ps.AppConfig.ServerHost, objectName)
 	saveres := ps.DB.Save(user)
 	if saveres.Error != nil {
 		return "", minio.UploadInfo{}, saveres.Error
@@ -196,8 +199,4 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 	// TODO: Authenticate Requests
 	// TODO: Rate Limiting
 	// TODO: Split file validation, compression, and upload logic into helper functions
-
-
-	
-	
 }
