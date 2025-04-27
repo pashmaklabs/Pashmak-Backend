@@ -190,7 +190,6 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 		},
 	}, nil
 
-	// TODO: Remove hardcoded URL
 	// TODO: Remove old avatar if exists
 	// TODO: Validate MIME Type
 	// TODO: Sanitize File Content: Use an image processing library (e.g., imaging or bimg) to validate and sanitize the image, ensuring it's a valid image and not malicious.
@@ -198,5 +197,4 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 	// TODO: Resize the image to a standard size (e.g., 256x256 pixels) using an image processing library.
 	// TODO: Authenticate Requests
 	// TODO: Rate Limiting
-	// TODO: Split file validation, compression, and upload logic into helper functions
 }
