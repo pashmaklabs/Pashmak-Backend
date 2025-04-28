@@ -1,0 +1,39 @@
+package services_place
+
+import (
+	"gorm.io/gorm"
+	"pashmak.com/pashmak/bootstrap"
+	sp "pashmak.com/pashmak/serializers/place"
+)
+
+type PlaceService struct {
+	DB        *gorm.DB
+	AppConfig *bootstrap.AppConfig
+}
+
+func NewPlaceService(db *gorm.DB, appconfig *bootstrap.AppConfig) *PlaceService {
+	return &PlaceService{
+		DB:        db,
+		AppConfig: appconfig,
+	}
+}
+
+func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) {
+	var result sp.GetPlaceByIDResponse
+
+	query := `
+        SELECT 
+            name,
+            amenity,
+            ST_Y(ST_Transform(way, 4326)) as latitude,
+            ST_X(ST_Transform(way, 4326)) as longitude
+        FROM planet_osm_point
+        WHERE osm_id = ?`
+
+	err := ps.DB.Raw(query, id).Scan(&result).Error
+	if err != nil {
+		return &sp.GetPlaceByIDResponse{}, err
+	}
+
+	return &result, nil
+}

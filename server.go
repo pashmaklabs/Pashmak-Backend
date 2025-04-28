@@ -15,6 +15,7 @@ import (
 	routers_comment "pashmak.com/pashmak/routers/comment"
 	routers_navigation "pashmak.com/pashmak/routers/navigation"
 	routers_profile "pashmak.com/pashmak/routers/profile"
+	routers_place "pashmak.com/pashmak/routers/place"
 	"pashmak.com/pashmak/serializers"
 )
 
@@ -54,6 +55,7 @@ func main() {
 	routers_profile.ProfileRoutes(Router, DB, Redis, AppConfig)
 	routers_navigation.NavigationRoutes(Router, DB, AppConfig)
 	routers_comment.CommentRoutes(Router, DB, Redis, AppConfig)
-
+	routers_place.PlaceRoutes(Router, DB, Redis, AppConfig)
+	
 	Router.Run(fmt.Sprintf(":%s", AppConfig.ServerPort))
 }

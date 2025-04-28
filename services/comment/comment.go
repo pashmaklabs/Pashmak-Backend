@@ -88,3 +88,23 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 
 	return result.Error
 }
+
+func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
+	var result serializers_comment.RatingResponse
+
+	err := cs.DB.Model(&models_place.Comment{}).
+		Where("place_id = ?", placeToken).
+		Select("AVG(rating) as average_rating, COUNT(*) as count").
+		Group("place_id").
+		Scan(&result).Error
+
+	if err != nil {
+		return 0, errors.New("خطایی رخ داده")
+	}
+
+	if result.Count == 0 {
+		return 0, errors.New("نظری ثبت نشده")
+	}
+
+	return result.AverageRating, nil
+}

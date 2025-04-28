@@ -10,7 +10,7 @@ type CommentResponse struct {
 	Rating    uint         `json:"rating" binding:"required,min=0,max=5"`
 	User      UserResponse `json:"user"`
 	// 	Reactions []models_place.Reaction `json:"reactions"`
-	CreatedAt time.Time    `json:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type UserResponse struct {
@@ -20,7 +20,10 @@ type UserResponse struct {
 	Avatar    string `json:"avatar_url"`
 }
 
-
+type RatingResponse struct {
+	AverageRating float64 `json:"average_rating"`
+	Count         int64   `json:"count"`
+}
 type AddCommentRequest struct{
 	Content string	`json:"content" binding:""`
 	Rating	uint	`json:"rating" binding:"required,numeric,min=0,max=5"`
