@@ -27,18 +27,32 @@ func NewAuthController(authService *services_auth.AuthService, appConfig *bootst
 	}
 }
 
-func (ac *AuthController) SendOTP(c *gin.Context) {
+func (ac *AuthController) GetValidatedData(c *gin.Context) (interface{}, bool){
 	validatedData, exists := c.Get("validated")
+	return validatedData, exists
+}
 
-	body, ok := validatedData.(serializers_auth.SendOTPRequest)
-	if !ok || !exists {
+func (ac *AuthController) SendOTP(c *gin.Context) {
+	validatedData, exists := ac.GetValidatedData(c)
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
 		return
 	}
+
+	body, ok := validatedData.(serializers_auth.SendOTPRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected SendOTPRequest, got %T", validatedData)
+		return
+	}
+	
 
 	resp, err := ac.authService.ValidateUser(body.Email)
 	if err != nil {
@@ -58,14 +72,22 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 
 func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
-
-	body, ok := validatedData.(serializers_auth.VerifyOTPRequest)
-	if !ok || !exists {
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_auth.VerifyOTPRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected VerifyOTPRequest, got %T", validatedData)
 		return
 	}
 
@@ -149,17 +171,25 @@ func (ac *AuthController) ProtectedRouter(c *gin.Context) {
 
 func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
-
-	body, ok := validatedData.(serializers_auth.LoginWithPasswordRequest)
-	if !ok || !exists {
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
 		return
 	}
 
+	body, ok := validatedData.(serializers_auth.LoginWithPasswordRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected LoginWithPasswordRequest, got %T", validatedData)
+		return
+	}
+	
 	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" || err.Error() == "user has no password" || err.Error() == "record not found" { // TODO: Integrate errors
@@ -186,14 +216,22 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 
 func (ac *AuthController) ForgetPassword(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
-
-	body, ok := validatedData.(serializers_auth.ForgetPasswordRequest)
-	if !ok || !exists {
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_auth.ForgetPasswordRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected ForgetPasswordRequest, got %T", validatedData)
 		return
 	}
 
@@ -208,7 +246,7 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "خطای غیر منتظره رخ داد.",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
 		return
@@ -222,16 +260,25 @@ func (ac *AuthController) ForgetPassword(c *gin.Context) {
 
 func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
-
-	body, ok := validatedData.(serializers_auth.ForgetPasswordVerifyRequest)
-	if !ok || !exists {
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
 		return
 	}
+
+	body, ok := validatedData.(serializers_auth.ForgetPasswordVerifyRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected ForgetPasswordVerifyRequest, got %T", validatedData)
+		return
+	}
+
 	jwt, resp, err := ac.authService.VerifyForgetPassword(body.Email, body.OTP)
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -274,14 +321,22 @@ func (ac *AuthController) ForgetPasswordVerify(c *gin.Context) {
 
 func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
-
-	body, ok := validatedData.(serializers_auth.ForgetPasswordResetRequest)
-	if !ok || !exists {
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_auth.ForgetPasswordResetRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected ForgetPasswordResetRequest, got %T", validatedData)
 		return
 	}
 	
@@ -320,17 +375,24 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 func (ac *AuthController) SignUp(c *gin.Context) {
 	// TODO: check password confirmation match in backend
 	validatedData, exists := c.Get("validated")
-
-	body, ok := validatedData.(serializers_auth.SignUpRequest)
-	if !ok || !exists {
+	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println("Error in retrieving and casting validated data!")
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
 		return
 	}
 
+	body, ok := validatedData.(serializers_auth.SignUpRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected SignUpRequest, got %T", validatedData)
+		return
+	}
 	userinfo, exists := c.Get("user")
 	
 	if !exists {
