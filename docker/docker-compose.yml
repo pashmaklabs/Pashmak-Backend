@@ -45,7 +45,7 @@ services:
       - pashmak_redis:/data
   
   backend:
-    image: registry.hamdocker.ir/bluh-bluh/pashmak-backend:latest
+    image: registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.4
     container_name: pashmak_backend
     restart: unless-stopped
     ports:
