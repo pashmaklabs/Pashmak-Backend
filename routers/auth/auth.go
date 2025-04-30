@@ -30,7 +30,7 @@ func AuthRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig 
 			middlewares_validation.ValidationMiddleware[serializers_auth.LoginWithPasswordRequest](),
 			authController.LoginWithPassword)
 		auth.POST("/password/forget/send",
-			middlewares_validation.ValidationMiddleware[serializers_auth.SendOTPRequest](),
+			middlewares_validation.ValidationMiddleware[serializers_auth.ForgetPasswordRequest](),
 			authController.ForgetPassword)
 		auth.POST("/password/forget/verify",
 			middlewares_validation.ValidationMiddleware[serializers_auth.ForgetPasswordVerifyRequest](),
