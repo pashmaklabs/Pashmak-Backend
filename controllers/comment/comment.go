@@ -21,7 +21,7 @@ func NewCommentController(commentservice *services_comment.CommentService) *Comm
 }
 
 func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
-	token := c.Param("token")
+	token := c.Param("placeToken")
 	comments, err := cc.CommentService.GetCommentsByPlaceToken(token)
 	if err != nil {
 		if err.Error() == "no comments found"{
@@ -45,12 +45,42 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 }
 
 func (cc *CommentController) SetNewReaction(c *gin.Context){
-	// TODO: Should be implemented
-	reactionType := c.Query("type")
+	validatedData, exists := c.Get("validated")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
 
-	if reactionType == "like"{
+	body, ok := validatedData.(serializers_comment.AddReactionRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected AddReactionRequest, got %T", validatedData)
+		return
+	}
 
-	}else if reactionType == "dislike"{}
+	userinfo, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+
+	userpayload := userinfo.(services_auth.UserInfo)
+	commentToken := c.Param("token")
+
+
+	err := cc.CommentService.AddReaction(userpayload, commentToken, body.ReactionType)
+
+	
 	c.JSON(403, reactionType)
 }
 

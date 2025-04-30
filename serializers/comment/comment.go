@@ -28,3 +28,7 @@ type AddCommentRequest struct{
 	Content string	`json:"content" binding:""`
 	Rating	uint	`json:"rating" binding:"required,numeric,min=0,max=5"`
 }
+
+type AddReactionRequest struct{
+	ReactionType	string	`json:"reaction_type"`
+}

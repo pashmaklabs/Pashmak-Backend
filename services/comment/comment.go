@@ -108,3 +108,18 @@ func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
 
 	return result.AverageRating, nil
 }
+
+
+func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentToken string, reactionType string) error{
+	var comment models_place.Comment
+    if err := cs.DB.First(&comment, commentToken).Error; err != nil {
+        return errors.New("comment not found!")
+    }
+	
+
+	if reactionType == "like"{
+
+	}else if reactionType == "dislike"{
+
+	}
+}
