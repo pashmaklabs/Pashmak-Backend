@@ -22,6 +22,7 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *
 	profile := router.Group("/profiles")
 	{
 		profile.GET("/me", authMiddleware.LoginMiddleware(), profileController.GetMyProfile)
+		profile.GET("/me/update", authMiddleware.LoginMiddleware(), profileController.)
 		profile.GET("/:id", profileController.GetProfileByID)
 		profile.GET("/avatar/:file_uuid", profileController.GetUserAvatarObject)
 		profile.POST("/avatar/:id", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)

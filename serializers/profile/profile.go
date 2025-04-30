@@ -14,3 +14,7 @@ type GetProfileByIDResponse struct {
 	Avatar_url string
 	Score     uint
 }
+
+type UpdateUserProfileRequest struct{
+	
+}
