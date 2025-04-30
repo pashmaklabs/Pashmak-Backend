@@ -110,16 +110,29 @@ func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
 }
 
 
-func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentToken string, reactionType string) error{
+func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentToken string, reactionType uint) error{
 	var comment models_place.Comment
     if err := cs.DB.First(&comment, commentToken).Error; err != nil {
         return errors.New("comment not found!")
     }
-	
 
-	if reactionType == "like"{
+	var existingReaction models_place.Reaction
+    if err := cs.DB.Where("user_id = ? AND comment_id = ?", userInfo.ID, commentToken).
+        First(&existingReaction).Error; err == nil {
+        // Update existing reaction
+        existingReaction.ReactionType = reactionType
+        cs.DB.Save(&existingReaction)
+        return nil
+    }
 
-	}else if reactionType == "dislike"{
-
+	newReaction := models_place.Reaction{
+		CommentID: commentToken,
+		ReactionType: reactionType,
+		UserID: userInfo.ID,
 	}
+	if err := cs.DB.Create(&newReaction).Error; err != nil{
+		return err
+	}
+	
+	return nil
 }

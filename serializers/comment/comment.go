@@ -30,5 +30,6 @@ type AddCommentRequest struct{
 }
 
 type AddReactionRequest struct{
-	ReactionType	string	`json:"reaction_type"`
+	ReactionType	uint	`json:"reaction_type"`
+	// validate
 }

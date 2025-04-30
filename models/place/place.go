@@ -28,8 +28,8 @@ type Comment struct {
 
 type Reaction struct {
 	ID           uint      `gorm:"primaryKey;autoIncrement"`
-	CommentID    uint      `gorm:"not null"`	
-	ReactionType int       `gorm:"not null"`
+	CommentID    string      `gorm:"not null"`	
+	ReactionType uint       `gorm:"not null"`
 	UserID       uint      `json:"user_id"`	
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }
