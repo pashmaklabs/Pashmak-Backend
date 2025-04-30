@@ -40,8 +40,6 @@ func main() {
 	Router.Use(corsMiddleware.SetCORSHeader())
 
 	// Set up the Gin validator with custom validation rules
-	validate := validator.New()
-    serializers.RegisterCustomValidators(validate)
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		serializers.RegisterCustomValidators(v)
 	}else{
