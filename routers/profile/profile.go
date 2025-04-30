@@ -8,6 +8,8 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	controllers_profile "pashmak.com/pashmak/controllers/profile"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
+	middlewares_validation "pashmak.com/pashmak/middlewares/validation"
+	serializers_profile "pashmak.com/pashmak/serializers/profile"
 	services_profile "pashmak.com/pashmak/services/profile"
 
 	services_auth "pashmak.com/pashmak/services/auth"
@@ -22,7 +24,9 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *
 	profile := router.Group("/profiles")
 	{
 		profile.GET("/me", authMiddleware.LoginMiddleware(), profileController.GetMyProfile)
-		profile.GET("/me/update", authMiddleware.LoginMiddleware(), profileController.)
+		profile.POST("/me/update",
+			middlewares_validation.ValidationMiddleware[serializers_profile.UpdateUserProfileRequest](),
+			authMiddleware.LoginMiddleware(), profileController.UpdateUserProfile)
 		profile.GET("/:id", profileController.GetProfileByID)
 		profile.GET("/avatar/:file_uuid", profileController.GetUserAvatarObject)
 		profile.POST("/avatar/:id", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)

@@ -19,6 +19,7 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
+	services_auth "pashmak.com/pashmak/services/auth"
 )
 
 var (
@@ -52,6 +53,12 @@ func (ps *ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentProf
 		Email:      user.Email,
 		Avatar_url: user.Avatar_url,
 	}, result.Error
+}
+
+func (ps *ProfileService) GetUserByGmail(email string) (models_auth.User, error){
+	var user models_auth.User
+	result := ps.DB.First(&user, "email = ?", email)
+	return user, result.Error
 }
 
 func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfileByIDResponse, error) {
@@ -197,4 +204,18 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 	// TODO: Resize the image to a standard size (e.g., 256x256 pixels) using an image processing library.
 	// TODO: Authenticate Requests
 	// TODO: Rate Limiting
+}
+
+func (ps *ProfileService) UpdateUserProfile(userInfo services_auth.UserInfo, payload serializers_profile.UpdateUserProfileRequest) error{
+	user, err := ps.GetUserByGmail(userInfo.Email)
+	if err != nil {
+		return err
+	}
+	user.FirstName = payload.FirstName
+	user.LastName = payload.LastName
+
+	if err := ps.DB.Save(&user).Error; err != nil {
+		return err
+	}
+	return nil
 }
