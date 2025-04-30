@@ -25,13 +25,13 @@ type ForgetPasswordVerifyRequest struct {
 
 type ForgetPasswordResetRequest struct {
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8,containsany=!@#$%^&*,containsuppercase,containsnumber"`
+	Password string `json:"password" binding:"required,password_complexity"`
 }
 
 type SignUpRequest struct {
 	FirstName       string `json:"firstname" binding:"required,min=2,max=50"`
 	LastName        string `json:"lastname" binding:"required,min=2,max=50"`
 	Email           string `json:"email" binding:"required,email"`
-	Password        string `json:"password" binding:"required,min=8,containsany=!@#$%^&*,containsuppercase,containsnumber"`
-	PasswordConfirm string `json:"password_confirm" binding:"required,min=8,containsany=!@#$%^&*,containsuppercase,containsnumber"`
+	Password        string `json:"password" binding:"required,password_complexity"`
+	PasswordConfirm string `json:"password_confirm" binding:"required,password_complexity"`
 }
