@@ -5,11 +5,13 @@ import (
 )
 
 type CommentResponse struct {
-	ID        uint         `json:"id"`
-	Content   string       `json:"content"`
-	Rating    uint         `json:"rating" binding:"required,min=0,max=5"`
-	User      UserResponse `json:"user"`
-	// 	Reactions []models_place.Reaction `json:"reactions"`
+	ID      uint         `json:"id"`
+	Content string       `json:"content"`
+	Rating  uint         `json:"rating" binding:"required,min=0,max=5"`
+	User    UserResponse `json:"user"`
+	// Reactions []models_place.Reaction `json:"reactions"`
+	Likes     uint      `json:"likes"`
+	Dislikes  uint      `json:"dislikes"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -25,6 +27,11 @@ type RatingResponse struct {
 	Count         int64   `json:"count"`
 }
 type AddCommentRequest struct{
-	Content string	`json:"content" binding:""`
+	Content string	`json:"content" binding:"max=1000"`
 	Rating	uint	`json:"rating" binding:"required,numeric,min=0,max=5"`
+}
+
+type AddReactionRequest struct {
+	ReactionType uint `json:"reaction_type"`
+	// FIXME: Validate
 }
