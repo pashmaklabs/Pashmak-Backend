@@ -26,9 +26,9 @@ type RatingResponse struct {
 	AverageRating float64 `json:"average_rating"`
 	Count         int64   `json:"count"`
 }
-type AddCommentRequest struct {
-	Content string `json:"content" binding:"required"`
-	Rating  uint   `json:"rating" binding:"required,numeric,min=0,max=5"`
+type AddCommentRequest struct{
+	Content string	`json:"content" binding:"max=1000"`
+	Rating	uint	`json:"rating" binding:"required,numeric,min=0,max=5"`
 }
 
 type AddReactionRequest struct {
