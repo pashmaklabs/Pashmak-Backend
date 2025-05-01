@@ -24,6 +24,24 @@ func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentServ
 	}
 }
 
+func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(uint, uint, error){
+	var likes uint
+	var dislikes uint
+	query := `
+		SELECT 
+			COUNT(*)
+		FROM reactions
+		WHERE reaction_type = ? AND comment_id = ?` 
+
+	if err := cs.DB.Raw(query, 0, commentID).Scan(&likes).Error; err != nil{
+		return 0, 0, nil
+	}
+	if err := cs.DB.Raw(query, 1, commentID).Scan(&dislikes).Error; err != nil{
+		return 0, 0, nil
+	}
+	return likes, dislikes, nil
+}
+
 func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_comment.CommentResponse, error) {
 	var comments []models_place.Comment
 
@@ -43,6 +61,10 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 
 	commentDTOs := make([]serializers_comment.CommentResponse, len(comments))
 	for i, comment := range comments {
+		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
+		if err != nil{
+			return nil, err
+		}
 		commentDTOs[i] = serializers_comment.CommentResponse{
 			ID:      comment.ID,
 			Content: comment.Content,
@@ -54,6 +76,8 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 				Avatar:    comment.User.Avatar_url,
 			},
 			CreatedAt: comment.CreatedAt,
+			Likes: likes,
+			Dislikes: dislikes,
 		}
 	}
 
@@ -87,6 +111,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 	})
 
 	return result.Error
+	// FIXME: AddComment api has body error
 }
 
 func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
@@ -107,4 +132,45 @@ func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
 	}
 
 	return result.AverageRating, nil
+}
+
+
+func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentToken string, reactionType uint) error{
+	var comment models_place.Comment
+    if err := cs.DB.First(&comment, commentToken).Error; err != nil {
+        return errors.New("comment not found")
+    }
+
+	var existingReaction models_place.Reaction
+    if err := cs.DB.Where("user_id = ? AND comment_id = ?", userInfo.ID, commentToken).
+        First(&existingReaction).Error; err == nil {
+        // Update existing reaction
+        existingReaction.ReactionType = reactionType
+        cs.DB.Save(&existingReaction)
+        return nil
+    }
+
+	newReaction := models_place.Reaction{
+		CommentID: commentToken,
+		ReactionType: reactionType,
+		UserID: userInfo.ID,
+	}
+	if err := cs.DB.Create(&newReaction).Error; err != nil{
+		return err
+	}
+	
+	return nil
+}
+
+func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, commentToken string) error{
+	var comment models_place.Comment
+	if err := cs.DB.First(&comment, commentToken).Error; err != nil{
+		return errors.New("comment not found")
+	}
+
+	var existingReaction models_place.Reaction
+	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentToken, userInfo.ID).Delete(&existingReaction).Error; err != nil{
+		return err
+	}
+	return nil
 }
