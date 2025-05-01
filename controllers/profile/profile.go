@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	serializers_profile "pashmak.com/pashmak/serializers/profile"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_profile "pashmak.com/pashmak/services/profile"
 )
@@ -163,4 +164,49 @@ func (pc *ProfileController) UploadUserAvatar(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusAccepted, resp)
+}
+
+func (pc *ProfileController) UpdateUserProfile(c *gin.Context){
+	validatedData, exists := c.Get("validated")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_profile.UpdateUserProfileRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected UpdateUserProfileRequest, got %T", validatedData)
+		return
+	}
+	userinfo, exists := c.Get("user")
+	
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+	userpayload := userinfo.(services_auth.UserInfo)
+	err := pc.ProfileService.UpdateUserProfile(userpayload, body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیر منتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "آپدیت پروفایل با موفقیت انجام شد",
+	})
 }
