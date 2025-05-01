@@ -22,10 +22,10 @@ func CommentRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconf
 	comment := router.Group("/comments")
 	{
 		comment.GET("/:placeToken", commentController.GetCommentsByPlaceToken)
-		comment.POST("/:commentToken/reaction",
+		comment.POST("/:token/reaction",
 		middlewares_validation.ValidationMiddleware[serializers_comment.AddReactionRequest](),
 			authMiddleware.LoginMiddleware(), commentController.SetNewReaction)
-		comment.POST("/:placeToken/add-comment",
+		comment.POST("/:token/add-comment",
 			middlewares_validation.ValidationMiddleware[serializers_comment.AddCommentRequest](),
 			authMiddleware.LoginMiddleware(), commentController.AddNewComment)
 	}

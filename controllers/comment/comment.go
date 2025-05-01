@@ -79,9 +79,22 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 
 
 	err := cc.CommentService.AddReaction(userpayload, commentToken, body.ReactionType)
-
-	
-	c.JSON(403, reactionType)
+	if err != nil{
+		if err.Error() == "comment not found!"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "کامنت یافت نشد",
+			})
+			return
+		}else{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+			return
+		}
+	}
+	c.Status(http.StatusOK)
 }
 
 func (cc *CommentController) AddNewComment(c *gin.Context){
