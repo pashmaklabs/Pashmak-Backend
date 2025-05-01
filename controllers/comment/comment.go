@@ -55,14 +55,23 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 }
 
 func (cc *CommentController) AddNewComment(c *gin.Context){
-	var body serializers_comment.AddCommentRequest
-
-	if err := c.Bind(&body); err != nil{
-		c.JSON(http.StatusBadRequest, gin.H{
+	validatedData, exists := c.Get("validated")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "در خواندن بدنه ی درخواست خطایی رخ داد",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
-		log.Println(err)
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_comment.AddCommentRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected AddCommentRequest, got %T", validatedData)
 		return
 	}
 

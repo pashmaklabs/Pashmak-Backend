@@ -25,6 +25,6 @@ type RatingResponse struct {
 	Count         int64   `json:"count"`
 }
 type AddCommentRequest struct{
-	Content string	`json:"content" binding:""`
+	Content string	`json:"content" binding:"max=1000"`
 	Rating	uint	`json:"rating" binding:"required,numeric,min=0,max=5"`
 }
