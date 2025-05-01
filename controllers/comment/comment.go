@@ -80,7 +80,7 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 
 	err := cc.CommentService.AddReaction(userpayload, commentToken, body.ReactionType)
 	if err != nil{
-		if err.Error() == "comment not found!"{
+		if err.Error() == "comment not found"{
 			c.JSON(http.StatusNotFound, gin.H{
 				"status": "error",
 				"message": "کامنت یافت نشد",
@@ -134,4 +134,37 @@ func (cc *CommentController) AddNewComment(c *gin.Context){
 		"status": "success",
 		"message": "دیدگاه با موفقیت ثبت شد",
 	})
+}
+
+func (cc *CommentController) RemoveReaction(c *gin.Context){
+	userinfo, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+
+	userpayload := userinfo.(services_auth.UserInfo)
+	commentToken := c.Param("token")
+
+
+	err := cc.CommentService.RemoveRection(userpayload, commentToken)
+	if err != nil{
+		if err.Error() == "no comments found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "success",
+				"message": "دیدگاهی برای این مکان ثبت نشده است",
+			})
+			return
+		}else{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است",
+			})
+			return
+		}
+	}
+	c.Status(http.StatusOK)
 }

@@ -111,6 +111,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 	})
 
 	return result.Error
+	// FIXME: AddComment api has body error
 }
 
 func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
@@ -137,7 +138,7 @@ func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
 func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentToken string, reactionType uint) error{
 	var comment models_place.Comment
     if err := cs.DB.First(&comment, commentToken).Error; err != nil {
-        return errors.New("comment not found!")
+        return errors.New("comment not found")
     }
 
 	var existingReaction models_place.Reaction
@@ -158,5 +159,18 @@ func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentTo
 		return err
 	}
 	
+	return nil
+}
+
+func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, commentToken string) error{
+	var comment models_place.Comment
+	if err := cs.DB.First(&comment, commentToken).Error; err != nil{
+		return errors.New("comment not found")
+	}
+
+	var existingReaction models_place.Reaction
+	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentToken, userInfo.ID).Delete(&existingReaction).Error; err != nil{
+		return err
+	}
 	return nil
 }

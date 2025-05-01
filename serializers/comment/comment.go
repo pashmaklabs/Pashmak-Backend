@@ -27,11 +27,11 @@ type RatingResponse struct {
 	Count         int64   `json:"count"`
 }
 type AddCommentRequest struct {
-	Content string `json:"content" binding:""`
+	Content string `json:"content" binding:"required"`
 	Rating  uint   `json:"rating" binding:"required,numeric,min=0,max=5"`
 }
 
 type AddReactionRequest struct {
 	ReactionType uint `json:"reaction_type"`
-	// validate
+	// FIXME: Validate
 }
