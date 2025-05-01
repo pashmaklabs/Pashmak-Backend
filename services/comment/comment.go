@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+	"github.com/rosberry/go-pagination"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
@@ -24,6 +26,47 @@ func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentServ
 	}
 }
 
+func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.CommentResponse, error){
+	paginator, err := pagination.New(pagination.Options{
+		GinContext: c,
+		DB: cs.DB,
+		Model: &models_place.Comment{},
+		Limit: 20,
+		DefaultCursor: nil,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	var pagedComments []models_place.Comment
+	if err := paginator.Find(comments, &pagedComments); err != nil {
+		return nil, nil, err
+	}
+
+	commentDTOs := make([]serializers_comment.CommentResponse, len(pagedComments))
+	for i, comment := range pagedComments {
+		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
+		if err != nil{
+			return nil, nil, err
+		}
+		commentDTOs[i] = serializers_comment.CommentResponse{
+			ID:      comment.ID,
+			Content: comment.Content,
+			Rating:  comment.Rating,
+			User: serializers_comment.UserResponse{
+				ID:        comment.User.ID,
+				FirstName: comment.User.FirstName,
+				LastName:  comment.User.LastName,
+				Avatar:    comment.User.Avatar_url,
+			},
+			CreatedAt: comment.CreatedAt,
+			Likes: likes,
+			Dislikes: dislikes,
+		}
+	}
+
+	return paginator, commentDTOs, nil
+}
+
 func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(uint, uint, error){
 	var likes uint
 	var dislikes uint
@@ -42,46 +85,27 @@ func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(uint, uint,
 	return likes, dislikes, nil
 }
 
-func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_comment.CommentResponse, error) {
+func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
 	var comments []models_place.Comment
-
-	err := cs.DB.
+	commentsQuery := cs.DB.
 		Where("place_id = ?", token).
 		Preload("User").      // use if you want to use comment.User
-		Preload("Reactions"). // use if you want to use comment.Reaction
-		Find(&comments).Error
+		Preload("Reactions"). // use if you want to use comment.Reactions
+		Find(&comments)
 
-	if err != nil {
-		return nil, err
+	if commentsQuery.Error != nil {
+		return nil, nil, commentsQuery.Error
 	}
 
 	if len(comments) == 0 {
-		return nil, errors.New("no comments found")
+		return nil, nil, errors.New("no comments found")
 	}
 
-	commentDTOs := make([]serializers_comment.CommentResponse, len(comments))
-	for i, comment := range comments {
-		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
-		if err != nil{
-			return nil, err
-		}
-		commentDTOs[i] = serializers_comment.CommentResponse{
-			ID:      comment.ID,
-			Content: comment.Content,
-			Rating:  comment.Rating,
-			User: serializers_comment.UserResponse{
-				ID:        comment.User.ID,
-				FirstName: comment.User.FirstName,
-				LastName:  comment.User.LastName,
-				Avatar:    comment.User.Avatar_url,
-			},
-			CreatedAt: comment.CreatedAt,
-			Likes: likes,
-			Dislikes: dislikes,
-		}
+	paginator, commentDTOs, err := cs.PaginateComments(c, commentsQuery)
+	if err != nil{
+		return nil, nil, err
 	}
-
-	return commentDTOs, nil
+	return paginator, commentDTOs, nil
 }
 
 func (cs *CommentService) GetUserByGmail(email string) (models_auth.User, error) {
