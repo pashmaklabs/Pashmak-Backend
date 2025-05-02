@@ -37,3 +37,24 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
 
 	return &result, nil
 }
+
+func (ps *PlaceService) SearchPlace(name string) ([]sp.GetPlaceByIDResponse, error) {
+	var results []sp.GetPlaceByIDResponse
+
+	query := `
+		SELECT 
+			name,
+			amenity,
+			ST_Y(ST_Transform(way, 4326)) as latitude,
+			ST_X(ST_Transform(way, 4326)) as longitude
+		FROM planet_osm_point
+		WHERE name ILIKE ?
+		LIMIT 10`
+
+	err := ps.DB.Raw(query, "%"+name+"%").Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}

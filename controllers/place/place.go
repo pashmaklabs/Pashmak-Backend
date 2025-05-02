@@ -70,3 +70,21 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 		"place":   response,
 	})
 }
+
+func (pc *PlaceController) SearchPlace(c *gin.Context) {
+	q := c.Query("q")
+	places, err := pc.PlaceService.SearchPlace(q)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status":  "error",
+			"message": "خطا در جستجوی مکان",
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"status":  "success",
+		"message": "",
+		"places":  places,
+	})
+}
+
