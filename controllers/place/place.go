@@ -2,7 +2,9 @@ package controllers_place
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	serializers_place "pashmak.com/pashmak/serializers/place"
@@ -35,6 +37,13 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 
 	place, err := pc.PlaceService.GetPlaceByID(uint(id))
 	if err != nil {
+		if strings.Contains(err.Error(), "no place found") {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "مکان یافت نشد",
+			})
+			return
+		}
 		c.JSON(500, gin.H{
 			"status":  "error",
 			"message": "خطا در دریافت مکان",

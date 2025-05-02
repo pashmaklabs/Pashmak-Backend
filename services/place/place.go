@@ -1,6 +1,8 @@
 package services_place
 
 import (
+	"fmt"
+	
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	sp "pashmak.com/pashmak/serializers/place"
@@ -19,7 +21,7 @@ func NewPlaceService(db *gorm.DB, appconfig *bootstrap.AppConfig) *PlaceService 
 }
 
 func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) {
-	var result sp.GetPlaceByIDResponse
+	var results []sp.GetPlaceByIDResponse
 
 	query := `
         SELECT 
@@ -30,12 +32,18 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
         FROM planet_osm_point
         WHERE osm_id = ?`
 
-	err := ps.DB.Raw(query, id).Scan(&result).Error
+	err := ps.DB.Raw(query, id).Scan(&results).Error
 	if err != nil {
-		return &sp.GetPlaceByIDResponse{}, err
+		return nil, err
 	}
 
-	return &result, nil
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no place found with ID %d", id)
+	} else if len(results) > 1 {
+		return nil, fmt.Errorf("multiple places found with ID %d", id)
+	}
+
+	return &results[0], nil
 }
 
 func (ps *PlaceService) SearchPlace(name string) ([]sp.GetPlaceByIDResponse, error) {
