@@ -28,7 +28,7 @@ services:
       --cache 1000
       -d pashmak_postgres
       -U postgres
-      -H postgis
+      -H postgres
       -P 5432
       https://download.geofabrik.de/asia/iran-latest.osm.pbf
     depends_on:
