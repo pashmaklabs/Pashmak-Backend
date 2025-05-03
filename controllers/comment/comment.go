@@ -3,6 +3,7 @@ package controllers_comment
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
@@ -75,10 +76,11 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 	}
 
 	userpayload := userinfo.(services_auth.UserInfo)
-	commentToken := c.Param("token")
+	commentID, _ := strconv.Atoi(c.Param("id"))
 
+	// id, _ := strconv.Atoi(c.Param("id"))
 
-	err := cc.CommentService.AddReaction(userpayload, commentToken, body.ReactionType)
+	err := cc.CommentService.AddReaction(userpayload, uint(commentID), body.ReactionType)
 	if err != nil{
 		if err.Error() == "comment not found"{
 			c.JSON(http.StatusNotFound, gin.H{
@@ -156,10 +158,11 @@ func (cc *CommentController) RemoveReaction(c *gin.Context){
 	}
 
 	userpayload := userinfo.(services_auth.UserInfo)
-	commentToken := c.Param("token")
+	commentID, _ := strconv.Atoi(c.Param("id"))
 
 
-	err := cc.CommentService.RemoveRection(userpayload, commentToken)
+
+	err := cc.CommentService.RemoveRection(userpayload, uint(commentID))
 	if err != nil{
 		if err.Error() == "comment not found"{
 			c.JSON(http.StatusNotFound, gin.H{

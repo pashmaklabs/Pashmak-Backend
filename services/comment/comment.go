@@ -133,14 +133,14 @@ func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
 }
 
 
-func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentToken string, reactionType uint) error{
+func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentID uint, reactionType uint) error{
 	var comment models_place.Comment
-    if err := cs.DB.First(&comment, commentToken).Error; err != nil {
+    if err := cs.DB.First(&comment, commentID).Error; err != nil {
         return errors.New("comment not found")
     }
 
 	var existingReaction models_place.Reaction
-    if err := cs.DB.Where("user_id = ? AND comment_id = ?", userInfo.ID, commentToken).
+    if err := cs.DB.Where("user_id = ? AND comment_id = ?", userInfo.ID, commentID).
         First(&existingReaction).Error; err == nil {
         // Update existing reaction
         existingReaction.ReactionType = reactionType
@@ -149,7 +149,7 @@ func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentTo
     }
 
 	newReaction := models_place.Reaction{
-		CommentID: commentToken,
+		CommentID: commentID,
 		ReactionType: reactionType,
 		UserID: userInfo.ID,
 	}
@@ -160,14 +160,14 @@ func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentTo
 	return nil
 }
 
-func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, commentToken string) error{
+func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, commentID uint) error{
 	var comment models_place.Comment
-	if err := cs.DB.First(&comment, commentToken).Error; err != nil{
+	if err := cs.DB.First(&comment, commentID).Error; err != nil{
 		return errors.New("comment not found")
 	}
 
 	var existingReaction models_place.Reaction
-	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentToken, userInfo.ID).Delete(&existingReaction).Error; err != nil{
+	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentID, userInfo.ID).Delete(&existingReaction).Error; err != nil{
 		return err
 	}
 	return nil
