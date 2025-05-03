@@ -12,36 +12,24 @@ import (
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
-	sp "pashmak.com/pashmak/services/pagination"
+	services_paginator "pashmak.com/pashmak/services/pagination"
 )
 
 type CommentService struct {
 	DB        *gorm.DB
 	AppConfig *bootstrap.AppConfig
-	Paginator *sp.PaginationService
 }
 
-func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig, paginator *sp.PaginationService) *CommentService {
+func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentService {
 	return &CommentService{
 		DB:        db,
 		AppConfig: appconfig,
-		Paginator: paginator,
 	}
 }
 
 func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.CommentResponse, error){
-	paginator, err := pagination.New(pagination.Options{
-		GinContext: c,
-		DB: cs.DB,
-		Model: &models_place.Comment{},
-		Limit: 20,
-		DefaultCursor: nil,
-	})
+	pagedComments, paginator, err := services_paginator.Paginate[models_place.Comment](comments, c, cs.DB, 20)
 	if err != nil {
-		return nil, nil, err
-	}
-	var pagedComments []models_place.Comment
-	if err := paginator.Find(comments, &pagedComments); err != nil {
 		return nil, nil, err
 	}
 

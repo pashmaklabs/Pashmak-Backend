@@ -11,12 +11,10 @@ import (
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
-	services_pagination "pashmak.com/pashmak/services/pagination"
 )
 
 func CommentRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconfig *bootstrap.AppConfig) {
-	paginationService := services_pagination.NewPaginationService(db)
-	commentService := services_comment.NewCommentService(db, appconfig, paginationService)
+	commentService := services_comment.NewCommentService(db, appconfig)
 	commentController := controllers_comment.NewCommentController(commentService)
 	authService := services_auth.NewAuthService(db, redis, appconfig)
 	authMiddleware := middlewares_auth.NewAuthMiddleware(authService)

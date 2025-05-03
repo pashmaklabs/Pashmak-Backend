@@ -7,15 +7,13 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	"pashmak.com/pashmak/controllers/place"
 	"pashmak.com/pashmak/services/comment"
-	services_pagination "pashmak.com/pashmak/services/pagination"
 	"pashmak.com/pashmak/services/place"
 )
 
 
 func PlaceRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconfig *bootstrap.AppConfig) {
-	paginationService := services_pagination.NewPaginationService(db)
 	placeService := services_place.NewPlaceService(db, appconfig)
-	commentService := services_comment.NewCommentService(db, appconfig, paginationService)
+	commentService := services_comment.NewCommentService(db, appconfig)
 	placeController := controllers_place.NewPlaceController(placeService, commentService)
 
 	place := router.Group("/places")
