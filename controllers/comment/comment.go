@@ -161,10 +161,10 @@ func (cc *CommentController) RemoveReaction(c *gin.Context){
 
 	err := cc.CommentService.RemoveRection(userpayload, commentToken)
 	if err != nil{
-		if err.Error() == "no comments found"{
+		if err.Error() == "comment not found"{
 			c.JSON(http.StatusNotFound, gin.H{
 				"status": "success",
-				"message": "دیدگاهی برای این مکان ثبت نشده است",
+				"message": "دیدگاه یافت نشد",
 			})
 			return
 		}else{

@@ -24,21 +24,19 @@ func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentServ
 	}
 }
 
-func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(uint, uint, error){
-	var likes uint
-	var dislikes uint
-	query := `
-		SELECT 
-			COUNT(*)
-		FROM reactions
-		WHERE reaction_type = ? AND comment_id = ?` 
-
-	if err := cs.DB.Raw(query, 0, commentID).Scan(&likes).Error; err != nil{
-		return 0, 0, nil
-	}
-	if err := cs.DB.Raw(query, 1, commentID).Scan(&dislikes).Error; err != nil{
-		return 0, 0, nil
-	}
+func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(int64, int64, error){
+	var likes int64
+	var dislikes int64
+	if err := cs.DB.Model(&models_place.Reaction{}).
+		Where("reaction_type = ? AND comment_id = ?", 0, commentID).
+		Count(&likes).Error; err != nil{
+			return 0, 0, nil
+		}
+	if err := cs.DB.Model(&models_place.Reaction{}).
+		Where("reaction_type = ? AND comment_id = ?", 0, commentID).
+		Count(&likes).Error; err != nil{
+			return 0, 0, nil
+		}
 	return likes, dislikes, nil
 }
 
