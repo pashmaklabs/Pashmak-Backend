@@ -12,17 +12,20 @@ import (
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
+	sp "pashmak.com/pashmak/services/pagination"
 )
 
 type CommentService struct {
 	DB        *gorm.DB
 	AppConfig *bootstrap.AppConfig
+	Paginator *sp.PaginationService
 }
 
-func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentService {
+func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig, paginator *sp.PaginationService) *CommentService {
 	return &CommentService{
 		DB:        db,
 		AppConfig: appconfig,
+		Paginator: paginator,
 	}
 }
 
