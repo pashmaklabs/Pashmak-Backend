@@ -33,8 +33,8 @@ func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(int64, int6
 			return 0, 0, nil
 		}
 	if err := cs.DB.Model(&models_place.Reaction{}).
-		Where("reaction_type = ? AND comment_id = ?", 0, commentID).
-		Count(&likes).Error; err != nil{
+		Where("reaction_type = ? AND comment_id = ?", 1, commentID).
+		Count(&dislikes).Error; err != nil{
 			return 0, 0, nil
 		}
 	return likes, dislikes, nil
@@ -94,7 +94,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 		return err
 	}
 
-	placeTokenInt, err := strconv.ParseUint(placeToken, 10, 32)
+	placeTokenInt, err := strconv.ParseUint(placeToken, 10, 64)
 	if err != nil {
 		return err
 	}
