@@ -120,7 +120,7 @@ func (pc *ProfileController) GetUserAvatarObject(c *gin.Context) {
 
 	c.Header("ETag", eTag)
 	c.Header("Cache-Control", "public, max-age=3600")
-	c.Header("Content-Type", "image/png")
+	c.Header("Content-Type", "image/webp")
 
 	_, err = io.Copy(c.Writer, avatarStream)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"log"
 	"mime/multipart"
 	"path/filepath"
 	"time"
@@ -88,7 +87,7 @@ func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, err
 	return ext, nil
 }
 
-func (ps *ProfileService) uploadImage(file *multipart.FileHeader, ext string, user models_auth.User)(string, minio.UploadInfo, error){
+func (ps *ProfileService) uploadImage(file *multipart.FileHeader, user models_auth.User)(string, minio.UploadInfo, error){
 	var buf bytes.Buffer
 	fileReader, err := file.Open()
 	if err != nil {
@@ -102,7 +101,7 @@ func (ps *ProfileService) uploadImage(file *multipart.FileHeader, ext string, us
 	}
 
 	if err = webp.Encode(&buf, img, &webp.Options{Lossless: false, Quality: 30}); err != nil {
-		log.Println(err)
+		return "", minio.UploadInfo{}, err
 	}
 	objectName := fmt.Sprintf("%s%s", uuid.New().String(), ".webp")
 	Reader := bytes.NewReader(buf.Bytes())
@@ -168,8 +167,7 @@ func (ps *ProfileService) GetAvatar(ctx context.Context, fileName string, height
 
 	resized := imaging.Resize(img, height, 0, imaging.Lanczos)
 	buf := new(bytes.Buffer)
-	err = imaging.Encode(buf, resized, imaging.PNG)
-	if err != nil {
+	if err = webp.Encode(buf, resized, &webp.Options{Lossless: false, Quality: 30}); err != nil {
 		return nil, "", err
 	}
 
@@ -191,12 +189,12 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 		return nil, fmt.Errorf("failed to get file from form: %w", err)
 	}
 
-	ext, err := ps.validateImage(file)
+	_, err = ps.validateImage(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate image: %w", err)
 	}
 	
-	objectName, info, err := ps.uploadImage(file, ext, user)
+	objectName, info, err := ps.uploadImage(file, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to put object to minio: %w", err)
 	}
@@ -213,10 +211,11 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (res
 	// TODO: Remove old avatar if exists
 	// TODO: Validate MIME Type
 	// TODO: Sanitize File Content: Use an image processing library (e.g., imaging or bimg) to validate and sanitize the image, ensuring it's a valid image and not malicious.
-	// TODO: Compress using webp
 	// TODO: Resize the image to a standard size (e.g., 256x256 pixels) using an image processing library.
-	// TODO: Authenticate Requests
+	// TODO: Asynchronous Compression
+	// TODO: Some suggestions: https://x.com/i/grok/share/LOi6Xexr8xBCaX49J7t0LrUgN
 	// TODO: Rate Limiting
+	// TODO: Store Thumbnails, Medium, Full-size
 }
 
 func (ps *ProfileService) UpdateUserProfile(userInfo services_auth.UserInfo, payload serializers_profile.UpdateUserProfileRequest) error{
