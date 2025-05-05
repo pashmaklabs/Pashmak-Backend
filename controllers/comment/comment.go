@@ -122,7 +122,7 @@ func (cc *CommentController) AddNewComment(c *gin.Context){
 		return
 	}
 
-	placeToken := c.Param("token")
+	placeToken := c.Param("id")
 	userinfo, exists := c.Get("user")
 	
 	if !exists{
