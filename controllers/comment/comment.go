@@ -23,7 +23,7 @@ func NewCommentController(commentservice *services_comment.CommentService) *Comm
 
 func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 	token := c.Param("placeToken")
-	comments, err := cc.CommentService.GetCommentsByPlaceToken(token)
+	paginator, pagedComments, err := cc.CommentService.GetCommentsByPlaceToken(c, token)
 	if err != nil {
 		if err.Error() == "no comments found"{
 			c.JSON(http.StatusNotFound, gin.H{
@@ -39,9 +39,11 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"comments": comments,
+		"comments": pagedComments,
+		"Pagination": paginator.PageInfo,
 	})
 }
 

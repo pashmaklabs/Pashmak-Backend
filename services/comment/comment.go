@@ -4,12 +4,15 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+	"github.com/rosberry/go-pagination"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
+	services_paginator "pashmak.com/pashmak/services/pagination"
 )
 
 type CommentService struct {
@@ -40,28 +43,17 @@ func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(int64, int6
 	return likes, dislikes, nil
 }
 
-func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_comment.CommentResponse, error) {
-	var comments []models_place.Comment
-
-	err := cs.DB.
-		Where("place_id = ?", token).
-		Preload("User").      // use if you want to use comment.User
-		Preload("Reactions"). // use if you want to use comment.Reaction
-		Find(&comments).Error
-
+func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.CommentResponse, error){
+	pagedComments, paginator, err := services_paginator.Paginate[models_place.Comment](comments, c, cs.DB, 20)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if len(comments) == 0 {
-		return nil, errors.New("no comments found")
-	}
-
-	commentDTOs := make([]serializers_comment.CommentResponse, len(comments))
-	for i, comment := range comments {
+	commentDTOs := make([]serializers_comment.CommentResponse, len(pagedComments))
+	for i, comment := range pagedComments {
 		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
 		if err != nil{
-			return nil, err
+			return nil, nil, err
 		}
 		commentDTOs[i] = serializers_comment.CommentResponse{
 			ID:      comment.ID,
@@ -79,7 +71,30 @@ func (cs *CommentService) GetCommentsByPlaceToken(token string) ([]serializers_c
 		}
 	}
 
-	return commentDTOs, nil
+	return paginator, commentDTOs, nil
+}
+
+func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
+	var comments []models_place.Comment
+	commentsQuery := cs.DB.
+		Where("place_id = ?", token).
+		Preload("User").      // use if you want to use comment.User
+		Preload("Reactions"). // use if you want to use comment.Reactions
+		Find(&comments)
+
+	if commentsQuery.Error != nil {
+		return nil, nil, commentsQuery.Error
+	}
+
+	if len(comments) == 0 {
+		return nil, nil, errors.New("no comments found")
+	}
+
+	paginator, commentDTOs, err := cs.PaginateComments(c, commentsQuery)
+	if err != nil{
+		return nil, nil, err
+	}
+	return paginator, commentDTOs, nil
 }
 
 func (cs *CommentService) GetUserByGmail(email string) (models_auth.User, error) {

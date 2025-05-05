@@ -1,13 +1,13 @@
 package routers_place
 
 import (
-	"gorm.io/gorm"
-	"pashmak.com/pashmak/services/place"
-	"pashmak.com/pashmak/services/comment"
-	"pashmak.com/pashmak/controllers/place"
-	"pashmak.com/pashmak/bootstrap"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+	"pashmak.com/pashmak/bootstrap"
+	"pashmak.com/pashmak/controllers/place"
+	"pashmak.com/pashmak/services/comment"
+	"pashmak.com/pashmak/services/place"
 )
 
 
