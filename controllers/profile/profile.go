@@ -92,10 +92,7 @@ func (pc *ProfileController) GetUserAvatarObject(c *gin.Context) {
 				"message": "فرمت فایل نامعتبر است",
 			})
 		case services_profile.ErrNotFound:
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "کاربر یا تصویر آواتار پیدا نشد",
-			})
+			c.Status(http.StatusNotFound)
 		case services_profile.ErrPermissionDenied:
 			c.JSON(http.StatusForbidden, gin.H{
 				"status":  "error",
