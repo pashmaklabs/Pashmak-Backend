@@ -10,8 +10,8 @@ type CommentResponse struct {
 	Rating  uint         `json:"rating" binding:"required,min=0,max=5"`
 	User    UserResponse `json:"user"`
 	// Reactions []models_place.Reaction `json:"reactions"`
-	Likes     uint      `json:"likes"`
-	Dislikes  uint      `json:"dislikes"`
+	Likes     int64      `json:"likes"`
+	Dislikes  int64      `json:"dislikes"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
