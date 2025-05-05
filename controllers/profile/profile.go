@@ -92,10 +92,7 @@ func (pc *ProfileController) GetUserAvatarObject(c *gin.Context) {
 				"message": "فرمت فایل نامعتبر است",
 			})
 		case services_profile.ErrNotFound:
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "کاربر یا تصویر آواتار پیدا نشد",
-			})
+			c.Status(http.StatusNotFound)
 		case services_profile.ErrPermissionDenied:
 			c.JSON(http.StatusForbidden, gin.H{
 				"status":  "error",
@@ -120,7 +117,7 @@ func (pc *ProfileController) GetUserAvatarObject(c *gin.Context) {
 
 	c.Header("ETag", eTag)
 	c.Header("Cache-Control", "public, max-age=3600")
-	c.Header("Content-Type", "image/png")
+	c.Header("Content-Type", "image/webp")
 
 	_, err = io.Copy(c.Writer, avatarStream)
 	if err != nil {
