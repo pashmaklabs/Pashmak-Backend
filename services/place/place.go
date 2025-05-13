@@ -54,7 +54,8 @@ func (ps *PlaceService) SearchPlace(name string) ([]sp.GetPlaceByIDResponse, err
 			name,
 			amenity,
 			ST_Y(ST_Transform(way, 4326)) as latitude,
-			ST_X(ST_Transform(way, 4326)) as longitude
+			ST_X(ST_Transform(way, 4326)) as longitude,-
+			osm_id as id
 		FROM planet_osm_point
 		WHERE name ILIKE ?
 		LIMIT 10`
