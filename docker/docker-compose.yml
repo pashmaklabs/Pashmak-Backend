@@ -12,8 +12,8 @@ services:
     volumes:
       - 'minio_data:/data'
     environment:
-      - MINIO_ROOT_USER=minio
-      - MINIO_ROOT_PASSWORD=minio
+      - MINIO_ROOT_USER=pashmak_minio
+      - MINIO_ROOT_PASSWORD=pashmak_minio
       - MINIO_DEFAULT_BUCKETS=pashmak
     command: server /data --console-address ":9001"
 
