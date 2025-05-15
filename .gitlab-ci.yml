@@ -4,7 +4,7 @@ stages:
   - deploy
 
 variables:
-  IMAGE_NAME: registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.5
+  IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_REGISTRY_IMAGE_TAG
 
 build:
   stage: build
@@ -12,7 +12,7 @@ build:
   services:
     - docker:dind
   script:
-    - docker login -u bluh-bluh -p quA9pwW9miJIqyq8A1! registry.hamdocker.ir/bluh-bluh
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t $IMAGE_NAME .
     - docker push $IMAGE_NAME
   only:
@@ -39,7 +39,7 @@ deploy:
     - docker:dind
   script:
     - echo "Deploying $IMAGE_NAME..."
-    - docker login -u bluh-bluh -p quA9pwW9miJIqyq8A1! registry.hamdocker.ir/bluh-bluh
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker pull $IMAGE_NAME
     - echo "Add deployment commands here (e.g., deploy to Kubernetes, ECS, or a server)"
   only:
