@@ -1,55 +1,23 @@
-stages:
-  - build
-  - test
-  - deploy
-
-variables:
-  IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_REGISTRY_IMAGE_TAG
-
-build:
+darkube_build_backend_bluh-bluh_hamravesh-c13:
+  image: hamravesh.hamdocker.ir/public/darkube-cli:v1.1
+  interruptible: true
+  only:
+    refs:
+    - main
+  script:
+  - IMAGE_ADDRESS="registry.hamdocker.ir/bluh-bluh/pashmak-backend"
+  - 'darkube build --push -t $IMAGE_ADDRESS:$CI_COMMIT_SHORT_SHA -t $IMAGE_ADDRESS:$CI_COMMIT_REF_SLUG
+    --workdir . --file ./Dockerfile --build-context . '
   stage: build
-  image: docker:24.0.7
-  services:
-    - name: docker:24.0.7-dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
-  before_script:
-    - docker version
-    - docker info --format '{{.ServerVersion}}' || echo "Docker daemon not reachable"
-    - sleep 5
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $IMAGE_NAME .
-    - docker push $IMAGE_NAME
+  
+darkube_deploy_backend_bluh-bluh_hamravesh-c13:
+  image: hamravesh.hamdocker.ir/public/darkube-cli:v1.1
+  interruptible: true
   only:
+    refs:
     - main
-    - develop
-
-test:
-  stage: test
-  image: debian:bookworm-slim
-  before_script:
-    - apt-get update && apt-get install -y ca-certificates libwebp7
   script:
-    - echo "Running basic checks (no tests available)"
-    - ./app --version || echo "Version check not implemented, skipping"
-    - test -f ./app && echo "Binary exists"
-  only:
-    - main
-    - develop
-
-deploy:
+  - darkube deploy --token ${DEPLOY_TOKEN_BACKEND_BLUH_BLUH_HAMRAVESH_C13} --app-id
+    ${APP_ID_BACKEND_BLUH_BLUH_HAMRAVESH_C13} --image-tag ${CI_COMMIT_SHORT_SHA} --job-id
+    ${CI_JOB_ID}
   stage: deploy
-  image: docker:24
-  services:
-    - docker:dind
-  script:
-    - echo "Deploying $IMAGE_NAME..."
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $IMAGE_NAME
-    - echo "Add deployment commands here (e.g., deploy to Kubernetes, ECS, or a server)"
-  only:
-    - main
