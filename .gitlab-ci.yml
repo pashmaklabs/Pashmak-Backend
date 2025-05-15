@@ -5,11 +5,7 @@ darkube_build_backend_bluh-bluh_hamravesh-c13:
     refs:
     - main
   script:
-  - IMAGE_ADDRESS="registry.hamdocker.ir/bluh-bluh/pashmak-backend"
-  - CI_COMMIT_SHORT_SHA=2ff9f7f9
-  - CI_COMMIT_REF_SLUG=1.0.5
-  
-  - 'darkube build --push -t $IMAGE_ADDRESS:$CI_COMMIT_SHORT_SHA -t $IMAGE_ADDRESS:$CI_COMMIT_REF_SLUG
+  - 'darkube build --push -t registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.5
     --workdir . --file ./Dockerfile --build-context . '
   stage: build
   
