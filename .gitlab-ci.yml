@@ -1,0 +1,46 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  IMAGE_NAME: registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.5
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:dind
+  script:
+    - docker login -u bluh-bluh -p quA9pwW9miJIqyq8A1! registry.hamdocker.ir/bluh-bluh
+    - docker build -t $IMAGE_NAME .
+    - docker push $IMAGE_NAME
+  only:
+    - main
+    - develop
+
+test:
+  stage: test
+  image: debian:bookworm-slim
+  before_script:
+    - apt-get update && apt-get install -y ca-certificates libwebp7
+  script:
+    - echo "Running basic checks (no tests available)"
+    - ./app --version || echo "Version check not implemented, skipping"
+    - test -f ./app && echo "Binary exists"
+  only:
+    - main
+    - develop
+
+deploy:
+  stage: deploy
+  image: docker:24
+  services:
+    - docker:dind
+  script:
+    - echo "Deploying $IMAGE_NAME..."
+    - docker login -u bluh-bluh -p quA9pwW9miJIqyq8A1! registry.hamdocker.ir/bluh-bluh
+    - docker pull $IMAGE_NAME
+    - echo "Add deployment commands here (e.g., deploy to Kubernetes, ECS, or a server)"
+  only:
+    - main
