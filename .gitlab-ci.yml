@@ -4,6 +4,8 @@ darkube_build_backend_bluh-bluh_hamravesh-c13:
   only:
     refs:
     - main
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY_IMAGE:$CI_REGISTRY_IMAGE_TAG"
   script:
   - 'darkube build --push -t registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.5
     --workdir . --file ./Dockerfile --build-context . '
