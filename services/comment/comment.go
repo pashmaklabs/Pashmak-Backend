@@ -114,6 +114,31 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 		return err
 	}
 
+	var place models_place.Place
+	if err := cs.DB.First(&place, placeTokenInt).Error; err != nil {
+		var count int64
+		err := cs.DB.Raw(`
+			SELECT COUNT(*)
+			FROM planet_osm_point
+			WHERE osm_id = ?
+		`, placeTokenInt).Scan(&count).Error
+		if err != nil {
+			return err
+		}
+		if count > 0{
+			err := cs.DB.Create(&models_place.Place{
+				ID: uint(placeTokenInt),
+				// Name should be replaced with real name
+				Name: "Unknown",
+			}).Error
+			if err != nil {
+				return err
+			}
+		} else if count == 0{
+			return errors.New("place not found")
+		}
+	}
+
 	result := cs.DB.Create(&models_place.Comment{
 		Content:   payload.Content,
 		Rating:    payload.Rating,
