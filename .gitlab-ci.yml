@@ -1,0 +1,24 @@
+darkube_build_backend_bluh-bluh_hamravesh-c13:
+  image: hamravesh.hamdocker.ir/public/darkube-cli:v1.1
+  interruptible: true
+  only:
+    refs:
+    - main
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY_IMAGE:$CI_REGISTRY_IMAGE_TAG"
+  script:
+  - 'darkube build --push -t registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.5
+    --workdir . --file ./Dockerfile --build-context . '
+  stage: build
+  
+darkube_deploy_backend_bluh-bluh_hamravesh-c13:
+  image: hamravesh.hamdocker.ir/public/darkube-cli:v1.1
+  interruptible: true
+  only:
+    refs:
+    - main
+  script:
+  - darkube deploy --token ${DEPLOY_TOKEN_BACKEND_BLUH_BLUH_HAMRAVESH_C13} --app-id
+    ${APP_ID_BACKEND_BLUH_BLUH_HAMRAVESH_C13} --image-tag ${CI_COMMIT_SHORT_SHA} --job-id
+    ${CI_JOB_ID}
+  stage: deploy
