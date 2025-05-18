@@ -39,6 +39,8 @@ type AppConfig struct {
 	CookieDomain  string
 
 	Environment string
+
+	OpenaiApiKey string
 }
 
 var (
@@ -69,6 +71,8 @@ var (
 	MINIO_PASSWORD string
 
 	CookieDomain string
+
+	OPENAI_API_KEY string
 )
 
 func LoadEnvVars() *AppConfig {
@@ -121,6 +125,8 @@ func LoadEnvVars() *AppConfig {
 		CookieDomain = ""
 	}
 
+	OPENAI_API_KEY = os.Getenv("OPENAI_API_KEY")
+
 	return &AppConfig{
 		PashmakApiUrl:    PASHMAK_API_URL,
 		ServerHost:       SERVER_HOST,
@@ -139,10 +145,11 @@ func LoadEnvVars() *AppConfig {
 		RedisPort:        REDIS_PORT,
 		RedisHost:        REDIS_HOST,
 		RedisPassword:    REDIS_PASSWORD,
-		MinioHost: MINIO_HOST,
-		MinioUser: MINIO_USER,
-		MinioPassword: MINIO_PASSWORD,
+		MinioHost:        MINIO_HOST,
+		MinioUser:        MINIO_USER,
+		MinioPassword:    MINIO_PASSWORD,
 		AllowdOrigins:    AllowdOrigins,
 		CookieDomain:     CookieDomain,
+		OpenaiApiKey:     OPENAI_API_KEY,
 	}
 }

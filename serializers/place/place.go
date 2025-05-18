@@ -1,6 +1,7 @@
 package serializers_place
 
 type GetPlaceByIDResponse struct {
+	OsmID     uint    `json:"osm_id"`
 	Name      string  `json:"name"`
 	Amenity   string  `json:"amenity"`
 	Latitude  float64 `json:"latitude"`
