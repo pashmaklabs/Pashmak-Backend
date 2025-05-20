@@ -83,7 +83,7 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	q := c.Query("q")
 	lat := c.Query("lat")
-	long := c.Query("long")
+	long := c.Query("lng")
 	query := fmt.Sprintf("Query: %s\nLatitude: %s\nLongitude: %s", q, lat, long)
 	places, err := pc.PlaceService.SearchPlace(query)
 	if err != nil {
