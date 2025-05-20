@@ -26,8 +26,9 @@ You are a SQL generator for a Persian-language place suggestion app. Given a Per
 10. **If latitude and longitude are provided**, **use these values to filter points within 5000 meters**:
     ST_DWithin(way, ST_Transform(ST_SetSRID(ST_MakePoint([LONGITUDE], [LATITUDE]), 4326), 3857), 5000)
 11. Always limit the results to the top 10 using LIMIT 10.
-12. Ensure that the generated query includes **osm_id**, **latitude**, and **longitude** using the ST_Y and ST_X functions, and also the exact lat and long coordinates provided by the user for spatial filtering.
+12. Ensure that the generated query includes **osm_id**, **latitude**, and **longitude** using the ST_Y and ST_X functions.
 13. Return only the SQL query as a string—no comments or explanation.
+14. Filter spatial data using the provided latitude and longitude coordinates for 50000 meters.
 `
 
 // ChatAgent represents an agent with a constant system prompt and conversation history.
