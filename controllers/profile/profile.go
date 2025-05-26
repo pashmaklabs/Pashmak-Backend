@@ -126,13 +126,22 @@ func (pc *ProfileController) GetUserAvatarObject(c *gin.Context) {
 }
 
 func (pc *ProfileController) UploadUserAvatar(c *gin.Context) {
-	userID := c.Param("id")
-	if _, err := strconv.Atoi(userID); err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-			return
+	value, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
 	}
+	userinfo := value.(services_auth.UserInfo)
+	// userID := c.Param("id")
+	// if _, err := strconv.Atoi(userID); err != nil {
+	// 	c.AbortWithStatus(http.StatusNotFound)
+	// 		return
+	// }
 	
-	resp, err := pc.ProfileService.UploadUserAvatar(c, userID)
+	resp, err := pc.ProfileService.UploadUserAvatar(c, userinfo.ID)
 	if err != nil {
 		if err == services_profile.ErrNotFound {
 			c.AbortWithStatus(http.StatusNotFound)
