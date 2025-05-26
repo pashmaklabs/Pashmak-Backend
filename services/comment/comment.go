@@ -49,6 +49,12 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*
 		return nil, nil, err
 	}
 
+	// Reverse the pagedComments slice
+	for i := 0; i < len(pagedComments)/2; i++ {
+		j := len(pagedComments) - 1 - i
+		pagedComments[i], pagedComments[j] = pagedComments[j], pagedComments[i]
+	}
+	
 	commentDTOs := make([]serializers_comment.CommentResponse, len(pagedComments))
 	for i, comment := range pagedComments {
 		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)

@@ -174,7 +174,7 @@ func (ps *ProfileService) GetAvatar(ctx context.Context, fileName string, height
 	return io.NopCloser(buf), objInfo.ETag, nil
 }
 
-func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID string) (resp gin.H, err error) {
+func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID uint) (resp gin.H, err error) {
 	var user models_auth.User
 	result := ps.DB.First(&user, "id = ?", userID)
 	if result.Error != nil {

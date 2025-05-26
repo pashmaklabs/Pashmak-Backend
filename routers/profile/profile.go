@@ -25,10 +25,11 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *
 	{
 		profile.GET("/me", authMiddleware.LoginMiddleware(), profileController.GetMyProfile)
 		profile.POST("/me/update",
+			// turn into patch
 			middlewares_validation.ValidationMiddleware[serializers_profile.UpdateUserProfileRequest](),
 			authMiddleware.LoginMiddleware(), profileController.UpdateUserProfile)
 		profile.GET("/:id", profileController.GetProfileByID)
 		profile.GET("/avatar/:file_uuid", profileController.GetUserAvatarObject)
-		profile.POST("/avatar/:id", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)
+		profile.POST("/avatar/upload", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)
 	}
 }
