@@ -135,6 +135,13 @@ func (cc *CommentController) AddNewComment(c *gin.Context){
 	userpayload := userinfo.(services_auth.UserInfo)
 	err := cc.CommentService.AddNewComment(placeToken, userpayload, body)
 	if err != nil{
+		if err.Error() == "place not found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "مکان یافت نشد",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
 			"message": "مشکل غیر منتظره ای رخ داد",
