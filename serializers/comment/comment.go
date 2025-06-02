@@ -35,3 +35,7 @@ type AddReactionRequest struct {
 	ReactionType uint `json:"reaction_type"`
 	// FIXME: Validate
 }
+
+type SendReportRequest struct {
+	Reason string `json:"reason" binding:"required,max=500"`
+}

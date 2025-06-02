@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	models_auth "pashmak.com/pashmak/models/auth"
 	models_place "pashmak.com/pashmak/models/place"
+	models_report "pashmak.com/pashmak/models/report"
 )
 
 func getModels() []interface{} {
@@ -17,6 +18,7 @@ func getModels() []interface{} {
 		&models_place.Comment{},
 		&models_place.Place{},
 		&models_place.Reaction{},
+		&models_report.Report{},
 	}
 	return all_models
 }
