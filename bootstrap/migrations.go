@@ -31,6 +31,25 @@ func MakeMigrations(db *gorm.DB) {
 			log.Println("Error migrating model: ", err.Error())
 		}
 	}
+
+	SetupRoleAndPermissions(db)
+
+
+	// 3. Create a user with a valid role_id
+        // user := models_auth.User{
+        //     FirstName: "کاربر پشمک",
+        //     LastName:  "",
+        //     Email:     "bzrwbd@hi2.in",
+        //     Password:  "", // Add password hashing if needed
+        //     Avatar_url: "",
+        //     Score:     0,
+        //     RoleID:    adminRole.ID, // Use the ID from the created Admin role
+        // }
+        // if err := tx.Where("email = ?", user.Email).FirstOrCreate(&user).Error; err != nil {
+        //     log.Printf("Failed to create user %s: %v", user.Email, err)
+        //     return err
+        // }
+	
 	// INFO: Database indexing for efficiency of comments querying
 	// db.Exec("CREATE INDEX IF NOT EXISTS idx_comments_place_id ON comments (place_id)")
 }
