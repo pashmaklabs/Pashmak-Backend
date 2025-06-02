@@ -218,3 +218,7 @@ func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, comment
 	}
 	return nil
 }
+
+func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, commentID int) error{
+	
+}

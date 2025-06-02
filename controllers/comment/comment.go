@@ -189,3 +189,38 @@ func (cc *CommentController) RemoveReaction(c *gin.Context){
 	}
 	c.Status(http.StatusOK)
 }
+
+func (cc *CommentController) ReportComment(c *gin.Context){
+	commentID, _ := strconv.Atoi(c.Param("id"))
+	userinfo, exists := c.Get("user")
+	
+	if !exists{
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status": "error",
+			"message": "ابتدا باید وارد شوید",
+		})
+		return
+	}
+	userpayload := userinfo.(services_auth.UserInfo)
+	err := cc.CommentService.ReportComment(userpayload, commentID)
+	if err != nil{
+		if err.Error() == "place not found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "مکان یافت نشد",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیر منتظره ای رخ داد",
+		})
+		log.Println(err.Error())
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"status": "success",
+		"message": "گزارش با موفقیت ثبت شد",
+	})
+}
