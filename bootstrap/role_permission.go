@@ -41,6 +41,9 @@ func SetupRoleAndPermissions(db *gorm.DB){
             return err
         }
 
+		if (ADMIN_PASSWORD == "" || ADMIN_EMAIL == "") {
+			log.Println("Warning: ADMIN_EMAIL or ADMIN_PASSWORD is empty")
+		}
 		AdminHashedPass, err := bcrypt.GenerateFromPassword([]byte(ADMIN_PASSWORD), 10)
 		if err != nil {
 			return err

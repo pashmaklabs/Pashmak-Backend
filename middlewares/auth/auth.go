@@ -62,7 +62,7 @@ func HasPermission(db *gorm.DB, userID uint, permissionName string) bool {
 
 func PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
     return func(c *gin.Context) {
-        user, exists := c.Get("user") // Assume userID is set (e.g., from JWT middleware)
+        user, exists := c.Get("user")
 		userinfo := user.(services_auth.UserInfo)
         if !exists {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
@@ -77,5 +77,7 @@ func PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
         }
 
         c.Next()
+
+		// Add middleware in this format: PermissionMiddleware(db, "create_post")
     }
 }
