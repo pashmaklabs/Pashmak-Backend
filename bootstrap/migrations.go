@@ -14,6 +14,9 @@ func getModels() []interface{} {
 		// authentication
 		&models_auth.User{},
 		&models_auth.JWTBlacklist{},
+		&models_auth.Role{},
+		&models_auth.Permission{},
+		&models_auth.RolePermission{},
 		&models_place.Comment{},
 		&models_place.Place{},
 		&models_place.Reaction{},
