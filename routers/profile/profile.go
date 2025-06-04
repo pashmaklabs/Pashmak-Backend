@@ -31,5 +31,6 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *
 		profile.GET("/:id", profileController.GetProfileByID)
 		profile.GET("/avatar/:file_uuid", profileController.GetUserAvatarObject)
 		profile.POST("/avatar/upload", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)
+		profile.GET("/me/search/history", authMiddleware.LoginMiddleware(), profileController.FetchSearchHistory)
 	}
 }

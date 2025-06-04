@@ -216,3 +216,37 @@ func (pc *ProfileController) UpdateUserProfile(c *gin.Context){
 		"message": "آپدیت پروفایل با موفقیت انجام شد",
 	})
 }
+
+func (pc *ProfileController) FetchSearchHistory(c *gin.Context){
+	userinfo, exists := c.Get("user")
+	
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+	userpayload := userinfo.(services_auth.UserInfo)
+	history, err := pc.ProfileService.FetchSearchHistory(userpayload)
+	if err != nil {
+		if err.Error() == "no comments found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "success",
+				"message": "دیدگاهی برای این مکان ثبت نشده است",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"history": history,
+	})
+}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/openai/openai-go"
 	"gorm.io/gorm"
-	models_auth "pashmak.com/pashmak/models/auth"
 )
 
 const SystemPrompt = `
@@ -49,7 +48,6 @@ type SQLChatAgent struct {
 type SearchHistory struct {
 	gorm.Model
 	UserID    *uint            `gorm:"index"`
-	User      models_auth.User `gorm:"foreignKey:UserID"`
 	SessionID string           `gorm:"index"`
 	Query     string           `gorm:"not null;size:1000"`
 }
