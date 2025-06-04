@@ -17,7 +17,7 @@ func PlaceRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig
 	openaiService := services_openai.NewOpenAIService(appConfig.OpenaiApiKey)
 	placeService := services_place.NewPlaceService(db, appConfig, openaiService)
 	commentService := services_comment.NewCommentService(db, appConfig)
-	placeController := controllers_place.NewPlaceController(placeService, commentService)
+	placeController := controllers_place.NewPlaceController(placeService, commentService, appConfig)
 	authService := services_auth.NewAuthService(db, redis, appConfig)
 	authMiddleware := middlewares_auth.NewAuthMiddleware(authService)
 

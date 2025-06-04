@@ -48,7 +48,7 @@ type SQLChatAgent struct {
 
 type SearchHistory struct {
 	gorm.Model
-	UserID    uint             `gorm:"not null"`
+	UserID    *uint            `gorm:"index"`
 	User      models_auth.User `gorm:"foreignKey:UserID"`
 	SessionID string           `gorm:"index"`
 	Query     string           `gorm:"not null;size:1000"`

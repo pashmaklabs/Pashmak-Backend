@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"pashmak.com/pashmak/bootstrap"
 	serializers_place "pashmak.com/pashmak/serializers/place"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
@@ -18,12 +19,14 @@ import (
 type PlaceController struct {
 	PlaceService   *services_place.PlaceService
 	CommnetService *services_comment.CommentService
+	AppConfig 	*bootstrap.AppConfig
 }
 
-func NewPlaceController(placeService *services_place.PlaceService, commentService *services_comment.CommentService) *PlaceController {
+func NewPlaceController(placeService *services_place.PlaceService, commentService *services_comment.CommentService, appConfig *bootstrap.AppConfig) *PlaceController {
 	return &PlaceController{
 		PlaceService:   placeService,
 		CommnetService: commentService,
+		AppConfig: appConfig,
 	}
 }
 
@@ -99,22 +102,21 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 
 
 	sessionID, err := c.Cookie("session_id")
-    if err != nil || sessionID == "" {
-        sessionID = uuid.New().String()
-        c.SetCookie("session_id", sessionID, 30*24*3600, "/", "", false, true) // consider
-    }
 	userinfo, loggedIn := c.Get("user")
-	if loggedIn{
-		userpayload := userinfo.(services_auth.UserInfo)
-		log.Println("v ...any")
-		// Get user_id if logged in
-		var userID uint
-		userID = userinfo.(services_auth.UserInfo).ID // Adjust to your UserInfo struct
-		
-		err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q)
-		if err != nil{
-			log.Printf("Failed to save search query fo user: %v, %v", userpayload.ID, err)
-		}
+    if !loggedIn && (err != nil || sessionID == "") {
+        sessionID = uuid.New().String()
+        c.SetCookie("session_id", sessionID, 30*24*3600, "/", pc.AppConfig.CookieDomain, false, true)
+    }
+	
+	var userID *uint
+    if loggedIn {
+        id := userinfo.(services_auth.UserInfo).ID
+        userID = &id
+    }
+	log.Println(sessionID)
+	err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q)
+	if err != nil{
+		log.Printf("Failed to save search query fo user: %v, %v", userID, err)
 	}
 	
 	c.JSON(200, gin.H{

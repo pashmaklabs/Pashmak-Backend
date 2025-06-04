@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
-	models "pashmak.com/pashmak/models/openai"
 	oa "pashmak.com/pashmak/models/openai"
 	sp "pashmak.com/pashmak/serializers/place"
 	services_openai "pashmak.com/pashmak/services/openai"
@@ -56,9 +54,8 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
 	return &results[0], nil
 }
 
-func (ps *PlaceService) SaveSearch(userID uint, sessionID string, loggedIn bool, query string) error {
-	// Save to search history
-	history := models.SearchHistory{
+func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool, query string) error {
+	history := oa.SearchHistory{
 		UserID:    userID,
 		SessionID: sessionID,
 		Query:     query,
@@ -67,35 +64,7 @@ func (ps *PlaceService) SaveSearch(userID uint, sessionID string, loggedIn bool,
 		history.SessionID = "" // Clear session_id for logged-in users
 	}
 
-    // // Use transaction to update or create history
-    // err = h.DB.Transaction(func(tx *gorm.DB) error {
-    //     var history models.SearchHistory
-    //     result := tx.Where("identifier = ?", identifier).First(&history)
-    //     if result.Error == gorm.ErrRecordNotFound {
-    //         history = models.SearchHistory{
-    //             Identifier:  identifier,
-    //             IsAnonymous: isAnonymous,
-    //             Queries:     []models.QueryEntry{newEntry},
-    //         }
-    //         return tx.Create(&history).Error
-    //     } else if result.Error != nil {
-    //         return result.Error
-    //     }
-
-    //     history.Queries = append(history.Queries, newEntry)
-    //     // Limit to last 50 queries
-    //     if len(history.Queries) > 50 {
-    //         history.Queries = history.Queries[len(history.Queries)-50:]
-    //     }
-    //     return tx.Save(&history).Error
-    // })
-    // if err != nil {
-    //     c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save search history"})
-    //     return
-    // }
-
-
-	if err := ps.DB.Create(history); err != nil{
+	if err := ps.DB.Create(&history); err != nil{
 		return err.Error
 	}
 	return nil
