@@ -2,12 +2,14 @@ package controllers_place
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	serializers_place "pashmak.com/pashmak/serializers/place"
+	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
 	services_place "pashmak.com/pashmak/services/place"
 )
@@ -93,6 +95,17 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 		})
 		return
 	}
+
+	userinfo, exists := c.Get("user")
+	if exists{
+		userpayload := userinfo.(services_auth.UserInfo)
+		log.Println("v ...any")
+		err = pc.PlaceService.SaveSearch(userpayload, q)
+		if err != nil{
+			log.Printf("Failed to save search query fo user: %v, %v", userpayload.ID, err)
+		}
+	}
+	
 	c.JSON(200, gin.H{
 		"status":  "success",
 		"message": "",

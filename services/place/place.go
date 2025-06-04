@@ -9,8 +9,10 @@ import (
 	"github.com/openai/openai-go/option"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
+	models "pashmak.com/pashmak/models/openai"
 	oa "pashmak.com/pashmak/models/openai"
 	sp "pashmak.com/pashmak/serializers/place"
+	services_auth "pashmak.com/pashmak/services/auth"
 	services_openai "pashmak.com/pashmak/services/openai"
 )
 
@@ -53,6 +55,16 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
 	}
 
 	return &results[0], nil
+}
+
+func (ps *PlaceService) SaveSearch(user services_auth.UserInfo, query string) error {
+	if err := ps.DB.Create(models.SearchHistory{
+			UserID: user.ID,
+			Query:  query,
+		}); err != nil {
+		return err.Error
+	}
+	return nil
 }
 
 func (ps *PlaceService) SearchPlace(query string) ([]sp.GetPlaceByIDResponse, error) {
@@ -111,6 +123,7 @@ func (ps *PlaceService) SearchPlace(query string) ([]sp.GetPlaceByIDResponse, er
 		log.Printf("Failed to execute generated SQL: %v\nSQL: %s", err, generatedSQL)
 		return nil, fmt.Errorf("failed to execute generated SQL: %w", err)
 	}
+
 
 	return results, nil
 }

@@ -5,6 +5,7 @@ import (
 
 	"gorm.io/gorm"
 	models_auth "pashmak.com/pashmak/models/auth"
+	models "pashmak.com/pashmak/models/openai"
 	models_place "pashmak.com/pashmak/models/place"
 	models_report "pashmak.com/pashmak/models/report"
 )
@@ -19,6 +20,7 @@ func getModels() []interface{} {
 		&models_place.Place{},
 		&models_place.Reaction{},
 		&models_report.Report{},
+		&models.SearchHistory{},
 	}
 	return all_models
 }
