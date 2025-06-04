@@ -10,6 +10,7 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
 	models_place "pashmak.com/pashmak/models/place"
+	models_report "pashmak.com/pashmak/models/report"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_paginator "pashmak.com/pashmak/services/pagination"
@@ -216,5 +217,25 @@ func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, comment
 	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentID, userInfo.ID).Delete(&existingReaction).Error; err != nil{
 		return err
 	}
+	return nil
+}
+
+func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, commentID int,reason string) error{
+	var comment models_place.Comment
+    if err := cs.DB.First(&comment, commentID).Error; err != nil {
+        return errors.New("comment not found")
+    }
+
+	newReport := models_report.Report{
+		CommentID: uint(commentID),
+		UserID:    userInfo.ID,
+		Reason:    reason,
+		Status:    "Pending",
+	}
+
+	if err := cs.DB.Create(&newReport).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
