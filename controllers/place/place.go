@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	serializers_place "pashmak.com/pashmak/serializers/place"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
@@ -96,11 +97,21 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 		return
 	}
 
-	userinfo, exists := c.Get("user")
-	if exists{
+
+	sessionID, err := c.Cookie("session_id")
+    if err != nil || sessionID == "" {
+        sessionID = uuid.New().String()
+        c.SetCookie("session_id", sessionID, 30*24*3600, "/", "", false, true) // consider
+    }
+	userinfo, loggedIn := c.Get("user")
+	if loggedIn{
 		userpayload := userinfo.(services_auth.UserInfo)
 		log.Println("v ...any")
-		err = pc.PlaceService.SaveSearch(userpayload, q)
+		// Get user_id if logged in
+		var userID uint
+		userID = userinfo.(services_auth.UserInfo).ID // Adjust to your UserInfo struct
+		
+		err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q)
 		if err != nil{
 			log.Printf("Failed to save search query fo user: %v, %v", userpayload.ID, err)
 		}

@@ -43,3 +43,19 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 		}
 	}
 }
+
+func (am *AuthMiddleware) OptionalAuthMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token, err := c.Cookie("pashmak_authentication")
+        if err == nil && token != "" {
+            claim, err := am.authService.VerifyJWT(token)
+            if err == nil {
+                c.Set("user", *claim.UserInfo)
+                c.Set("claim", &claim)
+            } else {
+                log.Println("Invalid JWT, treating as anonymous:", err.Error())
+            }
+        }
+        c.Next()
+    }
+}

@@ -48,9 +48,10 @@ type SQLChatAgent struct {
 
 type SearchHistory struct {
 	gorm.Model
-	UserID uint             `gorm:"not null"`
-	User   models_auth.User `gorm:"foreignKey:UserID"`
-	Query  string           `gorm:"not null;size:1000"`
+	UserID    uint             `gorm:"not null"`
+	User      models_auth.User `gorm:"foreignKey:UserID"`
+	SessionID string           `gorm:"index"`
+	Query     string           `gorm:"not null;size:1000"`
 }
 
 // NewChatAgent creates a new ChatAgent with the given system prompt and model.
