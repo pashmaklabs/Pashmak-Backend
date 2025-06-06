@@ -134,7 +134,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 		}
 		if count > 0{
 			err := cs.DB.Create(&models_place.Place{
-				ID: uint(placeTokenInt),
+				OsmID: uint(placeTokenInt),
 				// Name should be replaced with real name
 				Name: "Unknown",
 			}).Error
