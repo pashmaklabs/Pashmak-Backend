@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	models_auth "pashmak.com/pashmak/models/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
@@ -42,4 +44,40 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 			c.Next()
 		}
 	}
+}
+
+func HasPermission(db *gorm.DB, userID uint, permissionName string) bool {
+    var user models_auth.User
+    if err := db.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
+        return false
+    }
+
+    for _, perm := range user.Role.Permissions {
+        if perm.Name == permissionName {
+            return true
+        }
+    }
+    return false
+}
+
+func PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        user, exists := c.Get("user")
+		userinfo := user.(services_auth.UserInfo)
+        if !exists {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+            c.Abort()
+            return
+        }
+
+        if !HasPermission(db, userinfo.ID, permission) {
+            c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+            c.Abort()
+            return
+        }
+
+        c.Next()
+
+		// Add middleware in this format: PermissionMiddleware(db, "create_post")
+    }
 }

@@ -41,6 +41,9 @@ type AppConfig struct {
 	Environment string
 
 	OpenaiApiKey string
+
+	AdminEmail    string
+	AdminPassword string
 }
 
 var (
@@ -73,6 +76,9 @@ var (
 	CookieDomain string
 
 	OPENAI_API_KEY string
+
+	ADMIN_EMAIL    string
+	ADMIN_PASSWORD string
 )
 
 func LoadEnvVars() *AppConfig {
@@ -127,6 +133,9 @@ func LoadEnvVars() *AppConfig {
 
 	OPENAI_API_KEY = os.Getenv("OPENAI_API_KEY")
 
+	ADMIN_EMAIL = os.Getenv("ADMIN_EMAIL")
+	ADMIN_PASSWORD = os.Getenv("ADMIN_PASSWORD")
+
 	return &AppConfig{
 		PashmakApiUrl:    PASHMAK_API_URL,
 		ServerHost:       SERVER_HOST,
@@ -151,5 +160,7 @@ func LoadEnvVars() *AppConfig {
 		AllowdOrigins:    AllowdOrigins,
 		CookieDomain:     CookieDomain,
 		OpenaiApiKey:     OPENAI_API_KEY,
+		AdminEmail:       ADMIN_EMAIL,
+		AdminPassword:    ADMIN_PASSWORD,
 	}
 }
