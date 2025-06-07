@@ -84,8 +84,8 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	q := c.Query("q")
 	lat := c.Query("lat")
 	long := c.Query("lng")
-	query := fmt.Sprintf("Query: %s\nLatitude: %s\nLongitude: %s", q, lat, long)
-	places, err := pc.PlaceService.SearchPlace(query)
+	
+	places, err := pc.PlaceService.SearchPlace(q, lat, long)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"status":  "error",
