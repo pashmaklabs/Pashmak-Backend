@@ -230,10 +230,10 @@ func (pc *ProfileController) FetchSearchHistory(c *gin.Context){
 	userpayload := userinfo.(services_auth.UserInfo)
 	history, err := pc.ProfileService.FetchSearchHistory(userpayload)
 	if err != nil {
-		if err.Error() == "no comments found"{
+		if err.Error() == "no history found"{
 			c.JSON(http.StatusNotFound, gin.H{
 				"status": "success",
-				"message": "دیدگاهی برای این مکان ثبت نشده است",
+				"message": "تاریخچه ای وجود ندارد",
 			})
 			return
 		}
