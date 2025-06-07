@@ -2,6 +2,7 @@ package services_comment
 
 import (
 	"errors"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -122,7 +123,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 	}
 
 	var place models_place.Place
-	if err := cs.DB.First(&place, placeTokenInt).Error; err != nil {
+	if err := cs.DB.Where("osm_id = ?", placeTokenInt).First(&place).Error; err != nil {
 		var count int64
 		err := cs.DB.Raw(`
 			SELECT COUNT(*)
@@ -133,25 +134,30 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 			return err
 		}
 		if count > 0{
-			err := cs.DB.Create(&models_place.Place{
-				ID: uint(placeTokenInt),
+			res := cs.DB.Create(&models_place.Place{
+				OsmID: uint(placeTokenInt),
 				// Name should be replaced with real name
 				Name: "Unknown",
-			}).Error
-			if err != nil {
+			})
+			
+			if res.Error != nil {
 				return err
 			}
+			// Retrieve the newly created place
+            if err := cs.DB.Where("osm_id = ?", placeTokenInt).First(&place).Error; err != nil {
+                return err
+            }
 		} else if count == 0{
 			return errors.New("place not found")
 		}
 	}
-
+	log.Println(place.ID)
 	result := cs.DB.Create(&models_place.Comment{
 		Content:   payload.Content,
 		Rating:    payload.Rating,
 		UserID:    user.ID,
 		User:      userInfo,
-		PlaceID:   uint(placeTokenInt),
+		PlaceID:   place.ID,
 		Reactions: []models_place.Reaction{},
 	})
 

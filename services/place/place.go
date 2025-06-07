@@ -70,7 +70,9 @@ func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool
 	return nil
 }
 
-func (ps *PlaceService) SearchPlace(query string) ([]sp.GetPlaceByIDResponse, error) {
+
+func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.GetPlaceByIDResponse, error) {
+	query := fmt.Sprintf("Query: %s\nLatitude: %s\nLongitude: %s", q, lat, long)
 	var results []sp.GetPlaceByIDResponse
 
 	// Create a new SQL chat agent with our specialized system prompt
@@ -95,16 +97,16 @@ func (ps *PlaceService) SearchPlace(query string) ([]sp.GetPlaceByIDResponse, er
 			err, len(ps.AppConfig.OpenaiApiKey), sqlAgent.Model, sqlAgent.GetMessages())
 		// Fallback to simple ILIKE search if SQL generation fails
 		fallbackQuery := `
-			SELECT 
-				name,
-				amenity,
-				ST_Y(ST_Transform(way, 4326)) as latitude,
-				ST_X(ST_Transform(way, 4326)) as longitude
-			FROM planet_osm_point
+			SELECT osm_id, name, NULL AS latitude, NULL AS longitude, NULL as amenity, id
+			FROM places
 			WHERE name ILIKE ?
-			LIMIT 10`
+			UNION
+			SELECT osm_id, name, ST_Y(way) AS latitude, ST_X(way) AS longitude, amenity, NULL AS place_id
+			FROM planet_osm_point
+			WHERE name ILIKE ? AND osm_id NOT IN (SELECT osm_id FROM places WHERE osm_id IS NOT NULL)
+			LIMIT 50`
 
-		err = ps.DB.Raw(fallbackQuery, "%"+query+"%").Scan(&results).Error
+		err = ps.DB.Raw(fallbackQuery, "%"+q+"%", "%"+q+"%").Scan(&results).Error
 		if err != nil {
 			log.Printf("Fallback search failed: %v", err)
 			return nil, fmt.Errorf("fallback search failed: %w", err)
