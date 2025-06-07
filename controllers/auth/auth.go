@@ -146,6 +146,18 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 			c.SetSameSite(http.SameSiteNoneMode)
 		}
+
+		// Merge anonymous history
+		sessionID, err := c.Cookie("session_id")
+		log.Println("login seesionid: " + sessionID)
+		if err == nil && sessionID != "" {
+			err := ac.authService.MergeSearchHistory(sessionID, user)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Failed to merge search history"})
+				return
+			}
+		}
+		c.SetCookie("session_id", "", -1, "/", "", false, true)
 		
 		
 		c.JSON(http.StatusOK, gin.H{

@@ -113,7 +113,6 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
         id := userinfo.(services_auth.UserInfo).ID
         userID = &id
     }
-	log.Println(sessionID)
 	err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q)
 	if err != nil{
 		log.Printf("Failed to save search query fo user: %v, %v", userID, err)
