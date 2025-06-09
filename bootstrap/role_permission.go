@@ -46,7 +46,7 @@ func SetupRoleAndPermissions(db *gorm.DB) {
 			Name:        "User",
 			Permissions: []models_auth.Permission{}, // No permissions
 		}
-		if err := tx.Where("name = ?", userRole.Name).Create(&userRole).Error; err != nil {
+		if err := tx.Where("name = ?", userRole.Name).FirstOrCreate(&userRole).Error; err != nil {
 			log.Printf("Failed to create role %s: %v", userRole.Name, err)
 			return err
 		}

@@ -247,7 +247,7 @@ func (ps *PlaceService) UploadPlaceImage(place *models_place.Place, file *multip
 	}
 
 	// Generate public URL
-	imgURL := fmt.Sprintf("%s/places/images/%s", ps.AppConfig.ServerHost, objectName)
+	imgURL := fmt.Sprintf("%s/places/%d/images/%s", ps.AppConfig.ServerHost, place.ID, objectName)
 	res := ps.DB.Create(&models_place.Image{
 		PlaceID: place.ID,
 		URL: imgURL,
@@ -259,7 +259,7 @@ func (ps *PlaceService) UploadPlaceImage(place *models_place.Place, file *multip
 		return "", res.Error
 	}
 
-	return objectName, nil
+	return imgURL, nil
 }
 
 // GetPlaceImage retrieves an image for a place by image filename

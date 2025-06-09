@@ -185,6 +185,7 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 	file, err := c.FormFile("photo")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "فایل ارسال نشد"})
+		log.Println(err)
 		return
 	}
 	objectName, err := pc.PlaceService.UploadPlaceImage(&place, file)

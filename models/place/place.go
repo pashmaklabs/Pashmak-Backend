@@ -9,7 +9,7 @@ import (
 
 type Place struct {
 	ID        uint   `gorm:"primaryKey;autoIncrement"`
-	Amenity   string `gorm:"not null;size:255"`
+	Amenity   string `gorm:"size:255"`
 	Latitude  float64
 	Longitude float64
 	// TODO: Add place TOKEN
