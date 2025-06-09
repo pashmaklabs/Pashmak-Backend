@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
+	models "pashmak.com/pashmak/models/openai"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
@@ -230,4 +231,25 @@ func (ps *ProfileService) UpdateUserProfile(userInfo services_auth.UserInfo, pay
 		return err
 	}
 	return nil
+}
+
+func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([]models.SearchHistory, error){
+	var history []models.SearchHistory
+	historyQuery := ps.DB.
+		Where("user_id = ?", userInfo.ID).
+		Find(&history)
+
+	if historyQuery.Error != nil {
+		return nil, historyQuery.Error
+	}
+
+	if len(history) == 0 {
+		return nil, errors.New("no history found")
+	}
+
+	// paginator, commentDTOs, err := ps.PaginateComments(c, commentsQuery)
+	// if err != nil{
+	// 	return nil, nil, err
+	// }
+	return history, nil
 }

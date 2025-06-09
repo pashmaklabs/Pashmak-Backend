@@ -2,7 +2,6 @@ package services_comment
 
 import (
 	"errors"
-	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -151,7 +150,6 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 			return errors.New("place not found")
 		}
 	}
-	log.Println(place.ID)
 	result := cs.DB.Create(&models_place.Comment{
 		Content:   payload.Content,
 		Rating:    payload.Rating,

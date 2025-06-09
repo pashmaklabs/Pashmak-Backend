@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"gorm.io/gorm"
@@ -54,6 +53,23 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
 
 	return &results[0], nil
 }
+
+func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool, query string) error {
+	history := oa.SearchHistory{
+		UserID:    userID,
+		SessionID: sessionID,
+		Query:     query,
+	}
+	if loggedIn {
+		history.SessionID = "" // Clear session_id for logged-in users
+	}
+
+	if err := ps.DB.Create(&history); err != nil{
+		return err.Error
+	}
+	return nil
+}
+
 
 func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.GetPlaceByIDResponse, error) {
 	query := fmt.Sprintf("Query: %s\nLatitude: %s\nLongitude: %s", q, lat, long)
@@ -112,6 +128,7 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 		log.Printf("Failed to execute generated SQL: %v\nSQL: %s", err, generatedSQL)
 		return nil, fmt.Errorf("failed to execute generated SQL: %w", err)
 	}
+
 
 	return results, nil
 }

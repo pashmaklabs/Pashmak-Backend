@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/openai/openai-go"
+	"gorm.io/gorm"
 )
 
 const SystemPrompt = `
@@ -42,6 +43,13 @@ type ChatAgent struct {
 type SQLChatAgent struct {
 	ChatAgent
 	TableSchema string // Store the table schema for context
+}
+
+type SearchHistory struct {
+	gorm.Model
+	UserID    *uint            `gorm:"index"`
+	SessionID string           `gorm:"index"`
+	Query     string           `gorm:"not null;size:1000"`
 }
 
 // NewChatAgent creates a new ChatAgent with the given system prompt and model.

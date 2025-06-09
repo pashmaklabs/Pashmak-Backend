@@ -17,14 +17,15 @@ type AuthMiddleware struct {
 func NewAuthMiddleware(authService *services_auth.AuthService) *AuthMiddleware {
 	return &AuthMiddleware{authService: authService}
 }
+
 // TODO: When someone is logged in, he can't login again using auth endpoints
 // TODO: When someone is not logged in, he can't logout
-func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
+func (am *AuthMiddleware) LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("pashmak_authentication")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "ابتدا باید وارد شوید",
 			})
 			return
@@ -32,7 +33,7 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 			claim, err := am.authService.VerifyJWT(token)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-					"status": "error",
+					"status":  "error",
 					"message": "در ورود مشکلی پیش آمده",
 				})
 				log.Println(err.Error())
@@ -47,37 +48,53 @@ func (am *AuthMiddleware)LoginMiddleware() gin.HandlerFunc {
 }
 
 func HasPermission(db *gorm.DB, userID uint, permissionName string) bool {
-    var user models_auth.User
-    if err := db.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
-        return false
-    }
+	var user models_auth.User
+	if err := db.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
+		return false
+	}
 
-    for _, perm := range user.Role.Permissions {
-        if perm.Name == permissionName {
-            return true
-        }
-    }
-    return false
+	for _, perm := range user.Role.Permissions {
+		if perm.Name == permissionName {
+			return true
+		}
+	}
+	return false
 }
 
 func PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        user, exists := c.Get("user")
+	return func(c *gin.Context) {
+		user, exists := c.Get("user")
 		userinfo := user.(services_auth.UserInfo)
-        if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-            c.Abort()
-            return
-        }
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+			c.Abort()
+			return
+		}
 
-        if !HasPermission(db, userinfo.ID, permission) {
-            c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
-            c.Abort()
-            return
-        }
+		if !HasPermission(db, userinfo.ID, permission) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+			c.Abort()
+			return
+		}
 
-        c.Next()
+		c.Next()
 
 		// Add middleware in this format: PermissionMiddleware(db, "create_post")
-    }
+	}
+}
+
+func (am *AuthMiddleware) AuthOrAnonMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, err := c.Cookie("pashmak_authentication")
+		if err == nil && token != "" {
+			claim, err := am.authService.VerifyJWT(token)
+			if err == nil {
+				c.Set("user", *claim.UserInfo)
+				c.Set("claim", &claim)
+			} else {
+				// log.Println("Invalid JWT, treating as anonymous:", err.Error())
+			}
+		}
+		c.Next()
+	}
 }

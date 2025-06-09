@@ -13,7 +13,7 @@ func (as *AuthService) GetUserByGmail(email string) (models_auth.User, error){
 }
 
 func (as *AuthService) CreateUser(email string) error{
-	result := as.DB.Create(&models_auth.User{Email: email})
+	result := as.DB.Create(&models_auth.User{Email: email, RoleID: 10})
 	return result.Error
 }
 
