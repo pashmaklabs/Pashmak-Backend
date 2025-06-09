@@ -1,13 +1,17 @@
 package controllers_place
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	models_place "pashmak.com/pashmak/models/place"
 	"github.com/google/uuid"
 	"pashmak.com/pashmak/bootstrap"
 	serializers_place "pashmak.com/pashmak/serializers/place"
@@ -77,6 +81,7 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 		Latitude:  place.Latitude,
 		Longitude: place.Longitude,
 		Rating:    avgRating,
+		ImageURLs: place.ImageURLs,
 	}
 
 	c.JSON(200, gin.H{
@@ -125,3 +130,92 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	})
 }
 
+// UploadPlaceImage handles POST /places/:id/images for uploading a new image to a place.
+func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "شناسه مکان نامعتبر است"})
+		return
+	}
+
+	var place models_place.Place
+	err = pc.PlaceService.DB.First(&place, uint(id)).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			var count int64
+			dbErr := pc.PlaceService.DB.Raw(`
+				SELECT COUNT(*)
+				FROM planet_osm_point
+				WHERE osm_id = ?
+			`, id).Scan(&count).Error
+			if dbErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "خطا در بررسی وجود مکان"})
+				return
+			}
+			if count > 0 {
+				place = models_place.Place{
+					ID:     uint(id),
+					Name:   "Unknown", // You may want to fetch the real name
+					Images: []models_place.Image{},
+				}
+				if err := pc.PlaceService.DB.Create(&place).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "خطا در ایجاد رکورد مکان"})
+					return
+				}
+			} else if count == 0 {
+				c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "مکان یافت نشد"})
+				return
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "خطا در دریافت رکورد مکان"})
+			return
+		}
+	}
+
+	file, err := c.FormFile("photo")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "فایل ارسال نشد"})
+		return
+	}
+	objectName, err := pc.PlaceService.UploadPlaceImage(uint(id), file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{
+		"status":  "success",
+		"message": "File uploaded successfully",
+		"data": map[string]interface{}{
+			"objectName": objectName,
+		},
+	})
+}
+
+// GetPlaceImage handles GET /places/:id/images/:image_name for retrieving a place image.
+func (pc *PlaceController) GetPlaceImage(c *gin.Context) {
+	idStr := c.Param("id")
+	imageName := c.Param("image_name")
+	_, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "شناسه مکان نامعتبر است"})
+		return
+	}
+	imgStream, eTag, err := pc.PlaceService.GetPlaceImage(0, imageName) // placeID not used in service
+	if err != nil {
+		if err.Error() == "image not found" {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	defer imgStream.Close()
+	c.Header("ETag", eTag)
+	c.Header("Cache-Control", "public, max-age=3600")
+	c.Header("Content-Type", "image/webp")
+	_, err = io.Copy(c.Writer, imgStream)
+	if err != nil {
+		log.Println("Error writing image using Copy func:", err)
+	}
+}
