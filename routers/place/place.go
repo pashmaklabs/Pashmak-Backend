@@ -24,6 +24,6 @@ func PlaceRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appConfig
 	place := router.Group("/places")
 	{
 		place.GET("/:id", placeController.GetPlace)
-		place.GET("/", authMiddleware.OptionalAuthMiddleware(), placeController.SearchPlace)
+		place.GET("/", authMiddleware.AuthOrAnonMiddleware(), placeController.SearchPlace)
 	}
 }

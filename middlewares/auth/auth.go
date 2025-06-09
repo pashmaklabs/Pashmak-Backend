@@ -83,7 +83,7 @@ func PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
 	}
 }
 
-func (am *AuthMiddleware) OptionalAuthMiddleware() gin.HandlerFunc {
+func (am *AuthMiddleware) AuthOrAnonMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("pashmak_authentication")
 		if err == nil && token != "" {
@@ -92,7 +92,7 @@ func (am *AuthMiddleware) OptionalAuthMiddleware() gin.HandlerFunc {
 				c.Set("user", *claim.UserInfo)
 				c.Set("claim", &claim)
 			} else {
-				log.Println("Invalid JWT, treating as anonymous:", err.Error())
+				// log.Println("Invalid JWT, treating as anonymous:", err.Error())
 			}
 		}
 		c.Next()
