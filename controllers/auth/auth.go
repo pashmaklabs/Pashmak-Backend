@@ -149,7 +149,6 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 
 		// Merge anonymous history
 		sessionID, err := c.Cookie("session_id")
-		log.Println("login seesionid: " + sessionID)
 		if err == nil && sessionID != "" {
 			err := ac.authService.MergeSearchHistory(sessionID, user)
 			if err != nil {
