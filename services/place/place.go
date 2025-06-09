@@ -166,12 +166,7 @@ func (ps *PlaceService) validateImage(file *multipart.FileHeader) (string, error
 }
 
 // UploadPlaceImage handles uploading a new image for a place and updating its ImageURLs array.
-func (ps *PlaceService) UploadPlaceImage(placeID uint, file *multipart.FileHeader) (string, error) {
-	var place models_place.Place
-	if err := ps.DB.First(&place, "id = ?", placeID).Error; err != nil {
-		return "", err
-	}
-
+func (ps *PlaceService) UploadPlaceImage(place models_place.Place, file *multipart.FileHeader) (string, error) {
 	_, err := ps.validateImage(file)
 	if err != nil {
 		return "", err
@@ -215,7 +210,7 @@ func (ps *PlaceService) UploadPlaceImage(placeID uint, file *multipart.FileHeade
 		place.Images = []models_place.Image{}
 	}
 	place.Images = append(place.Images, models_place.Image{
-		PlaceID: placeID,
+		PlaceID: place.ID,
 		URL: imgURL,
 		AltText: "image",
 		Caption: "caption",
