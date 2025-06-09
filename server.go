@@ -15,8 +15,8 @@ import (
 	routers_auth "pashmak.com/pashmak/routers/auth"
 	routers_comment "pashmak.com/pashmak/routers/comment"
 	routers_navigation "pashmak.com/pashmak/routers/navigation"
-	routers_profile "pashmak.com/pashmak/routers/profile"
 	routers_place "pashmak.com/pashmak/routers/place"
+	routers_profile "pashmak.com/pashmak/routers/profile"
 	"pashmak.com/pashmak/serializers"
 )
 
@@ -42,7 +42,6 @@ func main() {
 	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
 	Router.Use(corsMiddleware.SetCORSHeader())
 
-	
 	// Set up the Gin validator with custom validation rules
 	validate := validator.New()
 	serializers.RegisterCustomValidators(validate)
@@ -57,7 +56,7 @@ func main() {
 	routers_profile.ProfileRoutes(Router, DB, Redis, Minio, AppConfig)
 	routers_navigation.NavigationRoutes(Router, DB, AppConfig)
 	routers_comment.CommentRoutes(Router, DB, Redis, AppConfig)
-	routers_place.PlaceRoutes(Router, DB, Redis, AppConfig)
-	
+	routers_place.PlaceRoutes(Router, DB, Redis, Minio, AppConfig)
+
 	Router.Run(fmt.Sprintf(":%s", AppConfig.ServerPort))
 }
