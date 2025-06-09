@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-	models_place "pashmak.com/pashmak/models/place"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
+	models_place "pashmak.com/pashmak/models/place"
 	serializers_place "pashmak.com/pashmak/serializers/place"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
@@ -23,14 +23,14 @@ import (
 type PlaceController struct {
 	PlaceService   *services_place.PlaceService
 	CommnetService *services_comment.CommentService
-	AppConfig 	*bootstrap.AppConfig
+	AppConfig      *bootstrap.AppConfig
 }
 
 func NewPlaceController(placeService *services_place.PlaceService, commentService *services_comment.CommentService, appConfig *bootstrap.AppConfig) *PlaceController {
 	return &PlaceController{
 		PlaceService:   placeService,
 		CommnetService: commentService,
-		AppConfig: appConfig,
+		AppConfig:      appConfig,
 	}
 }
 
@@ -76,6 +76,7 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 	}
 
 	response := serializers_place.PlaceWithRatingResponse{
+		ID:        place.ID,
 		Name:      place.Name,
 		Amenity:   place.Amenity,
 		Latitude:  place.Latitude,
@@ -95,7 +96,7 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	q := c.Query("q")
 	lat := c.Query("lat")
 	long := c.Query("lng")
-	
+
 	places, err := pc.PlaceService.SearchPlace(q, lat, long)
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -105,24 +106,23 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 		return
 	}
 
-
 	sessionID, err := c.Cookie("session_id")
 	userinfo, loggedIn := c.Get("user")
-    if !loggedIn && (err != nil || sessionID == "") {
-        sessionID = uuid.New().String()
-        c.SetCookie("session_id", sessionID, 30*24*3600, "/", pc.AppConfig.CookieDomain, false, true)
-    }
-	
+	if !loggedIn && (err != nil || sessionID == "") {
+		sessionID = uuid.New().String()
+		c.SetCookie("session_id", sessionID, 30*24*3600, "/", pc.AppConfig.CookieDomain, false, true)
+	}
+
 	var userID *uint
-    if loggedIn {
-        id := userinfo.(services_auth.UserInfo).ID
-        userID = &id
-    }
+	if loggedIn {
+		id := userinfo.(services_auth.UserInfo).ID
+		userID = &id
+	}
 	err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q)
-	if err != nil{
+	if err != nil {
 		log.Printf("Failed to save search query fo user: %v, %v", userID, err)
 	}
-	
+
 	c.JSON(200, gin.H{
 		"status":  "success",
 		"message": "",
@@ -155,8 +155,8 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 			}
 			if count > 0 {
 				place = models_place.Place{
-					ID: uint(id),
-					IsOSM: true,
+					ID:     uint(id),
+					IsOSM:  true,
 					Name:   "Unknown",
 					Images: []models_place.Image{},
 				}
@@ -167,7 +167,7 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 				// Retrieve the newly created place
 				if err := pc.PlaceService.DB.Where("id = ?", id).First(&place).Error; err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{
-						"status" : "error",
+						"status":  "error",
 						"message": err.Error(),
 					})
 					return

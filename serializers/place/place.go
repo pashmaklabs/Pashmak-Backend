@@ -11,6 +11,7 @@ type GetPlaceByIDResponse struct {
 }
 
 type PlaceWithRatingResponse struct {
+	ID        int64    `json:"id"`
 	Name      string   `json:"name"`
 	Amenity   string   `json:"amenity"`
 	Latitude  float64  `json:"latitude"`

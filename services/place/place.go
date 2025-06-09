@@ -48,30 +48,72 @@ func NewPlaceService(db *gorm.DB, appconfig *bootstrap.AppConfig, openaiService 
 }
 
 func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) {
-	var results []sp.GetPlaceByIDResponse
-
-	query := `
-        SELECT 
-            osm_id,
-            name,
-            amenity,
-            ST_Y(ST_Transform(way, 4326)) as latitude,
-            ST_X(ST_Transform(way, 4326)) as longitude
-        FROM planet_osm_point
-        WHERE osm_id = ?`
-
-	err := ps.DB.Raw(query, id).Preload("images").Scan(&results).Error
+	// First, try to import/get the place from OSM if it exists
+	place, err := ps.ImportFromOSM(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(results) == 0 {
-		return nil, fmt.Errorf("no place found with ID %d", id)
-	} else if len(results) > 1 {
-		return nil, fmt.Errorf("multiple places found with ID %d", id)
+	// Load the place with its images
+	res := ps.DB.Preload("Images").First(&place, id)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("no place found with ID %d", id)
+		}
+		return nil, res.Error
 	}
 
-	return &results[0], nil
+	var response sp.GetPlaceByIDResponse
+	
+	// If this is an OSM place, get additional data from planet_osm_point
+	if place.IsOSM {
+		var osmResult struct {
+			OsmID     uint    `db:"osm_id"`
+			Name      string  `db:"name"`
+			Amenity   string  `db:"amenity"`
+			Latitude  float64 `db:"latitude"`
+			Longitude float64 `db:"longitude"`
+		}
+
+		query := `
+			SELECT
+				osm_id,
+				name,
+				amenity,
+				ST_Y(ST_Transform(way, 4326)) as latitude,
+				ST_X(ST_Transform(way, 4326)) as longitude
+			FROM planet_osm_point
+			WHERE osm_id = ?`
+		
+		err = ps.DB.Raw(query, id).Scan(&osmResult).Error
+		if err != nil {
+			return nil, err
+		}
+
+		// Populate response with OSM data
+		response.OsmID = osmResult.OsmID
+		response.Name = osmResult.Name
+		response.Amenity = osmResult.Amenity
+		response.Latitude = osmResult.Latitude
+		response.Longitude = osmResult.Longitude
+	} else {
+		// For non-OSM places, use data from the places table
+		response.OsmID = 0
+		response.Name = place.Name
+		response.Amenity = place.Amenity
+		response.Latitude = place.Latitude
+		response.Longitude = place.Longitude
+	}
+
+	// Common data for both OSM and non-OSM places
+	response.ID = int64(place.ID)
+	
+	// Add image URLs
+	for _, image := range place.Images {
+		response.ImageURLs = append(response.ImageURLs, image.URL)
+	}
+
+	return &response, nil
 }
 
 func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool, query string) error {
@@ -239,3 +281,38 @@ func (ps *PlaceService) GetPlaceImage(placeID uint, imageName string) (io.ReadCl
 	}
 	return obj, objInfo.ETag, nil
 }
+
+func (ps *PlaceService) ImportFromOSM(placeID uint) (*models_place.Place, error){
+  var place models_place.Place
+  if err := ps.DB.Where("id = ?", placeID).First(&place).Error; err != nil {
+    var count int64
+    err := ps.DB.Raw(`
+      SELECT COUNT(*)
+      FROM planet_osm_point
+      WHERE osm_id = ?
+    `, placeID).Scan(&count).Error
+    if err != nil {
+      return nil, err
+    }
+    if count > 0{
+      res := ps.DB.Create(&models_place.Place{
+        ID: placeID,
+        IsOSM: true,
+        // Name should be replaced with real name
+        Name: "Unknown",
+      })
+      
+      if res.Error != nil {
+        return nil, err
+      }
+      // Retrieve the newly created place
+            if err := ps.DB.Where("id = ?", placeID).First(&place).Error; err != nil {
+                return nil, err
+            }
+    } else if count == 0{
+      return nil, errors.New("place not found")
+    }
+  }
+  return &place, nil
+}
+
