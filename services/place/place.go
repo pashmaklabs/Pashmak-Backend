@@ -60,7 +60,7 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
         FROM planet_osm_point
         WHERE osm_id = ?`
 
-	err := ps.DB.Raw(query, id).Scan(&results).Error
+	err := ps.DB.Raw(query, id).Preload("images").Scan(&results).Error
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (ps *PlaceService) validateImage(file *multipart.FileHeader) (string, error
 }
 
 // UploadPlaceImage handles uploading a new image for a place and updating its ImageURLs array.
-func (ps *PlaceService) UploadPlaceImage(place models_place.Place, file *multipart.FileHeader) (string, error) {
+func (ps *PlaceService) UploadPlaceImage(place *models_place.Place, file *multipart.FileHeader) (string, error) {
 	_, err := ps.validateImage(file)
 	if err != nil {
 		return "", err
@@ -206,17 +206,15 @@ func (ps *PlaceService) UploadPlaceImage(place models_place.Place, file *multipa
 
 	// Generate public URL
 	imgURL := fmt.Sprintf("%s/places/images/%s", ps.AppConfig.ServerHost, objectName)
-	if place.Images == nil {
-		place.Images = []models_place.Image{}
-	}
-	place.Images = append(place.Images, models_place.Image{
+	res := ps.DB.Create(&models_place.Image{
 		PlaceID: place.ID,
 		URL: imgURL,
-		AltText: "image",
+		AltText: "alt",
 		Caption: "caption",
 	})
-	if err := ps.DB.Save(&place).Error; err != nil {
-		return "", err
+
+	if res.Error != nil{
+		return "", res.Error
 	}
 
 	return objectName, nil

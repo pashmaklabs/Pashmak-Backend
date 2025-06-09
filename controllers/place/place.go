@@ -155,8 +155,9 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 			}
 			if count > 0 {
 				place = models_place.Place{
-					OsmID:     uint(id),
-					Name:   "Unknown", // You may want to fetch the real name
+					ID: uint(id),
+					IsOSM: true,
+					Name:   "Unknown",
 					Images: []models_place.Image{},
 				}
 				if err := pc.PlaceService.DB.Create(&place).Error; err != nil {
@@ -164,11 +165,12 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 					return
 				}
 				// Retrieve the newly created place
-				if err := pc.PlaceService.DB.Where("osm_id = ?", id).First(&place).Error; err != nil {
+				if err := pc.PlaceService.DB.Where("id = ?", id).First(&place).Error; err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{
 						"status" : "error",
 						"message": err.Error(),
 					})
+					return
 				}
 			} else if count == 0 {
 				c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "مکان یافت نشد"})
@@ -185,7 +187,7 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "فایل ارسال نشد"})
 		return
 	}
-	objectName, err := pc.PlaceService.UploadPlaceImage(place, file)
+	objectName, err := pc.PlaceService.UploadPlaceImage(&place, file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 		return

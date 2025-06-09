@@ -10,7 +10,7 @@ import (
 type Place struct {
 	ID uint `gorm:"primaryKey;autoIncrement"`
 	// TODO: Add place TOKEN
-	OsmID     uint    `gorm:"column:osm_id"`
+	IsOSM     bool
 	Name      string    `gorm:"not null;size:255"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	Comments  []Comment `gorm:"foreignKey:PlaceID"` // INFO: One-to-many relationship
