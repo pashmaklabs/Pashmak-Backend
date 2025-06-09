@@ -3,6 +3,7 @@ package models_place
 import (
 	"time"
 
+	"gorm.io/gorm"
 	models_auth "pashmak.com/pashmak/models/auth"
 )
 
@@ -13,6 +14,7 @@ type Place struct {
 	Name      string    `gorm:"not null;size:255"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	Comments  []Comment `gorm:"foreignKey:PlaceID"` // INFO: One-to-many relationship
+	Images    []Image   `gorm:"foreignKey:PlaceID"`
 }
 
 type Comment struct {
@@ -33,4 +35,12 @@ type Reaction struct {
 	ReactionType uint      `gorm:"not null"`
 	UserID       uint      `gorm:"not null"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
+}
+
+type Image struct {
+	gorm.Model
+	PlaceID uint
+	URL     string `gorm:"not null"`
+	AltText string `gorm:"size:100"`
+	Caption string `gorm:"size:1000"`
 }
