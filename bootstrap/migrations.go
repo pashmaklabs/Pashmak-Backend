@@ -24,6 +24,7 @@ func getModels() []interface{} {
 		&models_place.Reaction{},
 		&models_report.Report{},
 		&models.SearchHistory{},
+		&models_place.Image{},
 	}
 	return all_models
 }

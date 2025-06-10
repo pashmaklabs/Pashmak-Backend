@@ -1,57 +1,119 @@
 package services_place
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"image"
+	"io"
 	"log"
+	"mime/multipart"
+	"path/filepath"
+	"time"
+	webp "github.com/chai2010/webp"
+	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	oa "pashmak.com/pashmak/models/openai"
+	models_place "pashmak.com/pashmak/models/place"
 	sp "pashmak.com/pashmak/serializers/place"
 	services_openai "pashmak.com/pashmak/services/openai"
+)
+
+var (
+	ErrInvalidFile      = errors.New("invalid file type or size")
+	ErrNotFound         = errors.New("image not found")
+	ErrMinioUnavailable = errors.New("minio unavailable")
+	ErrInvalidSize      = errors.New("file too large")
 )
 
 type PlaceService struct {
 	DB            *gorm.DB
 	AppConfig     *bootstrap.AppConfig
 	OpenAIService *services_openai.OpenAIService
+	Minio         *minio.Client
 }
 
-func NewPlaceService(db *gorm.DB, appconfig *bootstrap.AppConfig, openaiService *services_openai.OpenAIService) *PlaceService {
+func NewPlaceService(db *gorm.DB, appconfig *bootstrap.AppConfig, openaiService *services_openai.OpenAIService, minioClient *minio.Client) *PlaceService {
 	return &PlaceService{
 		DB:            db,
 		AppConfig:     appconfig,
 		OpenAIService: openaiService,
+		Minio:         minioClient,
 	}
 }
 
 func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) {
-	var results []sp.GetPlaceByIDResponse
-
-	query := `
-        SELECT 
-            osm_id,
-            name,
-            amenity,
-            ST_Y(ST_Transform(way, 4326)) as latitude,
-            ST_X(ST_Transform(way, 4326)) as longitude
-        FROM planet_osm_point
-        WHERE osm_id = ?`
-
-	err := ps.DB.Raw(query, id).Scan(&results).Error
+	// First, try to import/get the place from OSM if it exists
+	place, err := ps.ImportFromOSM(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(results) == 0 {
-		return nil, fmt.Errorf("no place found with ID %d", id)
-	} else if len(results) > 1 {
-		return nil, fmt.Errorf("multiple places found with ID %d", id)
+	// Load the place with its images
+	res := ps.DB.Preload("Images").First(&place, id)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("no place found with ID %d", id)
+		}
+		return nil, res.Error
 	}
 
-	return &results[0], nil
+	var response sp.GetPlaceByIDResponse
+	
+	// If this is an OSM place, get additional data from planet_osm_point
+	if place.IsOSM {
+		var osmResult struct {
+			OsmID     uint    `db:"osm_id"`
+			Name      string  `db:"name"`
+			Amenity   string  `db:"amenity"`
+			Latitude  float64 `db:"latitude"`
+			Longitude float64 `db:"longitude"`
+		}
+
+		query := `
+			SELECT
+				osm_id,
+				name,
+				amenity,
+				ST_Y(ST_Transform(way, 4326)) as latitude,
+				ST_X(ST_Transform(way, 4326)) as longitude
+			FROM planet_osm_point
+			WHERE osm_id = ?`
+		
+		err = ps.DB.Raw(query, id).Scan(&osmResult).Error
+		if err != nil {
+			return nil, err
+		}
+
+		// Populate response with OSM data
+		response.OsmID = osmResult.OsmID
+		response.Name = osmResult.Name
+		response.Amenity = osmResult.Amenity
+		response.Latitude = osmResult.Latitude
+		response.Longitude = osmResult.Longitude
+	} else {
+		// For non-OSM places, use data from the places table
+		response.OsmID = 0
+		response.Name = place.Name
+		response.Amenity = place.Amenity
+		response.Latitude = place.Latitude
+		response.Longitude = place.Longitude
+	}
+
+	// Common data for both OSM and non-OSM places
+	response.ID = int64(place.ID)
+	
+	// Add image URLs
+	for _, image := range place.Images {
+		response.ImageURLs = append(response.ImageURLs, image.URL)
+	}
+
+	return &response, nil
 }
 
 func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool, query string) error {
@@ -97,13 +159,13 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 			err, len(ps.AppConfig.OpenaiApiKey), sqlAgent.Model, sqlAgent.GetMessages())
 		// Fallback to simple ILIKE search if SQL generation fails
 		fallbackQuery := `
-			SELECT osm_id, name, NULL AS latitude, NULL AS longitude, NULL as amenity, id
+			SELECT NULL AS osm_id, name, NULL AS latitude, NULL AS longitude, NULL as amenity, id
 			FROM places
 			WHERE name ILIKE ?
 			UNION
 			SELECT osm_id, name, ST_Y(way) AS latitude, ST_X(way) AS longitude, amenity, NULL AS place_id
 			FROM planet_osm_point
-			WHERE name ILIKE ? AND osm_id NOT IN (SELECT osm_id FROM places WHERE osm_id IS NOT NULL)
+			WHERE name ILIKE ?
 			LIMIT 50`
 
 		err = ps.DB.Raw(fallbackQuery, "%"+q+"%", "%"+q+"%").Scan(&results).Error
@@ -132,3 +194,125 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 
 	return results, nil
 }
+
+// validateImage checks file extension and size
+func (ps *PlaceService) validateImage(file *multipart.FileHeader) (string, error) {
+	ext := filepath.Ext(file.Filename)
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+		return "", ErrInvalidFile
+	}
+	if file.Size > 1<<24 {
+		return "", ErrInvalidSize
+	}
+	return ext, nil
+}
+
+// UploadPlaceImage handles uploading a new image for a place and updating its ImageURLs array.
+func (ps *PlaceService) UploadPlaceImage(place *models_place.Place, file *multipart.FileHeader) (string, error) {
+	_, err := ps.validateImage(file)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	fileReader, err := file.Open()
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %w", err)
+	}
+	defer fileReader.Close()
+
+	img, _, err := image.Decode(fileReader)
+	if err != nil {
+		return "", err
+	}
+
+	if err = webp.Encode(&buf, img, &webp.Options{Lossless: false, Quality: 30}); err != nil {
+		return "", err
+	}
+	objectName := fmt.Sprintf("%s%s", uuid.New().String(), ".webp")
+	Reader := bytes.NewReader(buf.Bytes())
+	timedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err = ps.Minio.PutObject(
+		timedCtx,
+		"place-photos",
+		objectName,
+		Reader,
+		Reader.Size(),
+		minio.PutObjectOptions{ContentType: "image/webp"},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	// Generate public URL
+	imgURL := fmt.Sprintf("%s/places/%d/images/%s", ps.AppConfig.ServerHost, place.ID, objectName)
+	res := ps.DB.Create(&models_place.Image{
+		PlaceID: place.ID,
+		URL: imgURL,
+		AltText: "alt",
+		Caption: "caption",
+	})
+
+	if res.Error != nil{
+		return "", res.Error
+	}
+
+	return imgURL, nil
+}
+
+// GetPlaceImage retrieves an image for a place by image filename
+func (ps *PlaceService) GetPlaceImage(placeID uint, imageName string) (io.ReadCloser, string, error) {
+	if imageName == "" {
+		return nil, "", ErrInvalidFile
+	}
+
+	obj, err := ps.Minio.GetObject(context.Background(), "place-photos", imageName, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, "", ErrMinioUnavailable
+	}
+	objInfo, err := obj.Stat()
+	if err != nil {
+		if minio.ToErrorResponse(err).Code == "NoSuchKey" {
+			return nil, "", ErrNotFound
+		}
+		return nil, "", ErrMinioUnavailable
+	}
+	return obj, objInfo.ETag, nil
+}
+
+func (ps *PlaceService) ImportFromOSM(placeID uint) (*models_place.Place, error){
+  var place models_place.Place
+  if err := ps.DB.Where("id = ?", placeID).First(&place).Error; err != nil {
+    var count int64
+    err := ps.DB.Raw(`
+      SELECT COUNT(*)
+      FROM planet_osm_point
+      WHERE osm_id = ?
+    `, placeID).Scan(&count).Error
+    if err != nil {
+      return nil, err
+    }
+    if count > 0{
+      res := ps.DB.Create(&models_place.Place{
+        ID: placeID,
+        IsOSM: true,
+        // Name should be replaced with real name
+        Name: "Unknown",
+      })
+      
+      if res.Error != nil {
+        return nil, err
+      }
+      // Retrieve the newly created place
+            if err := ps.DB.Where("id = ?", placeID).First(&place).Error; err != nil {
+                return nil, err
+            }
+    } else if count == 0{
+      return nil, errors.New("place not found")
+    }
+  }
+  return &place, nil
+}
+

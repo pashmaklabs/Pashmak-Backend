@@ -16,7 +16,7 @@ type User struct {
 	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
 	Avatar_url string    `gorm:"default:''"`
 	Score      uint
-	RoleID     uint `gorm:"not null"`
+	RoleID     uint
 	Role       Role `gorm:"foreignKey:RoleID"` // Foreign key to roles table
 }
 

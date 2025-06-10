@@ -122,7 +122,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 	}
 
 	var place models_place.Place
-	if err := cs.DB.Where("osm_id = ?", placeTokenInt).First(&place).Error; err != nil {
+	if err := cs.DB.Where("id = ?", placeTokenInt).First(&place).Error; err != nil {
 		var count int64
 		err := cs.DB.Raw(`
 			SELECT COUNT(*)
@@ -134,7 +134,8 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 		}
 		if count > 0{
 			res := cs.DB.Create(&models_place.Place{
-				OsmID: uint(placeTokenInt),
+				ID: uint(placeTokenInt),
+				IsOSM: true,
 				// Name should be replaced with real name
 				Name: "Unknown",
 			})
@@ -143,7 +144,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 				return err
 			}
 			// Retrieve the newly created place
-            if err := cs.DB.Where("osm_id = ?", placeTokenInt).First(&place).Error; err != nil {
+            if err := cs.DB.Where("id = ?", placeTokenInt).First(&place).Error; err != nil {
                 return err
             }
 		} else if count == 0{
