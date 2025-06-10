@@ -34,7 +34,3 @@ type UpdateUserProfileRequest struct {
 	FirstName string	`json:"firstname" binding:"required,alpha"`
 	LastName  string	`json:"lastname" binding:"required,alpha"`
 }
-
-// type SearchHistoryResponse struct{
-
-// }

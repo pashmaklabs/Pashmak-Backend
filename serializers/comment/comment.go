@@ -9,7 +9,6 @@ type CommentResponse struct {
 	Content string       `json:"content"`
 	Rating  uint         `json:"rating" binding:"required,min=0,max=5"`
 	User    UserResponse `json:"user"`
-	// Reactions []models_place.Reaction `json:"reactions"`
 	Likes     int64      `json:"likes"`
 	Dislikes  int64      `json:"dislikes"`
 	CreatedAt time.Time `json:"created_at"`

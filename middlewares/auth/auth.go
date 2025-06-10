@@ -92,7 +92,7 @@ func (am *AuthMiddleware) AuthOrAnonMiddleware() gin.HandlerFunc {
 				c.Set("user", *claim.UserInfo)
 				c.Set("claim", &claim)
 			} else {
-				// log.Println("Invalid JWT, treating as anonymous:", err.Error())
+				// Invalid JWT, treating as anonymous
 			}
 		}
 		c.Next()

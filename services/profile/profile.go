@@ -290,10 +290,5 @@ func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([
 	if len(history) == 0 {
 		return nil, errors.New("no history found")
 	}
-
-	// paginator, commentDTOs, err := ps.PaginateComments(c, commentsQuery)
-	// if err != nil{
-	// 	return nil, nil, err
-	// }
 	return history, nil
 }
