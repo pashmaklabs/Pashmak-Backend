@@ -13,15 +13,15 @@ import (
 func getModels() []interface{} {
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
-		// authentication
 		&models_auth.User{},
 		&models_auth.JWTBlacklist{},
-		&models_auth.Role{},
-		&models_auth.Permission{},
-		&models_auth.RolePermission{},
 		&models_place.Comment{},
 		&models_place.Place{},
 		&models_place.Reaction{},
+		&models_place.SavedLocation{},
+		&models_auth.Role{},
+		&models_auth.Permission{},
+		&models_auth.RolePermission{},
 		&models_report.Report{},
 		&models.SearchHistory{},
 		&models_place.Image{},
@@ -39,22 +39,6 @@ func MakeMigrations(db *gorm.DB) {
 
 	SetupRoleAndPermissions(db)
 
-
-	// 3. Create a user with a valid role_id
-        // user := models_auth.User{
-        //     FirstName: "کاربر پشمک",
-        //     LastName:  "",
-        //     Email:     "bzrwbd@hi2.in",
-        //     Password:  "", // Add password hashing if needed
-        //     Avatar_url: "",
-        //     Score:     0,
-        //     RoleID:    adminRole.ID, // Use the ID from the created Admin role
-        // }
-        // if err := tx.Where("email = ?", user.Email).FirstOrCreate(&user).Error; err != nil {
-        //     log.Printf("Failed to create user %s: %v", user.Email, err)
-        //     return err
-        // }
 	
-	// INFO: Database indexing for efficiency of comments querying
-	// db.Exec("CREATE INDEX IF NOT EXISTS idx_comments_place_id ON comments (place_id)")
+	// TODO: Database indexing for efficiency of comments querying
 }
