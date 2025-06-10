@@ -14,6 +14,7 @@ import (
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_paginator "pashmak.com/pashmak/services/pagination"
+	"pashmak.com/pashmak/services/placeOsmUtils"
 )
 
 type CommentService struct {
@@ -120,37 +121,42 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 	if err != nil {
 		return err
 	}
-
-	var place models_place.Place
-	if err := cs.DB.Where("id = ?", placeTokenInt).First(&place).Error; err != nil {
-		var count int64
-		err := cs.DB.Raw(`
-			SELECT COUNT(*)
-			FROM planet_osm_point
-			WHERE osm_id = ?
-		`, placeTokenInt).Scan(&count).Error
-		if err != nil {
-			return err
-		}
-		if count > 0{
-			res := cs.DB.Create(&models_place.Place{
-				ID: uint(placeTokenInt),
-				IsOSM: true,
-				// Name should be replaced with real name
-				Name: "Unknown",
-			})
-			
-			if res.Error != nil {
-				return err
-			}
-			// Retrieve the newly created place
-            if err := cs.DB.Where("id = ?", placeTokenInt).First(&place).Error; err != nil {
-                return err
-            }
-		} else if count == 0{
-			return errors.New("place not found")
-		}
+	
+	place, err := placeOsmUtils.ImportFromOSM(uint(placeTokenInt), cs.DB)
+	if err != nil {
+		return err
 	}
+
+	// var place models_place.Place
+	// if err := cs.DB.Where("id = ?", placeTokenInt).First(&place).Error; err != nil {
+	// 	var count int64
+	// 	err := cs.DB.Raw(`
+	// 		SELECT COUNT(*)
+	// 		FROM planet_osm_point
+	// 		WHERE osm_id = ?
+	// 	`, placeTokenInt).Scan(&count).Error
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if count > 0{
+	// 		res := cs.DB.Create(&models_place.Place{
+	// 			ID: uint(placeTokenInt),
+	// 			IsOSM: true,
+	// 			// Name should be replaced with real name
+	// 			Name: "Unknown",
+	// 		})
+			
+	// 		if res.Error != nil {
+	// 			return err
+	// 		}
+	// 		// Retrieve the newly created place
+    //         if err := cs.DB.Where("id = ?", placeTokenInt).First(&place).Error; err != nil {
+    //             return err
+    //         }
+	// 	} else if count == 0{
+	// 		return errors.New("place not found")
+	// 	}
+	// }
 	result := cs.DB.Create(&models_place.Comment{
 		Content:   payload.Content,
 		Rating:    payload.Rating,
