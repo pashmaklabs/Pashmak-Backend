@@ -172,7 +172,7 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 			FROM places
 			WHERE name ILIKE ?
 			UNION
-			SELECT osm_id, name, ST_Y(way) AS latitude, ST_X(way) AS longitude, amenity, NULL AS id
+			SELECT osm_id, name, ST_Y(ST_Transform(way, 4326)) AS latitude, ST_X(ST_Transform(way, 4326)) AS longitude, amenity, NULL AS id
 			FROM planet_osm_point
 			WHERE name ILIKE ?
 			LIMIT 50`
@@ -204,7 +204,7 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 }
 
 // Helper function to map search results to response
-func (ps *PlaceService)mapSearchResultsToResponse(rawResults []placeSearchResult) []sp.GetPlaceByIDResponse {
+func (ps *PlaceService) mapSearchResultsToResponse(rawResults []placeSearchResult) []sp.GetPlaceByIDResponse {
 	var results []sp.GetPlaceByIDResponse
 	for _, r := range rawResults {
 		resp := sp.GetPlaceByIDResponse{
