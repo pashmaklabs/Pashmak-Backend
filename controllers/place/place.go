@@ -78,9 +78,9 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 	response := serializers_place.PlaceWithRatingResponse{
 		ID:        place.ID,
 		Name:      place.Name,
-		Amenity:   place.Amenity,
-		Latitude:  place.Latitude,
-		Longitude: place.Longitude,
+		Amenity:   *place.Amenity,
+		Latitude:  *place.Latitude,
+		Longitude: *place.Longitude,
 		Rating:    avgRating,
 		ImageURLs: place.ImageURLs,
 	}
