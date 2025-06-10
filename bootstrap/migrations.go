@@ -40,6 +40,5 @@ func MakeMigrations(db *gorm.DB) {
 	SetupRoleAndPermissions(db)
 
 	
-	// INFO: Database indexing for efficiency of comments querying
-	// db.Exec("CREATE INDEX IF NOT EXISTS idx_comments_place_id ON comments (place_id)")
+	// TODO: Database indexing for efficiency of comments querying
 }
