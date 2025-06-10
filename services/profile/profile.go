@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
+	models_place "pashmak.com/pashmak/models/place"
 	models "pashmak.com/pashmak/models/openai"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
 	services_auth "pashmak.com/pashmak/services/auth"
@@ -76,6 +77,49 @@ func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfil
 	}, result.Error
 }
 
+func (ps *ProfileService) GetSavedLocations(id uint) ([]serializers_profile.SavedLocationResponse, error) {
+	var savedLocations []models_place.SavedLocation
+	response := make([]serializers_profile.SavedLocationResponse, 0)
+
+	result := ps.DB.Where("user_id = ?", id).Preload("Place").Find(&savedLocations)
+	if result.Error != nil {
+		return response, result.Error
+	}
+
+	for _, location := range savedLocations {
+		response = append(response, serializers_profile.SavedLocationResponse{
+			Latitude:  location.Latitude,
+			Longitude: location.Longitude,
+			UserNote:  location.UserNote,
+			Label:     string(location.Label),
+		})
+	}
+
+	return response, nil
+}
+
+func (ps *ProfileService) AddSavedLocation(id uint, request serializers_profile.SavedLocationRequest) (serializers_profile.SavedLocationResponse, error) {
+	savedLocation := models_place.SavedLocation{
+		UserID:    id,
+		PlaceID:   request.PlaceID,
+		Latitude:  request.Latitude,
+		Longitude: request.Longitude,
+		UserNote:  request.UserNote,
+		Label:     models_place.LabelType(request.Label),
+	}
+
+	result := ps.DB.Create(&savedLocation)
+	if result.Error != nil {
+		return serializers_profile.SavedLocationResponse{}, result.Error
+	}
+
+	return serializers_profile.SavedLocationResponse{
+		Latitude:  savedLocation.Latitude,
+		Longitude: savedLocation.Longitude,
+		UserNote:  savedLocation.UserNote,
+		Label:     string(savedLocation.Label),
+	}, nil
+}
 func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, error){
 	ext := filepath.Ext(file.Filename)
 	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {

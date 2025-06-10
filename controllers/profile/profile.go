@@ -250,3 +250,65 @@ func (pc *ProfileController) FetchSearchHistory(c *gin.Context){
 		"history": history,
 	})
 }
+
+func (pc *ProfileController) GetSavedLocations(c *gin.Context) {
+	value, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+	userinfo := value.(services_auth.UserInfo)
+	savedLocations, err := pc.ProfileService.GetSavedLocations(userinfo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "",
+		"result":  savedLocations,
+	})
+}
+
+func (pc *ProfileController) AddSavedLocation(c *gin.Context) {
+	value, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+	userinfo := value.(services_auth.UserInfo)
+
+	var requestBody serializers_profile.SavedLocationRequest
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "ورودی نامعتبر است",
+		})
+		return
+	}
+
+	savedLocation, err := pc.ProfileService.AddSavedLocation(userinfo.ID, requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "",
+		"result":  savedLocation,
+	})
+}

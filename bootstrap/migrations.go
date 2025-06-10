@@ -13,15 +13,15 @@ import (
 func getModels() []interface{} {
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
-		// authentication
 		&models_auth.User{},
 		&models_auth.JWTBlacklist{},
-		&models_auth.Role{},
-		&models_auth.Permission{},
-		&models_auth.RolePermission{},
 		&models_place.Comment{},
 		&models_place.Place{},
 		&models_place.Reaction{},
+		&models_place.SavedLocation{},
+		&models_auth.Role{},
+		&models_auth.Permission{},
+		&models_auth.RolePermission{},
 		&models_report.Report{},
 		&models.SearchHistory{},
 		&models_place.Image{},

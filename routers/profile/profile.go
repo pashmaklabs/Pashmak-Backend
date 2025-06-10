@@ -29,6 +29,8 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *
 			middlewares_validation.ValidationMiddleware[serializers_profile.UpdateUserProfileRequest](),
 			authMiddleware.LoginMiddleware(), profileController.UpdateUserProfile)
 		profile.GET("/:id", profileController.GetProfileByID)
+		profile.GET("/me/saved-locs", authMiddleware.LoginMiddleware(), profileController.GetSavedLocations)
+		profile.POST("/me/saved-locs", authMiddleware.LoginMiddleware(), profileController.AddSavedLocation)
 		profile.GET("/avatar/:file_uuid", profileController.GetUserAvatarObject)
 		profile.POST("/avatar/upload", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)
 		profile.GET("/me/search/history", authMiddleware.LoginMiddleware(), profileController.FetchSearchHistory)
