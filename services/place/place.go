@@ -159,13 +159,13 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 			err, len(ps.AppConfig.OpenaiApiKey), sqlAgent.Model, sqlAgent.GetMessages())
 		// Fallback to simple ILIKE search if SQL generation fails
 		fallbackQuery := `
-			SELECT osm_id, name, NULL AS latitude, NULL AS longitude, NULL as amenity, id
+			SELECT NULL AS osm_id, name, NULL AS latitude, NULL AS longitude, NULL as amenity, id
 			FROM places
 			WHERE name ILIKE ?
 			UNION
 			SELECT osm_id, name, ST_Y(way) AS latitude, ST_X(way) AS longitude, amenity, NULL AS place_id
 			FROM planet_osm_point
-			WHERE name ILIKE ? AND osm_id NOT IN (SELECT osm_id FROM places WHERE osm_id IS NOT NULL)
+			WHERE name ILIKE ?
 			LIMIT 50`
 
 		err = ps.DB.Raw(fallbackQuery, "%"+q+"%", "%"+q+"%").Scan(&results).Error
