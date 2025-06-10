@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"path/filepath"
 	"time"
+
 	webp "github.com/chai2010/webp"
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
@@ -22,6 +23,7 @@ import (
 	models_place "pashmak.com/pashmak/models/place"
 	sp "pashmak.com/pashmak/serializers/place"
 	services_openai "pashmak.com/pashmak/services/openai"
+	"pashmak.com/pashmak/services/placeOsmUtils"
 )
 
 var (
@@ -30,6 +32,15 @@ var (
 	ErrMinioUnavailable = errors.New("minio unavailable")
 	ErrInvalidSize      = errors.New("file too large")
 )
+
+type placeSearchResult struct {
+	OsmID     *uint
+	Name      string
+	Amenity   *string
+	Latitude  *float64
+	Longitude *float64
+	ID        *int64
+}
 
 type PlaceService struct {
 	DB            *gorm.DB
@@ -49,7 +60,7 @@ func NewPlaceService(db *gorm.DB, appconfig *bootstrap.AppConfig, openaiService 
 
 func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) {
 	// First, try to import/get the place from OSM if it exists
-	place, err := ps.ImportFromOSM(id)
+	place, err := placeOsmUtils.ImportFromOSM(id, ps.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +75,7 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
 	}
 
 	var response sp.GetPlaceByIDResponse
-	
+
 	// If this is an OSM place, get additional data from planet_osm_point
 	if place.IsOSM {
 		var osmResult struct {
@@ -84,30 +95,30 @@ func (ps *PlaceService) GetPlaceByID(id uint) (*sp.GetPlaceByIDResponse, error) 
 				ST_X(ST_Transform(way, 4326)) as longitude
 			FROM planet_osm_point
 			WHERE osm_id = ?`
-		
+
 		err = ps.DB.Raw(query, id).Scan(&osmResult).Error
 		if err != nil {
 			return nil, err
 		}
 
 		// Populate response with OSM data
-		response.OsmID = osmResult.OsmID
+		response.OsmID = &osmResult.OsmID
 		response.Name = osmResult.Name
-		response.Amenity = osmResult.Amenity
-		response.Latitude = osmResult.Latitude
-		response.Longitude = osmResult.Longitude
+		response.Amenity = &osmResult.Amenity
+		response.Latitude = &osmResult.Latitude
+		response.Longitude = &osmResult.Longitude
 	} else {
 		// For non-OSM places, use data from the places table
-		response.OsmID = 0
+		response.OsmID = nil
 		response.Name = place.Name
-		response.Amenity = place.Amenity
-		response.Latitude = place.Latitude
-		response.Longitude = place.Longitude
+		response.Amenity = &place.Amenity
+		response.Latitude = &place.Latitude
+		response.Longitude = &place.Longitude
 	}
 
 	// Common data for both OSM and non-OSM places
 	response.ID = int64(place.ID)
-	
+
 	// Add image URLs
 	for _, image := range place.Images {
 		response.ImageURLs = append(response.ImageURLs, image.URL)
@@ -126,16 +137,15 @@ func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool
 		history.SessionID = "" // Clear session_id for logged-in users
 	}
 
-	if err := ps.DB.Create(&history); err != nil{
+	if err := ps.DB.Create(&history); err != nil {
 		return err.Error
 	}
 	return nil
 }
 
-
 func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.GetPlaceByIDResponse, error) {
 	query := fmt.Sprintf("Query: %s\nLatitude: %s\nLongitude: %s", q, lat, long)
-	var results []sp.GetPlaceByIDResponse
+	var rawResults []placeSearchResult
 
 	// Create a new SQL chat agent with our specialized system prompt
 	sqlAgent := oa.NewSQLChatAgent("", "gpt-4.1")
@@ -163,17 +173,17 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 			FROM places
 			WHERE name ILIKE ?
 			UNION
-			SELECT osm_id, name, ST_Y(way) AS latitude, ST_X(way) AS longitude, amenity, NULL AS place_id
+			SELECT osm_id, name, ST_Y(ST_Transform(way, 4326)) AS latitude, ST_X(ST_Transform(way, 4326)) AS longitude, amenity, NULL AS id
 			FROM planet_osm_point
 			WHERE name ILIKE ?
 			LIMIT 50`
 
-		err = ps.DB.Raw(fallbackQuery, "%"+q+"%", "%"+q+"%").Scan(&results).Error
+		err = ps.DB.Raw(fallbackQuery, "%"+q+"%", "%"+q+"%").Scan(&rawResults).Error
 		if err != nil {
 			log.Printf("Fallback search failed: %v", err)
 			return nil, fmt.Errorf("fallback search failed: %w", err)
 		}
-		return results, nil
+		return ps.mapSearchResultsToResponse(rawResults), nil
 	}
 
 	if len(resp.Choices) == 0 {
@@ -185,14 +195,41 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string) ([]sp.Get
 	generatedSQL := resp.Choices[0].Message.Content
 	log.Printf("Generated SQL: %s", generatedSQL)
 
-	err = ps.DB.Raw(generatedSQL).Scan(&results).Error
+	err = ps.DB.Raw(generatedSQL).Scan(&rawResults).Error
 	if err != nil {
 		log.Printf("Failed to execute generated SQL: %v\nSQL: %s", err, generatedSQL)
 		return nil, fmt.Errorf("failed to execute generated SQL: %w", err)
 	}
 
+	return ps.mapSearchResultsToResponse(rawResults), nil
+}
 
-	return results, nil
+// Helper function to map search results to response
+func (ps *PlaceService) mapSearchResultsToResponse(rawResults []placeSearchResult) []sp.GetPlaceByIDResponse {
+	var results []sp.GetPlaceByIDResponse
+	for _, r := range rawResults {
+		resp := sp.GetPlaceByIDResponse{
+			OsmID:     r.OsmID,
+			Name:      r.Name,
+			Amenity:   r.Amenity,
+			Latitude:  r.Latitude,
+			Longitude: r.Longitude,
+			ID:        0,
+			ImageURLs: []string{},
+		}
+		if r.ID != nil {
+			resp.ID = *r.ID
+			// Optionally, fetch images for this place ID
+			var images []models_place.Image
+			if err := ps.DB.Where("place_id = ?", *r.ID).Find(&images).Error; err == nil {
+				for _, img := range images {
+					resp.ImageURLs = append(resp.ImageURLs, img.URL)
+				}
+			}
+		}
+		results = append(results, resp)
+	}
+	return results
 }
 
 // validateImage checks file extension and size
@@ -250,12 +287,12 @@ func (ps *PlaceService) UploadPlaceImage(place *models_place.Place, file *multip
 	imgURL := fmt.Sprintf("%s/places/%d/images/%s", ps.AppConfig.ServerHost, place.ID, objectName)
 	res := ps.DB.Create(&models_place.Image{
 		PlaceID: place.ID,
-		URL: imgURL,
+		URL:     imgURL,
 		AltText: "alt",
 		Caption: "caption",
 	})
 
-	if res.Error != nil{
+	if res.Error != nil {
 		return "", res.Error
 	}
 
@@ -282,37 +319,4 @@ func (ps *PlaceService) GetPlaceImage(placeID uint, imageName string) (io.ReadCl
 	return obj, objInfo.ETag, nil
 }
 
-func (ps *PlaceService) ImportFromOSM(placeID uint) (*models_place.Place, error){
-  var place models_place.Place
-  if err := ps.DB.Where("id = ?", placeID).First(&place).Error; err != nil {
-    var count int64
-    err := ps.DB.Raw(`
-      SELECT COUNT(*)
-      FROM planet_osm_point
-      WHERE osm_id = ?
-    `, placeID).Scan(&count).Error
-    if err != nil {
-      return nil, err
-    }
-    if count > 0{
-      res := ps.DB.Create(&models_place.Place{
-        ID: placeID,
-        IsOSM: true,
-        // Name should be replaced with real name
-        Name: "Unknown",
-      })
-      
-      if res.Error != nil {
-        return nil, err
-      }
-      // Retrieve the newly created place
-            if err := ps.DB.Where("id = ?", placeID).First(&place).Error; err != nil {
-                return nil, err
-            }
-    } else if count == 0{
-      return nil, errors.New("place not found")
-    }
-  }
-  return &place, nil
-}
 

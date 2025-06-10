@@ -14,7 +14,7 @@ type Place struct {
 	Longitude float64
 	// TODO: Add place TOKEN
 	IsOSM     bool
-	Name      string    `gorm:"not null;size:255"`
+	Name      string    `gorm:"not null;size:255;index"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	Comments  []Comment `gorm:"foreignKey:PlaceID"` // INFO: One-to-many relationship
 	Images    []Image   `gorm:"foreignKey:PlaceID"`
