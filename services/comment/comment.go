@@ -29,23 +29,23 @@ func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentServ
 	}
 }
 
-func (cs *CommentService) FetchReactionsFromDatabase(commentID uint)(int64, int64, error){
+func (cs *CommentService) FetchReactionsFromDatabase(commentID uint) (int64, int64, error) {
 	var likes int64
 	var dislikes int64
 	if err := cs.DB.Model(&models_place.Reaction{}).
 		Where("reaction_type = ? AND comment_id = ?", 0, commentID).
-		Count(&likes).Error; err != nil{
-			return 0, 0, nil
-		}
+		Count(&likes).Error; err != nil {
+		return 0, 0, nil
+	}
 	if err := cs.DB.Model(&models_place.Reaction{}).
 		Where("reaction_type = ? AND comment_id = ?", 1, commentID).
-		Count(&dislikes).Error; err != nil{
-			return 0, 0, nil
-		}
+		Count(&dislikes).Error; err != nil {
+		return 0, 0, nil
+	}
 	return likes, dislikes, nil
 }
 
-func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.CommentResponse, error){
+func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
 	pagedComments, paginator, err := services_paginator.Paginate[models_place.Comment](comments, c, cs.DB, 20)
 	if err != nil {
 		return nil, nil, err
@@ -56,11 +56,11 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*
 		j := len(pagedComments) - 1 - i
 		pagedComments[i], pagedComments[j] = pagedComments[j], pagedComments[i]
 	}
-	
+
 	commentDTOs := make([]serializers_comment.CommentResponse, len(pagedComments))
 	for i, comment := range pagedComments {
 		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
-		if err != nil{
+		if err != nil {
 			return nil, nil, err
 		}
 		commentDTOs[i] = serializers_comment.CommentResponse{
@@ -74,12 +74,49 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*
 				Avatar:    comment.User.Avatar_url,
 			},
 			CreatedAt: comment.CreatedAt,
-			Likes: likes,
-			Dislikes: dislikes,
+			Likes:     likes,
+			Dislikes:  dislikes,
 		}
 	}
 
 	return paginator, commentDTOs, nil
+}
+
+func (cs *CommentService) PaginateReportedComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.ReportedCommentsResponse, error) {
+	pagedReports, paginator, err := services_paginator.Paginate[models_report.Report](comments, c, cs.DB, 20)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Reverse the pagedComments slice
+	for i := 0; i < len(pagedReports)/2; i++ {
+		j := len(pagedReports) - 1 - i
+		pagedReports[i], pagedReports[j] = pagedReports[j], pagedReports[i]
+	}
+
+	reportDTOs := make([]serializers_comment.ReportedCommentsResponse, len(pagedReports))
+	for i, report := range pagedReports {
+		reportDTOs[i] = serializers_comment.ReportedCommentsResponse{
+			ID:     report.ID,
+			Reason: report.Reason,
+			Status: report.Status,
+			Comment: serializers_comment.ReportCommentResponse{
+				ID:        report.Comment.ID,
+				Content:   report.Comment.Content,
+				PlaceID:   report.Comment.PlaceID,
+				PlaceName: report.Comment.Place.Name,
+				User: serializers_comment.UserResponse{
+					ID:        report.User.ID,
+					FirstName: report.User.FirstName,
+					LastName:  report.User.LastName,
+					Avatar:    report.User.Avatar_url,
+				},
+			},
+			CreatedAt: report.CreatedAt,
+		}
+	}
+
+	return paginator, reportDTOs, nil
 }
 
 func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
@@ -99,7 +136,7 @@ func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string) 
 	}
 
 	paginator, commentDTOs, err := cs.PaginateComments(c, commentsQuery)
-	if err != nil{
+	if err != nil {
 		return nil, nil, err
 	}
 	return paginator, commentDTOs, nil
@@ -121,7 +158,7 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 	if err != nil {
 		return err
 	}
-	
+
 	place, err := placeOsmUtils.ImportFromOSM(uint(placeTokenInt), cs.DB)
 	if err != nil {
 		return err
@@ -159,52 +196,51 @@ func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
 	return result.AverageRating, nil
 }
 
-
-func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentID uint, reactionType uint) error{
+func (cs *CommentService) AddReaction(userInfo services_auth.UserInfo, commentID uint, reactionType uint) error {
 	var comment models_place.Comment
-    if err := cs.DB.First(&comment, commentID).Error; err != nil {
-        return errors.New("comment not found")
-    }
-
-	var existingReaction models_place.Reaction
-    if err := cs.DB.Where("user_id = ? AND comment_id = ?", userInfo.ID, commentID).
-        First(&existingReaction).Error; err == nil {
-        // Update existing reaction
-        existingReaction.ReactionType = reactionType
-        cs.DB.Save(&existingReaction)
-        return nil
-    }
-
-	newReaction := models_place.Reaction{
-		CommentID: commentID,
-		ReactionType: reactionType,
-		UserID: userInfo.ID,
-	}
-	if err := cs.DB.Create(&newReaction).Error; err != nil{
-		return err
-	}
-	
-	return nil
-}
-
-func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, commentID uint) error{
-	var comment models_place.Comment
-	if err := cs.DB.First(&comment, commentID).Error; err != nil{
+	if err := cs.DB.First(&comment, commentID).Error; err != nil {
 		return errors.New("comment not found")
 	}
 
 	var existingReaction models_place.Reaction
-	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentID, userInfo.ID).Delete(&existingReaction).Error; err != nil{
+	if err := cs.DB.Where("user_id = ? AND comment_id = ?", userInfo.ID, commentID).
+		First(&existingReaction).Error; err == nil {
+		// Update existing reaction
+		existingReaction.ReactionType = reactionType
+		cs.DB.Save(&existingReaction)
+		return nil
+	}
+
+	newReaction := models_place.Reaction{
+		CommentID:    commentID,
+		ReactionType: reactionType,
+		UserID:       userInfo.ID,
+	}
+	if err := cs.DB.Create(&newReaction).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cs *CommentService) RemoveRection(userInfo services_auth.UserInfo, commentID uint) error {
+	var comment models_place.Comment
+	if err := cs.DB.First(&comment, commentID).Error; err != nil {
+		return errors.New("comment not found")
+	}
+
+	var existingReaction models_place.Reaction
+	if err := cs.DB.Where("comment_id = ? AND user_id = ?", commentID, userInfo.ID).Delete(&existingReaction).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, commentID int,reason string) error{
+func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, commentID int, reason string) error {
 	var comment models_place.Comment
-    if err := cs.DB.First(&comment, commentID).Error; err != nil {
-        return errors.New("comment not found")
-    }
+	if err := cs.DB.First(&comment, commentID).Error; err != nil {
+		return errors.New("comment not found")
+	}
 
 	newReport := models_report.Report{
 		CommentID: uint(commentID),
@@ -218,4 +254,21 @@ func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, comment
 	}
 
 	return nil
+}
+
+func (cs *CommentService) GetReportedComments(c *gin.Context) (*pagination.Paginator, []serializers_comment.ReportedCommentsResponse, error) {
+	var reportedComments []models_report.Report
+	query := cs.DB.Model(&models_report.Report{})
+
+	result := query.Preload("User").Preload("Comment").Preload("Comment.Place").Find(&reportedComments)
+	if result.Error != nil {
+		return nil, nil, result.Error
+	}
+
+	if len(reportedComments) == 0 {
+		return nil, nil, errors.New("no reports found")
+	}
+
+	paginator, commentDTOs, err := cs.PaginateReportedComments(c, result)
+	return paginator, commentDTOs, err
 }

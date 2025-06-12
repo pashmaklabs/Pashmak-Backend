@@ -244,3 +244,28 @@ func (cc *CommentController) ReportComment(c *gin.Context){
 		"message": "گزارش با موفقیت ثبت شد",
 	})
 }
+
+func (cc *CommentController) GetReportedComments(c *gin.Context){
+	paginator, pagedReports, err := cc.CommentService.GetReportedComments(c)
+	if err != nil {
+		if err.Error() == "no reports found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "success",
+				"message": "گزارشی یافت نشد",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"reports": pagedReports,
+		"paginator": paginator,
+	})
+}

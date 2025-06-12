@@ -61,15 +61,15 @@ func HasPermission(db *gorm.DB, userID uint, permissionName string) bool {
 	return false
 }
 
-func PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
+func (am *AuthMiddleware)PermissionMiddleware(db *gorm.DB, permission string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, exists := c.Get("user")
-		userinfo := user.(services_auth.UserInfo)
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 			c.Abort()
 			return
 		}
+		userinfo := user.(services_auth.UserInfo)
 
 		if !HasPermission(db, userinfo.ID, permission) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})

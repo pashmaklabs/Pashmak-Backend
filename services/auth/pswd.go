@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
-	"golang.org/x/crypto/bcrypt"
+
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 	models_auth "pashmak.com/pashmak/models/auth"
 )
 
@@ -56,6 +58,10 @@ func (as *AuthService) LoginWithPassword(email string, password string) (string,
 		return "", errors.New("user has no password")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		log.Println(err)
+		log.Println(user.Password)
+		log.Println(password)
+
 		return "", err
 	}
 	jwt, err := as.GenerateJWT(user)

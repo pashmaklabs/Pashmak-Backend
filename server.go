@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	middlewares_cors "pashmak.com/pashmak/middlewares/cors"
+	routers_admin "pashmak.com/pashmak/routers/admin"
 	routers_auth "pashmak.com/pashmak/routers/auth"
 	routers_comment "pashmak.com/pashmak/routers/comment"
 	routers_navigation "pashmak.com/pashmak/routers/navigation"
@@ -57,6 +58,7 @@ func main() {
 	routers_navigation.NavigationRoutes(Router, DB, AppConfig)
 	routers_comment.CommentRoutes(Router, DB, Redis, AppConfig)
 	routers_place.PlaceRoutes(Router, DB, Redis, Minio, AppConfig)
+	routers_admin.AdminRoutes(Router, DB, Redis, Minio, AppConfig)
 
 	Router.Run(fmt.Sprintf(":%s", AppConfig.ServerPort))
 }

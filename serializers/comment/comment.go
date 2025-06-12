@@ -5,13 +5,13 @@ import (
 )
 
 type CommentResponse struct {
-	ID      uint         `json:"id"`
-	Content string       `json:"content"`
-	Rating  uint         `json:"rating" binding:"required,min=0,max=5"`
-	User    UserResponse `json:"user"`
-	Likes     int64      `json:"likes"`
-	Dislikes  int64      `json:"dislikes"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uint         `json:"id"`
+	Content   string       `json:"content"`
+	Rating    uint         `json:"rating" binding:"required,min=0,max=5"`
+	User      UserResponse `json:"user"`
+	Likes     int64        `json:"likes"`
+	Dislikes  int64        `json:"dislikes"`
+	CreatedAt time.Time    `json:"created_at"`
 }
 
 type UserResponse struct {
@@ -25,9 +25,9 @@ type RatingResponse struct {
 	AverageRating float64 `json:"average_rating"`
 	Count         int64   `json:"count"`
 }
-type AddCommentRequest struct{
-	Content string	`json:"content" binding:"max=1000"`
-	Rating	uint	`json:"rating" binding:"required,numeric,min=0,max=5"`
+type AddCommentRequest struct {
+	Content string `json:"content" binding:"max=1000"`
+	Rating  uint   `json:"rating" binding:"required,numeric,min=0,max=5"`
 }
 
 type AddReactionRequest struct {
@@ -37,4 +37,20 @@ type AddReactionRequest struct {
 
 type SendReportRequest struct {
 	Reason string `json:"reason" binding:"required,max=500"`
+}
+
+type ReportCommentResponse struct {
+	ID        uint         `json:"id"`
+	Content   string       `json:"content"`
+	User      UserResponse `json:"user"`
+	PlaceID   uint         `json:"place_id"`
+	PlaceName string       `jsonn:"place_name"`
+}
+
+type ReportedCommentsResponse struct {
+	ID        uint                  `json:"id"`
+	Reason    string                `json:"reason"`
+	Status    string                `json:"status"`
+	Comment   ReportCommentResponse `json:"comment"`
+	CreatedAt time.Time             `json:"created_at"`
 }
