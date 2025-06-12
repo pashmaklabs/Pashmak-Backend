@@ -251,6 +251,41 @@ func (pc *ProfileController) FetchSearchHistory(c *gin.Context){
 	})
 }
 
+
+
+func (pc *ProfileController) DeleteSearchHistory(c *gin.Context){
+	userinfo, exists := c.Get("user")
+	
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+		})
+		return
+	}
+	userpayload := userinfo.(services_auth.UserInfo)
+
+	searchId := c.Param("id")
+	err := pc.ProfileService.DeleteSearchHistory(userpayload, searchId)
+
+	if err != nil{
+		if err.Error() == "history not found"{
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "success",
+				"message": "تاریخچه ای وجود ندارد",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+	}
+
+	c.Status(http.StatusAccepted)
+}
+
 func (pc *ProfileController) GetSavedLocations(c *gin.Context) {
 	value, exists := c.Get("user")
 	if !exists {
