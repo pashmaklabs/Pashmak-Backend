@@ -305,3 +305,11 @@ func (ps *ProfileService) DeleteSearchHistory(userInfo services_auth.UserInfo, s
 	}
 	return nil
 }
+
+func (ps *ProfileService) ClearSearchHistory(userInfo services_auth.UserInfo) (error){
+	var history models.SearchHistory
+	if err := ps.DB.Where("user_id = ?", userInfo.ID).Delete(&history).Error; err != nil{
+		return err
+	}
+	return nil
+}
