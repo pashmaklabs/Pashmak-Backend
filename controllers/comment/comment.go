@@ -246,12 +246,14 @@ func (cc *CommentController) ReportComment(c *gin.Context){
 }
 
 func (cc *CommentController) GetReportedComments(c *gin.Context){
-	paginator, pagedReports, err := cc.CommentService.GetReportedComments(c)
+	status := c.Query("status")
+	paginator, pagedReports, err := cc.CommentService.GetReportedComments(c, status)
 	if err != nil {
 		if err.Error() == "no reports found"{
 			c.JSON(http.StatusNotFound, gin.H{
 				"status": "success",
-				"message": "گزارشی یافت نشد",
+				"reports": pagedReports,
+				"paginator": paginator,
 			})
 			return
 		}

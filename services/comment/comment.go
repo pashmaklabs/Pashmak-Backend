@@ -256,11 +256,11 @@ func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, comment
 	return nil
 }
 
-func (cs *CommentService) GetReportedComments(c *gin.Context) (*pagination.Paginator, []serializers_comment.ReportedCommentsResponse, error) {
+func (cs *CommentService) GetReportedComments(c *gin.Context, status string) (*pagination.Paginator, []serializers_comment.ReportedCommentsResponse, error) {
 	var reportedComments []models_report.Report
 	query := cs.DB.Model(&models_report.Report{})
 
-	result := query.Preload("User").Preload("Comment").Preload("Comment.Place").Find(&reportedComments)
+	result := query.Where("status = ?", status).Preload("User").Preload("Comment").Preload("Comment.Place").Find(&reportedComments)
 	if result.Error != nil {
 		return nil, nil, result.Error
 	}

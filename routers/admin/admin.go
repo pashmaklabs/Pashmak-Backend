@@ -22,7 +22,7 @@ func AdminRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *mi
 	admin := router.Group("/admin")
 	{
 		admin.GET("/reported-comments",
-		authMiddleware.LoginMiddleware(),
-		authMiddleware.PermissionMiddleware(db, "view_reports"), commentController.GetReportedComments)
+			authMiddleware.LoginMiddleware(),
+			authMiddleware.PermissionMiddleware(db, "view_reports"), commentController.GetReportedComments)
 	}
 }
