@@ -271,3 +271,46 @@ func (cc *CommentController) GetReportedComments(c *gin.Context){
 		"paginator": paginator,
 	})
 }
+
+
+func (cc *CommentController) ChangeReportStatus(c *gin.Context){
+	reportId := c.Param("id")
+	validatedData, exists := c.Get("validated")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_comment.ChangeReportStatus)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected AddCommentRequest, got %T", validatedData)
+		return
+	}
+
+	err := cc.CommentService.ChangeReportStatus(body.Status, reportId)
+	if err != nil {
+		if err.Error() == "report not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "error",
+				"message": "گزارش یافت نشد",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
