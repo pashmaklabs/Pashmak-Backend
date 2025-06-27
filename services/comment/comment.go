@@ -256,10 +256,15 @@ func (cs *CommentService) ReportComment(userInfo services_auth.UserInfo, comment
 	return nil
 }
 
-func (cs *CommentService) GetReportedComments(c *gin.Context) (*pagination.Paginator, []serializers_comment.ReportedCommentsResponse, error) {
+func (cs *CommentService) GetReportedComments(c *gin.Context, status string) (*pagination.Paginator, []serializers_comment.ReportedCommentsResponse, error) {
 	var reportedComments []models_report.Report
 	query := cs.DB.Model(&models_report.Report{})
-
+	if status != "" {
+		result := query.Where("status = ?", status).Preload("User").Preload("Comment").Preload("Comment.Place").Find(&reportedComments)
+		if result.Error != nil {
+			return nil, nil, result.Error
+		}
+	}
 	result := query.Preload("User").Preload("Comment").Preload("Comment.Place").Find(&reportedComments)
 	if result.Error != nil {
 		return nil, nil, result.Error
@@ -271,4 +276,20 @@ func (cs *CommentService) GetReportedComments(c *gin.Context) (*pagination.Pagin
 
 	paginator, commentDTOs, err := cs.PaginateReportedComments(c, result)
 	return paginator, commentDTOs, err
+}
+
+func (cs *CommentService) ChangeReportStatus(status string, reportId string) error{
+	var report models_report.Report
+	if err := cs.DB.First(&report, reportId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("report not found")
+		}
+		return err
+	}
+
+	res := cs.DB.Model(&report).Update("status", status)
+	if res.Error != nil{
+		return res.Error
+	}
+	return nil
 }

@@ -54,3 +54,7 @@ type ReportedCommentsResponse struct {
 	Comment   ReportCommentResponse `json:"comment"`
 	CreatedAt time.Time             `json:"created_at"`
 }
+
+type ChangeReportStatus struct {
+	Status string `json:"status" binding:"required,oneof=Pending Resolved Dismissed"`
+}
