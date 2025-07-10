@@ -292,3 +292,24 @@ func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([
 	}
 	return history, nil
 }
+
+
+func (ps *ProfileService) DeleteSearchHistory(userInfo services_auth.UserInfo, searchId string) (error){
+	var history models.SearchHistory
+	if err := ps.DB.First(&history, searchId).Error; err != nil{
+		return errors.New("history not found")
+	}
+
+	if err := ps.DB.Where("id = ? AND user_id = ?", searchId, userInfo.ID).Delete(&history).Error; err != nil{
+		return err
+	}
+	return nil
+}
+
+func (ps *ProfileService) ClearSearchHistory(userInfo services_auth.UserInfo) (error){
+	var history models.SearchHistory
+	if err := ps.DB.Where("user_id = ?", userInfo.ID).Delete(&history).Error; err != nil{
+		return err
+	}
+	return nil
+}

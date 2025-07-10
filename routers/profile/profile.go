@@ -34,5 +34,7 @@ func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *
 		profile.GET("/avatar/:file_uuid", profileController.GetUserAvatarObject)
 		profile.POST("/avatar/upload", authMiddleware.LoginMiddleware(), profileController.UploadUserAvatar)
 		profile.GET("/me/search/history", authMiddleware.LoginMiddleware(), profileController.FetchSearchHistory)
+		profile.DELETE("/me/search/history/:id", authMiddleware.LoginMiddleware(), profileController.DeleteSearchHistory)
+		profile.DELETE("/me/search/history/clear", authMiddleware.LoginMiddleware(), profileController.ClearSearchHistory)
 	}
 }
