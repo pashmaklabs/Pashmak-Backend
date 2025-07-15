@@ -201,7 +201,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		return
 	}
 	
-	jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
+	user, jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" || err.Error() == "user has no password" || err.Error() == "record not found" { // TODO: Integrate errors
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -222,6 +222,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "ورود با موفقیت انجام شد.",
+		"role":	map[uint]string{1: "admin", 2: "user"}[user.RoleID],
 	})
 }
 

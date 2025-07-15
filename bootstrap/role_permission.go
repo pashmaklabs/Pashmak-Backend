@@ -24,6 +24,7 @@ func SetupRoleAndPermissions(db *gorm.DB) {
 
 		// 2. Create roles and associate permissions
 		adminRole := models_auth.Role{
+			Model:       gorm.Model{ID: 1},
 			Name:        "Admin",
 			Permissions: permissions, // Assign both permissions
 		}
@@ -33,6 +34,7 @@ func SetupRoleAndPermissions(db *gorm.DB) {
 		}
 
 		editorRole := models_auth.Role{
+			Model:       gorm.Model{ID: 2},
 			Name:        "Editor",
 			Permissions: []models_auth.Permission{permissions[0]}, // Only "create_post"
 		}
