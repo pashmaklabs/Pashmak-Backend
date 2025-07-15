@@ -21,7 +21,7 @@ func CommentRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconf
 
 	comment := router.Group("/comments")
 	{
-		comment.GET("/:placeToken", commentController.GetCommentsByPlaceToken)
+		comment.GET("/:placeToken", authMiddleware.AuthOrAnonMiddleware(), commentController.GetCommentsByPlaceToken)
 		comment.POST("/:id/reaction/set",
 			middlewares_validation.ValidationMiddleware[serializers_comment.AddReactionRequest](),
 			authMiddleware.LoginMiddleware(), commentController.SetNewReaction)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -49,26 +48,22 @@ func (as *AuthService) CheckUserPassword(email string, newpassword string) (*mod
 	return &user, nil
 }
 
-func (as *AuthService) LoginWithPassword(email string, password string) (string, error) {
+func (as *AuthService) LoginWithPassword(email string, password string) (models_auth.User, string, error) {
 	user, err := as.GetUserByGmail(email)
 	if err != nil {
-		return "", err
+		return models_auth.User{}, "", err
 	}
 	if user.Password == "" {
-		return "", errors.New("user has no password")
+		return models_auth.User{}, "", errors.New("user has no password")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Println(err)
-		log.Println(user.Password)
-		log.Println(password)
-
-		return "", err
+		return models_auth.User{}, "", err
 	}
 	jwt, err := as.GenerateJWT(user)
 	if err != nil {
-		return "", err
+		return models_auth.User{}, "", err
 	}
-	return jwt, nil
+	return user, jwt, nil
 }
 
 func (as *AuthService) ForgetPassword(email string) error {
