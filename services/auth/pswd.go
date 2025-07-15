@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -58,10 +57,6 @@ func (as *AuthService) LoginWithPassword(email string, password string) (string,
 		return "", errors.New("user has no password")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Println(err)
-		log.Println(user.Password)
-		log.Println(password)
-
 		return "", err
 	}
 	jwt, err := as.GenerateJWT(user)
