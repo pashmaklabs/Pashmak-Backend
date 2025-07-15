@@ -45,10 +45,10 @@ func (cs *CommentService) FetchReactionsFromDatabase(commentID uint) (int64, int
 	return likes, dislikes, nil
 }
 
-func (cs *CommentService) CheckIsLikedByCurrentUser(userpayload services_auth.UserInfo, comment models_place.Comment) (bool, error){
+func (cs *CommentService) CheckIsReactedByCurrentUser(userpayload services_auth.UserInfo, comment models_place.Comment, reactionType uint) (bool, error){
 	var count int64
 	err := cs.DB.Model(&models_place.Reaction{}).
-		Where("comment_id = ? AND user_id = ?", comment.ID, userpayload.ID).
+		Where("comment_id = ? AND user_id = ? AND reaction_type = ?", comment.ID, userpayload.ID, reactionType).
 		Count(&count).Error
 	return count > 0, err
 }
@@ -72,8 +72,12 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB, us
 			return nil, nil, err
 		}
 		isLiked := false
+		isDisliked := false
 		if(isLoggedIn){
-			isLiked, err = cs.CheckIsLikedByCurrentUser(userpayload, comment)
+			isLiked, err = cs.CheckIsReactedByCurrentUser(userpayload, comment, 0)
+			if(!isLiked){
+				isDisliked, err = cs.CheckIsReactedByCurrentUser(userpayload, comment, 1)
+			}
 		}
 		if err != nil{
 			return nil, nil, err
@@ -92,6 +96,7 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB, us
 			Likes:     likes,
 			Dislikes:  dislikes,
 			IsLikedByCurrentUser: isLiked,
+			IsDislikedByCurrentUser: isDisliked,
 		}
 	}
 

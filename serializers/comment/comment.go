@@ -5,14 +5,15 @@ import (
 )
 
 type CommentResponse struct {
-	ID                   uint         `json:"id"`
-	Content              string       `json:"content"`
-	Rating               uint         `json:"rating" binding:"required,min=0,max=5"`
-	User                 UserResponse `json:"user"`
-	Likes                int64        `json:"likes"`
-	Dislikes             int64        `json:"dislikes"`
-	IsLikedByCurrentUser bool         `json:"isLikedByCurrentUser"`
-	CreatedAt            time.Time    `json:"created_at"`
+	ID                      uint         `json:"id"`
+	Content                 string       `json:"content"`
+	Rating                  uint         `json:"rating" binding:"required,min=0,max=5"`
+	User                    UserResponse `json:"user"`
+	Likes                   int64        `json:"likes"`
+	Dislikes                int64        `json:"dislikes"`
+	IsLikedByCurrentUser    bool         `json:"isLikedByCurrentUser"`
+	IsDislikedByCurrentUser bool         `json:"isDislikedByCurrentUser"`
+	CreatedAt               time.Time    `json:"created_at"`
 }
 
 type UserResponse struct {
