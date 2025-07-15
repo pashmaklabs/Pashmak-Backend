@@ -162,6 +162,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "ورود با موفقیت انجام شد.",
+			"role":	map[uint]string{1: "admin", 10: "user"}[user.RoleID],
 		})
 		return
 	} else {
@@ -222,7 +223,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "ورود با موفقیت انجام شد.",
-		"role":	map[uint]string{1: "admin", 2: "user"}[user.RoleID],
+		"role":	map[uint]string{1: "admin", 10: "user"}[user.RoleID],
 	})
 }
 
