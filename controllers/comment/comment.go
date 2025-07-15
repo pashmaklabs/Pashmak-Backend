@@ -22,8 +22,16 @@ func NewCommentController(commentservice *services_comment.CommentService) *Comm
 }
 
 func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
+	isLoggedIn := false
+	var userpayload services_auth.UserInfo
+	userinfo, _ := c.Get("user")
+	if userinfo != nil{
+		isLoggedIn = true
+		userpayload = userinfo.(services_auth.UserInfo)
+	}
+	
 	token := c.Param("placeToken")
-	paginator, pagedComments, err := cc.CommentService.GetCommentsByPlaceToken(c, token)
+	paginator, pagedComments, err := cc.CommentService.GetCommentsByPlaceToken(c, token, userpayload, isLoggedIn)
 	if err != nil {
 		if err.Error() == "no comments found"{
 			c.JSON(http.StatusNotFound, gin.H{

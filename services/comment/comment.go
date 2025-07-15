@@ -45,7 +45,15 @@ func (cs *CommentService) FetchReactionsFromDatabase(commentID uint) (int64, int
 	return likes, dislikes, nil
 }
 
-func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
+func (cs *CommentService) CheckIsReactedByCurrentUser(userpayload services_auth.UserInfo, comment models_place.Comment, reactionType uint) (bool, error){
+	var count int64
+	err := cs.DB.Model(&models_place.Reaction{}).
+		Where("comment_id = ? AND user_id = ? AND reaction_type = ?", comment.ID, userpayload.ID, reactionType).
+		Count(&count).Error
+	return count > 0, err
+}
+
+func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB, userpayload services_auth.UserInfo, isLoggedIn bool) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
 	pagedComments, paginator, err := services_paginator.Paginate[models_place.Comment](comments, c, cs.DB, 20)
 	if err != nil {
 		return nil, nil, err
@@ -63,6 +71,17 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*
 		if err != nil {
 			return nil, nil, err
 		}
+		isLiked := false
+		isDisliked := false
+		if(isLoggedIn){
+			isLiked, err = cs.CheckIsReactedByCurrentUser(userpayload, comment, 0)
+			if(!isLiked){
+				isDisliked, err = cs.CheckIsReactedByCurrentUser(userpayload, comment, 1)
+			}
+		}
+		if err != nil{
+			return nil, nil, err
+		}
 		commentDTOs[i] = serializers_comment.CommentResponse{
 			ID:      comment.ID,
 			Content: comment.Content,
@@ -76,6 +95,8 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB) (*
 			CreatedAt: comment.CreatedAt,
 			Likes:     likes,
 			Dislikes:  dislikes,
+			IsLikedByCurrentUser: isLiked,
+			IsDislikedByCurrentUser: isDisliked,
 		}
 	}
 
@@ -119,7 +140,7 @@ func (cs *CommentService) PaginateReportedComments(c *gin.Context, comments *gor
 	return paginator, reportDTOs, nil
 }
 
-func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
+func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string, userpayload services_auth.UserInfo, isLoggedIn bool) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
 	var comments []models_place.Comment
 	commentsQuery := cs.DB.
 		Where("place_id = ?", token).
@@ -135,7 +156,7 @@ func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string) 
 		return nil, nil, errors.New("no comments found")
 	}
 
-	paginator, commentDTOs, err := cs.PaginateComments(c, commentsQuery)
+	paginator, commentDTOs, err := cs.PaginateComments(c, commentsQuery, userpayload, isLoggedIn)
 	if err != nil {
 		return nil, nil, err
 	}
