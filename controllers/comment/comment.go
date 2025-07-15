@@ -250,7 +250,10 @@ func (cc *CommentController) GetReportedComments(c *gin.Context){
 	paginator, pagedReports, err := cc.CommentService.GetReportedComments(c, status)
 	if err != nil {
 		if err.Error() == "no reports found"{
-			c.JSON(http.StatusNotFound, gin.H{
+			if pagedReports == nil {
+				pagedReports = []serializers_comment.ReportedCommentsResponse{}
+			}
+			c.JSON(http.StatusOK, gin.H{
 				"status": "success",
 				"reports": pagedReports,
 				"paginator": paginator,
