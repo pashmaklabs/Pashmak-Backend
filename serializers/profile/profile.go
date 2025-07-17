@@ -30,7 +30,33 @@ type SavedLocationRequest struct {
 	UserNote  string  `json:"user_note,omitempty"`
 }
 
+type CreatePlaceLabelRequest struct {
+	Name string
+}
+
+type GetSavedLocationsByPlaceLabelRequest struct {
+	PlaceLabelID uint `uri:"place_label_id" form:"place_label_id"`
+}
+
+type UpdateSavedLocationRequest struct {
+	ID           uint    `json:"id"`
+	UserNote     *string `json:"user_note"`
+	PlaceLabelID *uint   `json:"place_label_id"`
+}
+
+type DeleteSavedLocation struct {
+	ID uint `uri:"id"`
+}
+
 type UpdateUserProfileRequest struct {
-	FirstName string	`json:"firstname" binding:"required,alpha"`
-	LastName  string	`json:"lastname" binding:"required,alpha"`
+	FirstName string `json:"firstname" binding:"required,alpha"`
+	LastName  string `json:"lastname" binding:"required,alpha"`
+}
+
+type CreateSavedLocationRequest struct {
+	PlaceID   *uint   `json:"place_id,omitempty"`
+	PlaceLabelID  uint `json:"place_label_id"`
+	Latitude  float64 `json:"latitude" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+	UserNote  *string  `json:"user_note,omitempty"`
 }

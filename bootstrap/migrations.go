@@ -18,6 +18,7 @@ func getModels() []interface{} {
 		&models_place.Comment{},
 		&models_place.Place{},
 		&models_place.Reaction{},
+		&models_place.PlaceLabel{},
 		&models_place.SavedLocation{},
 		&models_auth.Role{},
 		&models_auth.Permission{},

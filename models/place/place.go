@@ -40,13 +40,13 @@ type Reaction struct {
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }
 
-type LabelType string
-
-const (
-	LabelFavorites   LabelType = "favorites"
-	LabelWantToGo    LabelType = "want_to_go"
-	LabelDestination LabelType = "destination"
-)
+type PlaceLabel struct {
+	ID        uint             `gorm:"primaryKey;autoIncrement"`
+	Name      string           `gorm:"not null"`
+	UserID    uint             `gorm:"not null"`
+	User      models_auth.User `gorm:"foreignKey:UserID" json:"-"`
+	CreatedAt time.Time        `gorm:"autoCreateTime"`
+}
 
 type SavedLocation struct {
 	ID        uint             `gorm:"primaryKey;autoIncrement"`
@@ -54,11 +54,10 @@ type SavedLocation struct {
 	Longitude float64          `gorm:"not null"`
 	UserNote  string           `gorm:"size:255;default:''"`
 	PlaceID   *uint            `gorm:"default:null"`
-	Place     *Place           `gorm:"foreignKey:PlaceID"`
-	UserID    uint             `gorm:"not null"`
-	User      models_auth.User `gorm:"foreignKey:UserID"`
+	Place     *Place           `gorm:"foreignKey:PlaceID" json:"-"`
+	PlaceLabelID uint           `gorm:"not null"`
+	PlaceLabel   PlaceLabel     `gorm:"foreignKey:PlaceLabelID" json:"-"`
 	CreatedAt time.Time        `gorm:"autoCreateTime"`
-	Label     LabelType        `gorm:"type:varchar(20);not null"`
 }
 
 type Image struct {

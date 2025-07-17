@@ -1,6 +1,8 @@
 package controllers_profile
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,15 +12,20 @@ import (
 	"gorm.io/gorm"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
 	services_auth "pashmak.com/pashmak/services/auth"
+	services_place "pashmak.com/pashmak/services/place"
 	services_profile "pashmak.com/pashmak/services/profile"
 )
 
 type ProfileController struct {
 	ProfileService *services_profile.ProfileService
+	PlaceService *services_place.PlaceService
 }
 
-func NewProfileController(profileService *services_profile.ProfileService) *ProfileController {
-	return &ProfileController{ProfileService: profileService}
+func NewProfileController(profileService *services_profile.ProfileService, placeService *services_place.PlaceService) *ProfileController {
+	return &ProfileController{
+		ProfileService: profileService,
+		PlaceService: placeService,
+	}
 }
 
 func (pc *ProfileController) GetMyProfile(c *gin.Context) {
@@ -252,7 +259,6 @@ func (pc *ProfileController) FetchSearchHistory(c *gin.Context){
 }
 
 
-
 func (pc *ProfileController) DeleteSearchHistory(c *gin.Context){
 	userinfo, exists := c.Get("user")
 	
@@ -318,64 +324,229 @@ func (pc *ProfileController) ClearSearchHistory(c *gin.Context){
 	c.Status(http.StatusAccepted)
 }
 
-func (pc *ProfileController) GetSavedLocations(c *gin.Context) {
-	value, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusForbidden, gin.H{
+func (pc *ProfileController) CreatePlaceLabel(c *gin.Context) {
+	value, _ := c.Get("user")
+	userinfo := value.(services_auth.UserInfo)
+
+	var req serializers_profile.CreatePlaceLabelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "ساختار داده ورودی اشتباه است.",
+		})
+		return
+	}
+
+	label, err := pc.ProfileService.CreatePlaceLabel(req.Name, userinfo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "شمامجاز به انجام این عملیات نمی باشید.",
 		})
 		return
 	}
+
+	c.JSON(http.StatusCreated, label)
+}
+
+func (pc *ProfileController) GetUserPlaceLabels(c *gin.Context) {
+	value, _ := c.Get("user")
 	userinfo := value.(services_auth.UserInfo)
-	savedLocations, err := pc.ProfileService.GetSavedLocations(userinfo.ID)
+	labels, err := pc.ProfileService.GetUserPlaceLabels(userinfo.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
-			"message": "مشکل غیرمنتظره ای رخ داده است",
+			"message": "خطا در دریافت برچسب ها",
 		})
-		log.Println(err.Error())
 		return
 	}
+
+	c.JSON(http.StatusOK, labels)
+}
+
+func (pc *ProfileController) DeletePlaceLabel(c *gin.Context) {
+	value, _ := c.Get("user")
+	userinfo := value.(services_auth.UserInfo)
+
+	labelID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "شناسه برچسب نامعتبر است",
+		})
+		return
+	}
+
+	err = pc.ProfileService.DeletePlaceLabel(uint(labelID), userinfo.ID)
+	if err != nil {
+		
+		status := http.StatusInternalServerError
+		message := "مشکل غیرمنتظره ای رخ داده است."
+
+		if err.Error() == "record not found" {
+			status = http.StatusNotFound
+			message = "برچسب پیدا نشد"
+		}
+
+		c.JSON(status, gin.H{
+			"status":  "error",
+			"message": message,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
+		"status": "success",
 		"message": "",
-		"result":  savedLocations,
 	})
 }
 
-func (pc *ProfileController) AddSavedLocation(c *gin.Context) {
-	value, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusForbidden, gin.H{
-			"status":  "error",
-			"message": "شمامجاز به انجام این عملیات نمی باشید.",
+func (pc *ProfileController) CreateSavedLocation(c *gin.Context){
+	var validateBody serializers_profile.CreateSavedLocationRequest
+	if err := c.ShouldBindJSON(&validateBody); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message": "ساختار داده ورودی اشتباه است.",
+		})
+	}
+
+	_, err := pc.PlaceService.GetPlaceByID(*validateBody.PlaceID)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است.",
+		})
+	}
+
+	value, _ := c.Get("user")
+	userinfo := value.(services_auth.UserInfo)
+	savedLocation, err := pc.ProfileService.CreateSavedLocation(userinfo.ID, services_profile.CreateSavedLocationParams{
+		PlaceID: validateBody.PlaceID,
+		PlaceLabelID: validateBody.PlaceLabelID,
+		UserNote: validateBody.UserNote,
+		Latitude: validateBody.Latitude,
+		Longitude: validateBody.Longitude,
+	})
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است.",
 		})
 		return
 	}
+	c.JSON(http.StatusCreated, gin.H{
+		"saved_location": savedLocation,
+		"status": "success",
+		"message": "",
+	})
+}
+
+func (pc *ProfileController) GetSavedLocationsByPlaceLabel(c *gin.Context){
+	var validatedBody serializers_profile.GetSavedLocationsByPlaceLabelRequest
+	if err := c.ShouldBindUri(&validatedBody); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message": "ساختار داده ورودی اشتباه است.",
+		})
+	}
+
+	value, _ := c.Get("user")
 	userinfo := value.(services_auth.UserInfo)
 
-	var requestBody serializers_profile.SavedLocationRequest
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "ورودی نامعتبر است",
+	places, err := pc.ProfileService.GetSavedLocationsByPlaceLabel(userinfo.ID, validatedBody.PlaceLabelID)
+	if err == gorm.ErrRecordNotFound{
+		c.JSON(http.StatusNotFound, gin.H{
+			"status": "error",
+			"message": "چنین برچسبی پیدا نشد.",
+		})
+		return 
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		return
 	}
 
-	savedLocation, err := pc.ProfileService.AddSavedLocation(userinfo.ID, requestBody)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "مشکل غیرمنتظره ای رخ داده است",
+	c.JSON(http.StatusOK, gin.H{
+		"results": places,
+		"status": "success",
+		"message": "",
+	})
+}
+
+func (pc *ProfileController) UpdateSavedLocation(c *gin.Context) {
+	var validatedBody serializers_profile.UpdateSavedLocationRequest
+	if err := c.ShouldBindJSON(&validatedBody); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message": "ساختار داده ورودی اشتباه است",
 		})
-		log.Println(err.Error())
+	}
+
+	value, _ := c.Get("user")
+	userinfo := value.(services_auth.UserInfo)
+
+	savedLocation, err := pc.ProfileService.UpdateSavedLocation(
+		services_profile.UpdateSavedLocationServiceParams{
+			ID: validatedBody.ID,
+			UserNote: validatedBody.UserNote,
+			PlaceLabelID: validatedBody.PlaceLabelID,
+			UserID: userinfo.ID,
+		},
+	)
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status": "error",
+			"message": "مکان ذخیره شده یافت نشد.",
+		})
+		return 
+	} else if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "خطا غیر منتظره ای رخ داده است.",
+		})
+		return 
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"saved_location": savedLocation,
+		"status": "success",
+		"message": "",
+	})
+}
+
+func (pc *ProfileController) HardDeleteSavedLocation(c *gin.Context){
+	var validatedBody serializers_profile.DeleteSavedLocation
+	if err := c.ShouldBindUri(&validatedBody); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message": "ساختار داده ورودی اشتباه هست.",
+		})
+		return 
+	}
+
+	value, _ := c.Get("user")
+	userinfo := value.(services_auth.UserInfo)
+	
+	err := pc.ProfileService.HardDeleteSavedLocation(validatedBody.ID, userinfo.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status": "error",
+			"message": "مکان ذخیره شده یافت نشد.",
+		})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "خطای غیرمنتظره ای رخ داده است.",
+		})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
+		"status": "success",
 		"message": "",
-		"result":  savedLocation,
 	})
 }

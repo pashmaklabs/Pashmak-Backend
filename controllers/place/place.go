@@ -18,18 +18,21 @@ import (
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
 	services_place "pashmak.com/pashmak/services/place"
+	services_profile "pashmak.com/pashmak/services/profile"
 )
 
 type PlaceController struct {
 	PlaceService   *services_place.PlaceService
 	CommnetService *services_comment.CommentService
+	ProfileService *services_profile.ProfileService
 	AppConfig      *bootstrap.AppConfig
 }
 
-func NewPlaceController(placeService *services_place.PlaceService, commentService *services_comment.CommentService, appConfig *bootstrap.AppConfig) *PlaceController {
+func NewPlaceController(placeService *services_place.PlaceService, commentService *services_comment.CommentService, profileService *services_profile.ProfileService, appConfig *bootstrap.AppConfig) *PlaceController {
 	return &PlaceController{
 		PlaceService:   placeService,
 		CommnetService: commentService,
+		ProfileService: profileService,
 		AppConfig:      appConfig,
 	}
 }
@@ -84,6 +87,16 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 		Rating:    avgRating,
 		ImageURLs: place.ImageURLs,
 	}
+
+	value, exists := c.Get("user")
+	if exists{
+		userinfo := value.(services_auth.UserInfo)
+		placeLabel, err := pc.ProfileService.GetLabelOfPlace(userinfo.ID, uint(place.ID))
+		if err == nil && placeLabel != nil{
+			response.PlaceLabel = placeLabel
+		}
+	}
+	
 
 	c.JSON(200, gin.H{
 		"status":  "success",
