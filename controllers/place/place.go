@@ -276,13 +276,6 @@ func (pc *PlaceController) AddNewPlace(c *gin.Context){
 	userpayload := userinfo.(services_auth.UserInfo)
 	err := pc.PlaceService.AddNewPlace(userpayload, body)
 	if err != nil{
-		if err.Error() == "place not found"{
-			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
-				"message": "مکان یافت نشد",
-			})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
 			"message": "مشکل غیر منتظره ای رخ داد",
@@ -293,6 +286,6 @@ func (pc *PlaceController) AddNewPlace(c *gin.Context){
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"status": "success",
-		"message": "دیدگاه با موفقیت ثبت شد",
+		"message": "مکان با موفقیت ثبت شد",
 	})
 }

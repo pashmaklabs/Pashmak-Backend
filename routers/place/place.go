@@ -8,6 +8,8 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	controllers_place "pashmak.com/pashmak/controllers/place"
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
+	middlewares_validation "pashmak.com/pashmak/middlewares/validation"
+	serializers_place "pashmak.com/pashmak/serializers/place"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
 	services_openai "pashmak.com/pashmak/services/openai"
@@ -30,6 +32,9 @@ func PlaceRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *mi
 		place.GET("/", authMiddleware.AuthOrAnonMiddleware(), placeController.SearchPlace)
 		place.POST("/:id/images", placeController.UploadPlaceImage)
 		place.GET("/:id/images/:image_name", placeController.GetPlaceImage)
-		place.POST("/new_place", placeController.AddNewPlace)
+		place.POST("/new_place",
+			middlewares_validation.ValidationMiddleware[serializers_place.AddPlaceRequest](),
+			authMiddleware.LoginMiddleware(),
+			placeController.AddNewPlace)
 	}
 }

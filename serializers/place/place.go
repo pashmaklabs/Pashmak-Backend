@@ -26,6 +26,6 @@ type PlaceWithRatingResponse struct {
 type AddPlaceRequest struct {
 	Name      string  `json:"name"`
 	Amenity   string  `json:"amenity"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude" binding:"latitude"`
+	Longitude float64 `json:"longitude" binding:"longitude"`
 }

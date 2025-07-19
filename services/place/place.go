@@ -321,7 +321,17 @@ func (ps *PlaceService) GetPlaceImage(placeID uint, imageName string) (io.ReadCl
 	return obj, objInfo.ETag, nil
 }
 
-func (ps *PlaceService) AddNewPlace(userinfo services_auth.UserInfo, payload serializers_place.AddPlaceRequest){
-	
+func (ps *PlaceService) AddNewPlace(userinfo services_auth.UserInfo, payload serializers_place.AddPlaceRequest) error{
+	newPlace := models_place.Place{
+		Name: payload.Name,
+		Amenity: payload.Amenity,
+		Latitude: payload.Latitude,
+		Longitude: payload.Longitude,
+		IsOSM: false,
+	}
+	if err := ps.DB.Create(&newPlace).Error; err != nil{
+		return err
+	}
+	return nil
 }
 
