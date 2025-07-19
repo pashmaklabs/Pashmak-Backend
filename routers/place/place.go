@@ -30,5 +30,6 @@ func PlaceRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *mi
 		place.GET("/", authMiddleware.AuthOrAnonMiddleware(), placeController.SearchPlace)
 		place.POST("/:id/images", placeController.UploadPlaceImage)
 		place.GET("/:id/images/:image_name", placeController.GetPlaceImage)
+		place.POST("/new_place", placeController.AddNewPlace)
 	}
 }

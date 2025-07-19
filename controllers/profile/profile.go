@@ -2,7 +2,6 @@ package controllers_profile
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"

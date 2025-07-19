@@ -21,7 +21,9 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	oa "pashmak.com/pashmak/models/openai"
 	models_place "pashmak.com/pashmak/models/place"
+	serializers_place "pashmak.com/pashmak/serializers/place"
 	sp "pashmak.com/pashmak/serializers/place"
+	services_auth "pashmak.com/pashmak/services/auth"
 	services_openai "pashmak.com/pashmak/services/openai"
 	"pashmak.com/pashmak/services/placeOsmUtils"
 )
@@ -319,4 +321,7 @@ func (ps *PlaceService) GetPlaceImage(placeID uint, imageName string) (io.ReadCl
 	return obj, objInfo.ETag, nil
 }
 
+func (ps *PlaceService) AddNewPlace(userinfo services_auth.UserInfo, payload serializers_place.AddPlaceRequest){
+	
+}
 
