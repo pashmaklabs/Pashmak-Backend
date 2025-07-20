@@ -22,6 +22,7 @@ import (
 	models_place "pashmak.com/pashmak/models/place"
 	models "pashmak.com/pashmak/models/openai"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
+	serializers_place "pashmak.com/pashmak/serializers/place"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
@@ -101,6 +102,7 @@ func (ps *ProfileService) GetUserPlaceLabels(userID uint) ([]models_place.PlaceL
 	return labels, nil
 }
 
+
 // DeletePlaceLabel permanently deletes a place label
 func (ps *ProfileService) DeletePlaceLabel(labelID uint, userID uint) error {
 	// Using Unscoped() for hard delete and checking user ownership
@@ -147,6 +149,7 @@ func (ps *ProfileService) CreateSavedLocation(userID uint, params CreateSavedLoc
 
 func (ps *ProfileService) GetSavedLocationsByPlaceLabel(userID uint, labelID uint) ([]models_place.SavedLocation, error){
 	var places []models_place.SavedLocation
+	fmt.Println(labelID, userID)
 	if err := ps.DB.
 		Joins("JOIN place_labels ON place_labels.id = saved_locations.place_label_id").
 		Where("saved_locations.place_label_id = ? AND place_labels.user_id = ?", labelID, userID).
@@ -202,17 +205,19 @@ func (ps *ProfileService) HardDeleteSavedLocation(ID uint, userID uint) (error) 
 	return nil
 }
 
-func (ps *ProfileService) GetLabelOfPlace(userID uint, placeID uint) (*models_place.PlaceLabel, error){
+func (ps *ProfileService) GetLabelOfPlace(userID uint, placeID uint) (*serializers_place.SavedLocationResponse, error) {
 	var savedLocation models_place.SavedLocation
 	if err := ps.DB.
-		Preload("PlaceLabel").
 		Joins("JOIN place_labels ON place_labels.id = saved_locations.place_label_id").
 		Where("place_labels.user_id = ? AND saved_locations.place_id = ?", userID, placeID).
 		First(&savedLocation).
-		Error; err != nil{
+		Error; err != nil {
 		return nil, err
 	}
-	return &savedLocation.PlaceLabel, nil
+	return &serializers_place.SavedLocationResponse{
+		ID:           int64(savedLocation.ID),
+		PlaceLabelID: int64(savedLocation.PlaceLabelID),
+	}, nil
 }
 
 func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, error){

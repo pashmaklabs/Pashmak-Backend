@@ -2,7 +2,6 @@ package controllers_profile
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -410,16 +409,20 @@ func (pc *ProfileController) CreateSavedLocation(c *gin.Context){
 		})
 	}
 
-	_, err := pc.PlaceService.GetPlaceByID(*validateBody.PlaceID)
-	if err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
-			"message": "مشکل غیرمنتظره ای رخ داده است.",
-		})
+	if validateBody.PlaceID != nil{
+		_, err := pc.PlaceService.GetPlaceByID(*validateBody.PlaceID)
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": "error",
+				"message": "مشکل غیرمنتظره ای رخ داده است.",
+			})
+		}
 	}
+	
 
 	value, _ := c.Get("user")
 	userinfo := value.(services_auth.UserInfo)
+	
 	savedLocation, err := pc.ProfileService.CreateSavedLocation(userinfo.ID, services_profile.CreateSavedLocationParams{
 		PlaceID: validateBody.PlaceID,
 		PlaceLabelID: validateBody.PlaceLabelID,

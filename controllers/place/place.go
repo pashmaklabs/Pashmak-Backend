@@ -89,14 +89,13 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 	}
 
 	value, exists := c.Get("user")
-	if exists{
+	if exists {
 		userinfo := value.(services_auth.UserInfo)
-		placeLabel, err := pc.ProfileService.GetLabelOfPlace(userinfo.ID, uint(place.ID))
-		if err == nil && placeLabel != nil{
-			response.PlaceLabel = placeLabel
+		savedLocation, err := pc.ProfileService.GetLabelOfPlace(userinfo.ID, uint(place.ID))
+		if err == nil && savedLocation != nil {
+			response.SavedLocation = savedLocation
 		}
 	}
-	
 
 	c.JSON(200, gin.H{
 		"status":  "success",

@@ -1,5 +1,5 @@
 package serializers_place
-import models_place "pashmak.com/pashmak/models/place"
+
 type GetPlaceByIDResponse struct {
 	OsmID     *uint     `json:"osm_id"`
 	Name      string   `json:"name"`
@@ -10,13 +10,18 @@ type GetPlaceByIDResponse struct {
 	ImageURLs []string `json:"image_urls"`
 }
 
+type SavedLocationResponse struct {
+	ID           int64 `json:"id"`
+	PlaceLabelID int64 `json:"place_label_id"`
+}
+
 type PlaceWithRatingResponse struct {
-	ID        int64    `json:"id"`
-	Name      string   `json:"name"`
-	Amenity   string   `json:"amenity"`
-	Latitude  float64  `json:"latitude"`
-	Longitude float64  `json:"longitude"`
-	Rating    float64  `json:"rating"`
-	ImageURLs []string `json:"image_urls"`
-	PlaceLabel *models_place.PlaceLabel 
+	ID            int64                  `json:"id"`
+	Name          string                 `json:"name"`
+	Amenity       string                 `json:"amenity"`
+	Latitude      float64                `json:"latitude"`
+	Longitude     float64                `json:"longitude"`
+	Rating        float64                `json:"rating"`
+	ImageURLs     []string               `json:"image_urls"`
+	SavedLocation *SavedLocationResponse `json:"saved_location"`
 }
