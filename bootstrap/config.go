@@ -24,6 +24,11 @@ type AppConfig struct {
 	PostgresDBName   string
 	PostgresPort     string
 
+
+	PGVectorHost     string
+	PGVectorDBName   string
+	PGVectorPort     string
+
 	TokenAge       int64
 	PrivateKeyPath string
 
@@ -62,6 +67,10 @@ var (
 	POSTGRES_DBNAME   string
 	POSTGRES_PORT     string
 
+	PGVECTOR_HOST     string
+	PGVECTOR_DBNAME   string
+	PGVECTOR_PORT     string
+
 	TOKEN_AGE        int64
 	PRIVATE_KEY_PATH string
 
@@ -96,6 +105,10 @@ func LoadEnvVars() *AppConfig {
 	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
+
+	PGVECTOR_HOST = os.Getenv("POSTGRES_HOST")
+	PGVECTOR_DBNAME = os.Getenv("PGVECTOR_DBNAME")
+	PGVECTOR_PORT = os.Getenv("PGVECTOR_PORT")
 
 	TOKEN_AGE, err := strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
 	if err != nil {

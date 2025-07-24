@@ -24,6 +24,7 @@ import (
 var (
 	Router    *gin.Engine
 	DB        *gorm.DB
+	PGVectorDB        *gorm.DB
 	Redis     *redis.Client
 	Minio     *minio.Client
 	AppConfig *bootstrap.AppConfig
@@ -32,9 +33,11 @@ var (
 func init() {
 	AppConfig = bootstrap.LoadEnvVars()
 	DB = bootstrap.SetUpPostgres()
+	PGVectorDB = bootstrap.SetUpPGVector()
 	Redis = bootstrap.SetupRedis()
 	Minio = bootstrap.SetUpMinio()
 	bootstrap.MakeMigrations(DB)
+	bootstrap.MakePGVectorMigrations(PGVectorDB)
 }
 
 func main() {
