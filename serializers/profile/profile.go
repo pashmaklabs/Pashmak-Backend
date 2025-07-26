@@ -40,6 +40,7 @@ type GetSavedLocationsByPlaceLabelRequest struct {
 
 type UpdateSavedLocationRequest struct {
 	ID           uint    `json:"id"`
+	Name         *string `json:"name"`
 	UserNote     *string `json:"user_note"`
 	PlaceLabelID *uint   `json:"place_label_id"`
 }
@@ -54,9 +55,16 @@ type UpdateUserProfileRequest struct {
 }
 
 type CreateSavedLocationRequest struct {
-	PlaceID   *uint   `json:"place_id,omitempty"`
-	PlaceLabelID  uint `json:"place_label_id"`
-	Latitude  float64 `json:"latitude" binding:"required"`
-	Longitude float64 `json:"longitude" binding:"required"`
-	UserNote  *string  `json:"user_note,omitempty"`
+	PlaceID      *uint   `json:"place_id,omitempty"`
+	PlaceLabelID uint    `json:"place_label_id"`
+	Latitude     float64 `json:"latitude" binding:"required"`
+	Longitude    float64 `json:"longitude" binding:"required"`
+	UserNote     *string `json:"user_note,omitempty"`
+	Name         *string `json:"name,omitempty"`
+}
+
+type PlaceLabelWithCountResponse struct {
+	ID                  uint   `json:"id"`
+	Name                string `json:"name"`
+	SavedLocationsCount int64  `json:"saved_locations_count"`
 }

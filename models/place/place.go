@@ -50,6 +50,7 @@ type PlaceLabel struct {
 
 type SavedLocation struct {
 	ID        uint             `gorm:"primaryKey;autoIncrement"`
+	Name      string           `gorm:"size:25;default:''"`
 	Latitude  float64          `gorm:"not null"`
 	Longitude float64          `gorm:"not null"`
 	UserNote  string           `gorm:"size:255;default:''"`
