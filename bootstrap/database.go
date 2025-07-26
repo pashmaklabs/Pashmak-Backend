@@ -40,7 +40,7 @@ func SetUpPGVector() *gorm.DB {
 	postgres_dsn := DatabaseDSN{
 		host: PGVECTOR_HOST, 
 		user: POSTGRES_USER,
-		password: POSTGRES_PASSWORD,
+		password: PGVECTOR_PASSWORD,
 		dbname: PGVECTOR_DBNAME,
 		port: PGVECTOR_PORT,
 	}	

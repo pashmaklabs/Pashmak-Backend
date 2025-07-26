@@ -63,9 +63,5 @@ func MakePGVectorMigrations(db *gorm.DB) {
 			log.Println("Error migrating model: ", err.Error())
 		}
 	}
-
-	SetupRoleAndPermissions(db)
-
-	
 	// TODO: Database indexing for efficiency of comments querying
 }
