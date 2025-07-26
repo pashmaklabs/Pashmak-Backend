@@ -241,3 +241,50 @@ func (pc *PlaceController) GetPlaceImage(c *gin.Context) {
 		log.Println("Error writing image using Copy func:", err)
 	}
 }
+
+func (pc *PlaceController) AddNewPlace(c *gin.Context){
+	validatedData, exists := c.Get("validated")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed to retrieve validated data from context: exists=%v", exists)
+		return
+	}
+
+	body, ok := validatedData.(serializers_place.AddPlaceRequest)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Printf("Failed type assertion for validated data: expected AddCommentRequest, got %T", validatedData)
+		return
+	}
+
+	userinfo, exists := c.Get("user")
+	
+	if !exists{
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status": "error",
+			"message": "ابتدا باید وارد شوید",
+		})
+		return
+	}
+	userpayload := userinfo.(services_auth.UserInfo)
+	err := pc.PlaceService.AddNewPlace(userpayload, body)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیر منتظره ای رخ داد",
+		})
+		log.Println(err.Error())
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"status": "success",
+		"message": "مکان با موفقیت ثبت شد",
+	})
+}
