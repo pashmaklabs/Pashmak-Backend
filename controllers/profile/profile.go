@@ -413,7 +413,7 @@ func (pc *ProfileController) CreateSavedLocation(c *gin.Context) {
 	}
 
 	if validateBody.PlaceID != nil {
-		_, err := pc.PlaceService.GetPlaceByID(*validateBody.PlaceID)
+		_, err := pc.PlaceService.GetPlaceByID(strconv.FormatUint(uint64(*validateBody.PlaceID), 10))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
