@@ -68,3 +68,13 @@ type Image struct {
 	AltText string `gorm:"size:100"`
 	Caption string `gorm:"size:1000"`
 }
+
+type PendingPlace struct {
+	ID        uint   `gorm:"primaryKey;autoIncrement"`
+	Amenity   string `gorm:"size:255"`
+	Latitude  float64
+	Longitude float64
+	Name      string    `gorm:"not null;size:255;index"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	Images    []Image   `gorm:"foreignKey:PlaceID"`
+}
