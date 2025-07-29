@@ -60,3 +60,14 @@ type ReportedCommentsResponse struct {
 type ChangeReportStatus struct {
 	Status string `json:"status" binding:"required,oneof=Pending Resolved Dismissed"`
 }
+
+type UserCommentsRespone struct {
+	ID        uint      `json:"id"`
+	Content   string    `json:"content"`
+	Rating    uint      `json:"rating" binding:"required,min=0,max=5"`
+	Likes     int64     `json:"likes"`
+	Dislikes  int64     `json:"dislikes"`
+	PlaceName string    `json:"place_name"`
+	PlaceID   uint      `json:"place_id"`
+	CreatedAt time.Time `json:"created_at"`
+}

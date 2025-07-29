@@ -325,3 +325,29 @@ func (cc *CommentController) ChangeReportStatus(c *gin.Context){
 
 	c.Status(http.StatusOK)
 }
+
+func (cc *CommentController) GetCommentsByUser(c *gin.Context){
+	userinfo, exists := c.Get("user")
+	
+	if !exists{
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status": "error",
+			"message": "ابتدا باید وارد شوید",
+		})
+		return
+	}
+	userpayload := userinfo.(services_auth.UserInfo)
+	comments, err := cc.CommentService.GetCommentsByUser(userpayload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"message": "مشکل غیرمنتظره ای رخ داده است",
+		})
+		log.Println(err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"comments": comments,
+	})
+}
