@@ -33,5 +33,7 @@ func CommentRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconf
 		comment.POST("/:id/report",
 			middlewares_validation.ValidationMiddleware[serializers_comment.SendReportRequest](),
 			authMiddleware.LoginMiddleware(), commentController.ReportComment)
+		comment.GET("/me",
+			authMiddleware.LoginMiddleware(), commentController.GetCommentsByUser)
 	}
 }

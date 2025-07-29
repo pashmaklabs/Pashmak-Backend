@@ -321,3 +321,31 @@ func (cs *CommentService) ChangeReportStatus(status string, reportId string) err
 	}
 	return nil
 }
+
+func (cs *CommentService) GetCommentsByUser(userInfo services_auth.UserInfo) ([]serializers_comment.UserCommentsRespone, error){
+	var userComments []models_place.Comment
+	query := cs.DB.Model(&models_place.Comment{})
+	result := query.Where("user_id = ?", userInfo.ID).Preload("Place").Preload("User").Find(&userComments)
+	if result.Error != nil{
+		return []serializers_comment.UserCommentsRespone{}, result.Error
+	}
+
+	commentDTOs := make([]serializers_comment.UserCommentsRespone, len(userComments))
+	for i, comment := range userComments {
+		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
+		if err != nil{
+			return []serializers_comment.UserCommentsRespone{}, err
+		}
+		commentDTOs[i] = serializers_comment.UserCommentsRespone{
+			ID:     comment.ID,
+			Content: comment.Content,
+			Rating: comment.Rating,
+			Likes: likes,
+			Dislikes: dislikes,
+			PlaceID: comment.Place.ID,
+			PlaceName: comment.Place.Name,
+			CreatedAt: comment.CreatedAt,
+		}
+	}
+	return commentDTOs, nil
+}
