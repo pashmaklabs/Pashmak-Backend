@@ -10,17 +10,17 @@ import (
 	middlewares_auth "pashmak.com/pashmak/middlewares/auth"
 	middlewares_validation "pashmak.com/pashmak/middlewares/validation"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
+	services_openai "pashmak.com/pashmak/services/openai"
 	services_place "pashmak.com/pashmak/services/place"
 	services_profile "pashmak.com/pashmak/services/profile"
-	services_openai "pashmak.com/pashmak/services/openai"
 
 	services_auth "pashmak.com/pashmak/services/auth"
 )
 
-func ProfileRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *minio.Client, appConfig *bootstrap.AppConfig) {
+func ProfileRoutes(router *gin.Engine, db *gorm.DB, pgvectorDB *gorm.DB, redis *redis.Client, minio *minio.Client, appConfig *bootstrap.AppConfig) {
 	profileService := services_profile.NewProfileService(db, minio, appConfig)
 	openaiService := services_openai.NewOpenAIService(appConfig.OpenaiApiKey)
-	placeService := services_place.NewPlaceService(db, appConfig, openaiService, minio)
+	placeService := services_place.NewPlaceService(db, appConfig, openaiService, minio, pgvectorDB)
 	profileController := controllers_profile.NewProfileController(profileService, placeService)
 	authService := services_auth.NewAuthService(db, redis, appConfig)
 	authMiddleware := middlewares_auth.NewAuthMiddleware(authService)

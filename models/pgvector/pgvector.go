@@ -10,7 +10,7 @@ type Gplace struct {
 	ID              uint           `gorm:"primaryKey;autoIncrement"`
 	Name            string         `gorm:"type:text"`
 	Address         string         `gorm:"type:text"`
-	GmapID          string         `gorm:"type:text"`
+	GmapID          string         `gorm:"type:text;unique"`
 	Description     string         `gorm:"type:text"`
 	Latitude        float64        `gorm:"type:decimal"`
 	Longitude       float64        `gorm:"type:decimal"`

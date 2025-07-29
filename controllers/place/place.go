@@ -39,17 +39,16 @@ func NewPlaceController(placeService *services_place.PlaceService, commentServic
 
 func (pc *PlaceController) GetPlace(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"status":  "error",
-			"message": "شناسه مکان نامعتبر است",
-		})
-		return
-	}
 
-	place, err := pc.PlaceService.GetPlaceByID(uint(id))
+	place, err := pc.PlaceService.GetPlaceByID(idStr)
 	if err != nil {
+		if strings.Contains(err.Error(), "invalid place ID format") {
+			c.JSON(400, gin.H{
+				"status":  "error",
+				"message": "شناسه مکان نامعتبر است",
+			})
+			return
+		}
 		if strings.Contains(err.Error(), "no place found") {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
@@ -64,7 +63,7 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 		return
 	}
 
-	avgRating, err := pc.CommnetService.GetAverageRating(strconv.FormatUint(id, 10))
+	avgRating, err := pc.CommnetService.GetAverageRating(idStr)
 	if err != nil {
 		if err.Error() == "نظری ثبت نشده" {
 			avgRating = 0
@@ -79,7 +78,7 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 	}
 
 	response := serializers_place.PlaceWithRatingResponse{
-		ID:        place.ID,
+		ID:        place.ID, // Now this is a string
 		Name:      place.Name,
 		Amenity:   *place.Amenity,
 		Latitude:  *place.Latitude,
@@ -91,9 +90,13 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 	value, exists := c.Get("user")
 	if exists {
 		userinfo := value.(services_auth.UserInfo)
-		savedLocation, err := pc.ProfileService.GetLabelOfPlace(userinfo.ID, uint(place.ID))
-		if err == nil && savedLocation != nil {
-			response.SavedLocation = savedLocation
+		// Convert string ID to uint for the profile service
+		placeIDUint, err := strconv.ParseUint(place.ID, 10, 32)
+		if err == nil {
+			savedLocation, err := pc.ProfileService.GetLabelOfPlace(userinfo.ID, uint(placeIDUint))
+			if err == nil && savedLocation != nil {
+				response.SavedLocation = savedLocation
+			}
 		}
 	}
 
@@ -108,9 +111,11 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	q := c.Query("q")
 	lat := c.Query("lat")
 	long := c.Query("lng")
+	agentic := c.Query("agentic") == "true"
 
-	places, err := pc.PlaceService.SearchPlace(q, lat, long)
+	places, err := pc.PlaceService.SearchPlace(q, lat, long, agentic)
 	if err != nil {
+		fmt.Println("err", err)
 		c.JSON(500, gin.H{
 			"status":  "error",
 			"message": "خطا در جستجوی مکان",
@@ -139,6 +144,20 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 		"status":  "success",
 		"message": "",
 		"places":  places,
+	})
+}
+
+func (pc *PlaceController) GetPlaceRecommendations(c *gin.Context) {
+	query := c.Query("q")
+	recommendations, err := pc.PlaceService.GetPlaceRecommendations(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "",
+		"recommendations": recommendations,
 	})
 }
 
@@ -242,7 +261,7 @@ func (pc *PlaceController) GetPlaceImage(c *gin.Context) {
 	}
 }
 
-func (pc *PlaceController) AddNewPlace(c *gin.Context){
+func (pc *PlaceController) AddNewPlace(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -264,19 +283,19 @@ func (pc *PlaceController) AddNewPlace(c *gin.Context){
 	}
 
 	userinfo, exists := c.Get("user")
-	
-	if !exists{
+
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "ابتدا باید وارد شوید",
 		})
 		return
 	}
 	userpayload := userinfo.(services_auth.UserInfo)
 	err := pc.PlaceService.AddNewPlace(userpayload, body)
-	if err != nil{
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیر منتظره ای رخ داد",
 		})
 		log.Println(err.Error())
@@ -284,7 +303,7 @@ func (pc *PlaceController) AddNewPlace(c *gin.Context){
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{
-		"status": "success",
+		"status":  "success",
 		"message": "مکان با موفقیت ثبت شد",
 	})
 }

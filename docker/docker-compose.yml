@@ -48,6 +48,20 @@ services:
         target: /var/lib/postgresql/data
     ports:
       - 5432:5432
+
+  pgvector:
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=google
+      - PGPORT=5433
+    ports:
+      - 5433:5433
+    volumes:
+      - type: volume
+        source: pashmak_pgvector
+        target: /var/lib/postgresql/data
     
   redis:
     image: redis:7.4.2
@@ -59,20 +73,20 @@ services:
     volumes:
       - pashmak_redis:/data
   
-  backend:
-    image: registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.4
-    container_name: pashmak_backend
-    restart: unless-stopped
-    ports:
-      - 8080:8080
-    env_file:
-      - ../.env
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    depends_on:
-      - postgres
-      - redis
+  # backend:
+  #   image: registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.4
+  #   container_name: pashmak_backend
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8080:8080
+  #   env_file:
+  #     - ../.env
+  #   dns:
+  #     - 8.8.8.8
+  #     - 8.8.4.4
+  #   depends_on:
+  #     - postgres
+  #     - redis
 
 networks:
   minionetwork:
@@ -81,5 +95,6 @@ networks:
 volumes:
   pashmak_postgres:
   pashmak_redis:
+  pashmak_pgvector:
   minio_data:
     driver: local

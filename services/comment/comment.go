@@ -45,7 +45,7 @@ func (cs *CommentService) FetchReactionsFromDatabase(commentID uint) (int64, int
 	return likes, dislikes, nil
 }
 
-func (cs *CommentService) CheckIsReactedByCurrentUser(userpayload services_auth.UserInfo, comment models_place.Comment, reactionType uint) (bool, error){
+func (cs *CommentService) CheckIsReactedByCurrentUser(userpayload services_auth.UserInfo, comment models_place.Comment, reactionType uint) (bool, error) {
 	var count int64
 	err := cs.DB.Model(&models_place.Reaction{}).
 		Where("comment_id = ? AND user_id = ? AND reaction_type = ?", comment.ID, userpayload.ID, reactionType).
@@ -73,13 +73,13 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB, us
 		}
 		isLiked := false
 		isDisliked := false
-		if(isLoggedIn){
+		if isLoggedIn {
 			isLiked, err = cs.CheckIsReactedByCurrentUser(userpayload, comment, 0)
-			if(!isLiked){
+			if !isLiked {
 				isDisliked, err = cs.CheckIsReactedByCurrentUser(userpayload, comment, 1)
 			}
 		}
-		if err != nil{
+		if err != nil {
 			return nil, nil, err
 		}
 		commentDTOs[i] = serializers_comment.CommentResponse{
@@ -92,10 +92,10 @@ func (cs *CommentService) PaginateComments(c *gin.Context, comments *gorm.DB, us
 				LastName:  comment.User.LastName,
 				Avatar:    comment.User.Avatar_url,
 			},
-			CreatedAt: comment.CreatedAt,
-			Likes:     likes,
-			Dislikes:  dislikes,
-			IsLikedByCurrentUser: isLiked,
+			CreatedAt:               comment.CreatedAt,
+			Likes:                   likes,
+			Dislikes:                dislikes,
+			IsLikedByCurrentUser:    isLiked,
 			IsDislikedByCurrentUser: isDisliked,
 		}
 	}
@@ -198,6 +198,13 @@ func (cs *CommentService) AddNewComment(placeToken string, user services_auth.Us
 }
 
 func (cs *CommentService) GetAverageRating(placeToken string) (float64, error) {
+	// Check if placeToken is an integer (internal place ID)
+	if _, err := strconv.ParseUint(placeToken, 10, 64); err != nil {
+		// placeToken is not an integer (external place ID like Google Places ID)
+		// External places don't have comments in our system, so return 0
+		return 0, nil
+	}
+
 	var result serializers_comment.RatingResponse
 
 	err := cs.DB.Model(&models_place.Comment{}).
@@ -299,7 +306,7 @@ func (cs *CommentService) GetReportedComments(c *gin.Context, status string) (*p
 	return paginator, commentDTOs, err
 }
 
-func (cs *CommentService) ChangeReportStatus(status string, reportId string) error{
+func (cs *CommentService) ChangeReportStatus(status string, reportId string) error {
 	var report models_report.Report
 	if err := cs.DB.First(&report, reportId).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -309,7 +316,7 @@ func (cs *CommentService) ChangeReportStatus(status string, reportId string) err
 	}
 
 	res := cs.DB.Model(&report).Update("status", status)
-	if res.Error != nil{
+	if res.Error != nil {
 		return res.Error
 	}
 	return nil

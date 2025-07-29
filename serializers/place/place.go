@@ -6,7 +6,7 @@ type GetPlaceByIDResponse struct {
 	Amenity   *string  `json:"amenity"`
 	Latitude  *float64 `json:"latitude"`
 	Longitude *float64 `json:"longitude"`
-	ID        int64    `json:"id"`
+	ID        string   `json:"id"`
 	ImageURLs []string `json:"image_urls"`
 }
 
@@ -22,7 +22,7 @@ type SavedLocationResponse struct {
 }
 
 type PlaceWithRatingResponse struct {
-	ID            int64                  `json:"id"`
+	ID            string                 `json:"id"`
 	Name          string                 `json:"name"`
 	Amenity       string                 `json:"amenity"`
 	Latitude      float64                `json:"latitude"`
