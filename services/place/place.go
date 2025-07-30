@@ -67,7 +67,7 @@ func NewPlaceService(db *gorm.DB, appConfig *bootstrap.AppConfig, openaiService 
 
 func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error) {
 	// Try to parse the string ID to uint first
-	idUint, err := strconv.ParseUint(id, 10, 32)
+	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		// If parsing fails, search in gplace table
 		var result struct {
@@ -79,7 +79,7 @@ func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error
 			Longitude float64 `db:"longitude"`
 		}
 
-		if err := ps.PGVectorDB.Raw("SELECT id, name, gmap_id, category, latitude, longitude FROM gplaces WHERE gmap_id = ? AND deleted_at IS NULL", id).Scan(&result).Error; err != nil {
+		if err := ps.PGVectorDB.Raw("SELECT id, name, gmap_id, category, latitude, longitude FROM gplaces WHERE gmap_id = ? AND deleted_at IS NULL", id).First(&result).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, fmt.Errorf("no place found with ID %s", id)
 			}
