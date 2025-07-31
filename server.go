@@ -66,11 +66,6 @@ func main() {
 	// Health check endpoint
 	Router.GET("/health", middlewares_prometheus.HealthHandler)
 
-	// Basic API endpoint
-	Router.GET("/api", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "OK"})
-	})
-
 	// Expose Prometheus metrics endpoint
 	Router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
