@@ -148,7 +148,7 @@ func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string, 
 	if err != nil {
 		// This is a Google Place ID - get comments from greview table
 		var greviews []models_pgvector.Greview
-		commentsQuery := cs.PGVectorDB.Where("gmap_id = ?", token).Find(&greviews)
+		commentsQuery := cs.PGVectorDB.Omit("embedding").Where("gmap_id = ?", token).Find(&greviews)
 		if commentsQuery.Error != nil {
 			return nil, nil, commentsQuery.Error
 		}
@@ -163,10 +163,9 @@ func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string, 
 			j := len(pagedComments) - 1 - i
 			pagedComments[i], pagedComments[j] = pagedComments[j], pagedComments[i]
 		}
-	
+
 		commentDTOs := make([]serializers_comment.CommentResponse, len(pagedComments))
-		
-		
+
 		// Convert greview to CommentResponse format
 		for i, greview := range pagedComments {
 			commentDTOs[i] = serializers_comment.CommentResponse{
