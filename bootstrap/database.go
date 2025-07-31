@@ -35,6 +35,26 @@ func SetUpPostgres() *gorm.DB {
 	return db
 }
 
+
+func SetUpPGVector() *gorm.DB {
+	postgres_dsn := DatabaseDSN{
+		host: PGVECTOR_HOST,
+		user: PGVECTOR_USER,
+		password: PGVECTOR_PASSWORD,
+		dbname: PGVECTOR_DBNAME,
+		port: PGVECTOR_PORT,
+	}	
+	var dsn string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tehran",
+									postgres_dsn.host, postgres_dsn.user, postgres_dsn.password, postgres_dsn.dbname, postgres_dsn.port)
+	log.Println("dsn", dsn)
+	db, err := gorm.Open(postgres.Open(dsn),  &gorm.Config{})
+	if err != nil {
+		// TODO: set logger instead of Println
+		log.Println("failed to initialize database", err.Error())
+	}
+	return db
+}
+
 func SetupRedis() *redis.Client{
 	var RedisClient = redis.NewClient(&redis.Options{
         Addr:	  fmt.Sprintf("%s:%s", REDIS_HOST, REDIS_PORT),

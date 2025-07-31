@@ -24,6 +24,12 @@ type AppConfig struct {
 	PostgresDBName   string
 	PostgresPort     string
 
+	PGVectorHost     string
+	PGVectorUser     string
+	PGVectorDBName   string
+	PGVectorPort     string
+	PGVectorPassword string
+
 	TokenAge       int64
 	PrivateKeyPath string
 
@@ -41,6 +47,8 @@ type AppConfig struct {
 	Environment string
 
 	OpenaiApiKey string
+	MetisBaseUrl string
+	MetisApiKey  string
 
 	AdminEmail    string
 	AdminPassword string
@@ -62,6 +70,12 @@ var (
 	POSTGRES_DBNAME   string
 	POSTGRES_PORT     string
 
+	PGVECTOR_HOST     string
+	PGVECTOR_USER     string
+	PGVECTOR_DBNAME   string
+	PGVECTOR_PORT     string
+	PGVECTOR_PASSWORD string
+
 	TOKEN_AGE        int64
 	PRIVATE_KEY_PATH string
 
@@ -76,6 +90,8 @@ var (
 	CookieDomain string
 
 	OPENAI_API_KEY string
+	METIS_BASE_URL string
+	METIS_API_KEY string
 
 	ADMIN_EMAIL    string
 	ADMIN_PASSWORD string
@@ -96,6 +112,12 @@ func LoadEnvVars() *AppConfig {
 	POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	POSTGRES_DBNAME = os.Getenv("POSTGRES_DBNAME")
 	POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
+
+	PGVECTOR_HOST = os.Getenv("PGVECTOR_HOST")
+	PGVECTOR_DBNAME = os.Getenv("PGVECTOR_DBNAME")
+	PGVECTOR_PORT = os.Getenv("PGVECTOR_PORT")
+	PGVECTOR_USER = os.Getenv("PGVECTOR_USER")
+	PGVECTOR_PASSWORD = os.Getenv("PGVECTOR_PASSWORD")
 
 	TOKEN_AGE, err := strconv.ParseInt(os.Getenv("TOKEN_AGE"), 10, 64)
 	if err != nil {
@@ -132,6 +154,8 @@ func LoadEnvVars() *AppConfig {
 	}
 
 	OPENAI_API_KEY = os.Getenv("OPENAI_API_KEY")
+	METIS_BASE_URL = os.Getenv("METIS_BASE_URL")
+	METIS_API_KEY = os.Getenv("METIS_API_KEY")
 
 	ADMIN_EMAIL = os.Getenv("ADMIN_EMAIL")
 	ADMIN_PASSWORD = os.Getenv("ADMIN_PASSWORD")
@@ -162,5 +186,10 @@ func LoadEnvVars() *AppConfig {
 		OpenaiApiKey:     OPENAI_API_KEY,
 		AdminEmail:       ADMIN_EMAIL,
 		AdminPassword:    ADMIN_PASSWORD,
+		PGVectorHost:     PGVECTOR_HOST,
+		PGVectorUser:     PGVECTOR_USER,
+		PGVectorDBName:   PGVECTOR_DBNAME,
+		PGVectorPort:     PGVECTOR_PORT,
+		PGVectorPassword: PGVECTOR_PASSWORD,
 	}
 }

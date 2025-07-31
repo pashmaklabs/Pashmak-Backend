@@ -19,8 +19,9 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
-	models_place "pashmak.com/pashmak/models/place"
 	models "pashmak.com/pashmak/models/openai"
+	models_place "pashmak.com/pashmak/models/place"
+	serializers_place "pashmak.com/pashmak/serializers/place"
 	serializers_profile "pashmak.com/pashmak/serializers/profile"
 	services_auth "pashmak.com/pashmak/services/auth"
 )
@@ -58,7 +59,7 @@ func (ps *ProfileService) GetMyProfile(id uint) (serializers_profile.CurrentProf
 	}, result.Error
 }
 
-func (ps *ProfileService) GetUserByGmail(email string) (models_auth.User, error){
+func (ps *ProfileService) GetUserByGmail(email string) (models_auth.User, error) {
 	var user models_auth.User
 	result := ps.DB.First(&user, "email = ?", email)
 	return user, result.Error
@@ -77,50 +78,161 @@ func (ps *ProfileService) GetProfileByID(id uint) (serializers_profile.GetProfil
 	}, result.Error
 }
 
-func (ps *ProfileService) GetSavedLocations(id uint) ([]serializers_profile.SavedLocationResponse, error) {
-	var savedLocations []models_place.SavedLocation
-	response := make([]serializers_profile.SavedLocationResponse, 0)
-
-	result := ps.DB.Where("user_id = ?", id).Preload("Place").Find(&savedLocations)
-	if result.Error != nil {
-		return response, result.Error
+// CreatePlaceLabel creates a new place label for a user
+func (ps *ProfileService) CreatePlaceLabel(name string, userID uint) (*models_place.PlaceLabel, error) {
+	label := &models_place.PlaceLabel{
+		Name:   name,
+		UserID: userID,
 	}
 
-	for _, location := range savedLocations {
-		response = append(response, serializers_profile.SavedLocationResponse{
-			Latitude:  location.Latitude,
-			Longitude: location.Longitude,
-			UserNote:  location.UserNote,
-			Label:     string(location.Label),
-		})
+	if err := ps.DB.Create(label).Error; err != nil {
+		return nil, err
 	}
 
-	return response, nil
+	return label, nil
 }
 
-func (ps *ProfileService) AddSavedLocation(id uint, request serializers_profile.SavedLocationRequest) (serializers_profile.SavedLocationResponse, error) {
-	savedLocation := models_place.SavedLocation{
-		UserID:    id,
-		PlaceID:   request.PlaceID,
-		Latitude:  request.Latitude,
-		Longitude: request.Longitude,
-		UserNote:  request.UserNote,
-		Label:     models_place.LabelType(request.Label),
+// GetUserPlaceLabels returns all place labels for a specific user with the count of saved locations
+func (ps *ProfileService) GetUserPlaceLabels(userID uint) ([]serializers_profile.PlaceLabelWithCountResponse, error) {
+	var results []serializers_profile.PlaceLabelWithCountResponse
+
+	if err := ps.DB.Table("place_labels").
+		Select("place_labels.id, place_labels.name, COUNT(saved_locations.id) as saved_locations_count").
+		Joins("LEFT JOIN saved_locations ON saved_locations.place_label_id = place_labels.id").
+		Where("place_labels.user_id = ?", userID).
+		Group("place_labels.id, place_labels.name").
+		Find(&results).Error; err != nil {
+		return nil, err
 	}
 
-	result := ps.DB.Create(&savedLocation)
+	return results, nil
+}
+
+// DeletePlaceLabel permanently deletes a place label
+func (ps *ProfileService) DeletePlaceLabel(labelID uint, userID uint) error {
+	// Using Unscoped() for hard delete and checking user ownership
+	result := ps.DB.Unscoped().Where("id = ? AND user_id = ?", labelID, userID).Delete(&models_place.PlaceLabel{})
 	if result.Error != nil {
-		return serializers_profile.SavedLocationResponse{}, result.Error
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+type CreateSavedLocationParams struct {
+	Latitude     float64
+	Longitude    float64
+	PlaceID      *uint
+	PlaceLabelID uint
+	UserNote     *string
+	Name         *string
+}
+
+func (ps *ProfileService) CreateSavedLocation(userID uint, params CreateSavedLocationParams) (*models_place.SavedLocation, error) {
+	var placeLabel models_place.PlaceLabel
+	if err := ps.DB.First(&placeLabel, "id = ? AND user_id = ?", params.PlaceLabelID, userID).Error; err != nil {
+		return nil, err
+	}
+	savedLocation := models_place.SavedLocation{
+		Latitude:     params.Latitude,
+		Longitude:    params.Longitude,
+		PlaceLabelID: params.PlaceLabelID,
 	}
 
-	return serializers_profile.SavedLocationResponse{
-		Latitude:  savedLocation.Latitude,
-		Longitude: savedLocation.Longitude,
-		UserNote:  savedLocation.UserNote,
-		Label:     string(savedLocation.Label),
+	if params.PlaceID != nil {
+		savedLocation.PlaceID = params.PlaceID
+	}
+	if params.UserNote != nil {
+		savedLocation.UserNote = *params.UserNote
+	}
+	if params.Name != nil {
+		savedLocation.Name = *params.Name
+	}
+	if err := ps.DB.Create(&savedLocation).Error; err != nil {
+		return nil, err
+	}
+	return &savedLocation, nil
+}
+
+func (ps *ProfileService) GetSavedLocationsByPlaceLabel(userID uint, labelID uint) ([]models_place.SavedLocation, error) {
+	var places []models_place.SavedLocation
+	fmt.Println(labelID, userID)
+	if err := ps.DB.
+		Joins("JOIN place_labels ON place_labels.id = saved_locations.place_label_id").
+		Where("saved_locations.place_label_id = ? AND place_labels.user_id = ?", labelID, userID).
+		Find(&places).
+		Error; err != nil {
+		return nil, err
+	}
+	return places, nil
+}
+
+type UpdateSavedLocationServiceParams struct {
+	ID           uint
+	UserNote     *string
+	PlaceLabelID *uint
+	Name         *string
+	UserID       uint
+}
+
+func (ps *ProfileService) UpdateSavedLocation(in UpdateSavedLocationServiceParams) (*models_place.SavedLocation, error) {
+	var savedLocation models_place.SavedLocation
+	if err := ps.DB.Joins("JOIN place_labels ON place_labels.id = saved_locations.place_label_id").Where("saved_locations.id = ? AND place_labels.user_id = ?", in.ID, in.UserID).Find(&savedLocation).Error; err != nil {
+		return nil, err
+	}
+	if in.UserNote != nil {
+		savedLocation.UserNote = *in.UserNote
+	}
+	if in.PlaceLabelID != nil {
+		savedLocation.PlaceLabelID = *in.PlaceLabelID
+	}
+	if in.Name != nil {
+		savedLocation.Name = *in.Name
+	}
+	if err := ps.DB.Save(savedLocation).Error; err != nil {
+		return nil, err
+	}
+	return &savedLocation, nil
+}
+
+func (ps *ProfileService) HardDeleteSavedLocation(ID uint, userID uint) error {
+	sub := ps.DB.
+		Model(&models_place.PlaceLabel{}).
+		Select("id").
+		Where("user_id = ?", userID)
+
+	result := ps.DB.
+		Unscoped().
+		Where("id = ? AND place_label_id IN (?)", ID, sub).
+		Delete(&models_place.SavedLocation{})
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (ps *ProfileService) GetLabelOfPlace(userID uint, placeID uint) (*serializers_place.SavedLocationResponse, error) {
+	var savedLocation models_place.SavedLocation
+	if err := ps.DB.
+		Joins("JOIN place_labels ON place_labels.id = saved_locations.place_label_id").
+		Where("place_labels.user_id = ? AND saved_locations.place_id = ?", userID, placeID).
+		First(&savedLocation).
+		Error; err != nil {
+		return nil, err
+	}
+	return &serializers_place.SavedLocationResponse{
+		ID:           int64(savedLocation.ID),
+		PlaceLabelID: int64(savedLocation.PlaceLabelID),
 	}, nil
 }
-func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, error){
+
+func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, error) {
 	ext := filepath.Ext(file.Filename)
 	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
 		return "", ErrInvalidFile
@@ -132,7 +244,7 @@ func (ps *ProfileService) validateImage(file *multipart.FileHeader) (string, err
 	return ext, nil
 }
 
-func (ps *ProfileService) uploadImage(file *multipart.FileHeader, user models_auth.User)(string, minio.UploadInfo, error){
+func (ps *ProfileService) uploadImage(file *multipart.FileHeader, user models_auth.User) (string, minio.UploadInfo, error) {
 	var buf bytes.Buffer
 	fileReader, err := file.Open()
 	if err != nil {
@@ -152,7 +264,7 @@ func (ps *ProfileService) uploadImage(file *multipart.FileHeader, user models_au
 	Reader := bytes.NewReader(buf.Bytes())
 	timedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	info, err := ps.Minio.PutObject(
 		timedCtx,
 		"profile-photos",
@@ -161,8 +273,8 @@ func (ps *ProfileService) uploadImage(file *multipart.FileHeader, user models_au
 		Reader.Size(),
 		minio.PutObjectOptions{ContentType: "image/" + "webp"},
 	)
-	if err != nil{
-		return "",  minio.UploadInfo{}, err
+	if err != nil {
+		return "", minio.UploadInfo{}, err
 	}
 
 	user.Avatar_url = fmt.Sprintf("%s/profiles/avatar/%s", ps.AppConfig.ServerHost, objectName)
@@ -238,7 +350,7 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID uint) (resp 
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate image: %w", err)
 	}
-	
+
 	objectName, info, err := ps.uploadImage(file, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to put object to minio: %w", err)
@@ -263,7 +375,7 @@ func (ps *ProfileService) UploadUserAvatar(ctx *gin.Context, userID uint) (resp 
 	// TODO: Store Thumbnails, Medium, Full-size
 }
 
-func (ps *ProfileService) UpdateUserProfile(userInfo services_auth.UserInfo, payload serializers_profile.UpdateUserProfileRequest) error{
+func (ps *ProfileService) UpdateUserProfile(userInfo services_auth.UserInfo, payload serializers_profile.UpdateUserProfileRequest) error {
 	user, err := ps.GetUserByGmail(userInfo.Email)
 	if err != nil {
 		return err
@@ -277,7 +389,7 @@ func (ps *ProfileService) UpdateUserProfile(userInfo services_auth.UserInfo, pay
 	return nil
 }
 
-func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([]models.SearchHistory, error){
+func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([]models.SearchHistory, error) {
 	var history []models.SearchHistory
 	historyQuery := ps.DB.
 		Where("user_id = ?", userInfo.ID).
@@ -286,29 +398,24 @@ func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([
 	if historyQuery.Error != nil {
 		return nil, historyQuery.Error
 	}
-
-	if len(history) == 0 {
-		return nil, errors.New("no history found")
-	}
 	return history, nil
 }
 
-
-func (ps *ProfileService) DeleteSearchHistory(userInfo services_auth.UserInfo, searchId string) (error){
+func (ps *ProfileService) DeleteSearchHistory(userInfo services_auth.UserInfo, searchId string) error {
 	var history models.SearchHistory
-	if err := ps.DB.First(&history, searchId).Error; err != nil{
+	if err := ps.DB.First(&history, searchId).Error; err != nil {
 		return errors.New("history not found")
 	}
 
-	if err := ps.DB.Where("id = ? AND user_id = ?", searchId, userInfo.ID).Delete(&history).Error; err != nil{
+	if err := ps.DB.Where("id = ? AND user_id = ?", searchId, userInfo.ID).Delete(&history).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ps *ProfileService) ClearSearchHistory(userInfo services_auth.UserInfo) (error){
+func (ps *ProfileService) ClearSearchHistory(userInfo services_auth.UserInfo) error {
 	var history models.SearchHistory
-	if err := ps.DB.Where("user_id = ?", userInfo.ID).Delete(&history).Error; err != nil{
+	if err := ps.DB.Where("user_id = ?", userInfo.ID).Delete(&history).Error; err != nil {
 		return err
 	}
 	return nil

@@ -1,6 +1,8 @@
 module pashmak.com/pashmak
 
-go 1.24
+go 1.23.0
+
+toolchain go1.24.0
 
 require (
 	github.com/chai2010/webp v1.4.0
@@ -13,7 +15,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.91
-	github.com/openai/openai-go v0.1.0-beta.10
+	github.com/openai/openai-go v1.11.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/redis/go-redis/v9 v9.7.1
 	github.com/rosberry/go-pagination v1.3.1
@@ -58,6 +60,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
