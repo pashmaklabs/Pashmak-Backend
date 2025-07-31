@@ -152,10 +152,6 @@ func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string, 
 		return nil, nil, commentsQuery.Error
 	}
 
-	if len(comments) == 0 {
-		return nil, nil, errors.New("no comments found")
-	}
-
 	paginator, commentDTOs, err := cs.PaginateComments(c, commentsQuery, userpayload, isLoggedIn)
 	if err != nil {
 		return nil, nil, err
