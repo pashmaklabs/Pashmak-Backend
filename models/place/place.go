@@ -49,16 +49,16 @@ type PlaceLabel struct {
 }
 
 type SavedLocation struct {
-	ID        uint             `gorm:"primaryKey;autoIncrement"`
-	Name      string           `gorm:"size:25;default:''"`
-	Latitude  float64          `gorm:"not null"`
-	Longitude float64          `gorm:"not null"`
-	UserNote  string           `gorm:"size:255;default:''"`
-	PlaceID   *uint            `gorm:"default:null"`
-	Place     *Place           `gorm:"foreignKey:PlaceID" json:"-"`
-	PlaceLabelID uint           `gorm:"not null"`
-	PlaceLabel   PlaceLabel     `gorm:"foreignKey:PlaceLabelID" json:"-"`
-	CreatedAt time.Time        `gorm:"autoCreateTime"`
+	ID           uint       `gorm:"primaryKey;autoIncrement"`
+	Name         string     `gorm:"size:25;default:''"`
+	Latitude     float64    `gorm:"not null"`
+	Longitude    float64    `gorm:"not null"`
+	UserNote     string     `gorm:"size:255;default:''"`
+	PlaceID      *uint      `gorm:"default:null"`
+	Place        *Place     `gorm:"foreignKey:PlaceID" json:"-"`
+	PlaceLabelID uint       `gorm:"not null"`
+	PlaceLabel   PlaceLabel `gorm:"foreignKey:PlaceLabelID;references:ID;constraint:OnDelete:CASCADE" json:"-"`
+	CreatedAt    time.Time  `gorm:"autoCreateTime"`
 }
 
 type Image struct {

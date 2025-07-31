@@ -31,7 +31,6 @@ func getModels() []interface{} {
 	return all_models
 }
 
-
 func getPGVectorModels() []interface{} {
 	// [INFO] add your model here to be migrated
 	all_models := []interface{}{
@@ -51,10 +50,16 @@ func MakeMigrations(db *gorm.DB) {
 
 	SetupRoleAndPermissions(db)
 
-	
+	// Add cascade delete constraint for SavedLocation -> PlaceLabel
+	if err := db.Exec("ALTER TABLE saved_locations DROP CONSTRAINT IF EXISTS fk_saved_locations_place_label;").Error; err != nil {
+		log.Println("Error dropping existing constraint: ", err.Error())
+	}
+	if err := db.Exec("ALTER TABLE saved_locations ADD CONSTRAINT fk_saved_locations_place_label FOREIGN KEY (place_label_id) REFERENCES place_labels(id) ON DELETE CASCADE;").Error; err != nil {
+		log.Println("Error adding cascade constraint: ", err.Error())
+	}
+
 	// TODO: Database indexing for efficiency of comments querying
 }
-
 
 func MakePGVectorMigrations(db *gorm.DB) {
 	all_models := getPGVectorModels()
