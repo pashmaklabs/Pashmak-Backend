@@ -17,6 +17,7 @@ import (
 
 	webp "github.com/chai2010/webp"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/minio/minio-go/v7"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -206,10 +207,16 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string, agentic b
 	var rawResults []placeSearchResult
 
 	if agentic {
-		fmt.Println("agentic")
+		categories, categoryErr := ps.GetQueryCategories(q)
+		if categoryErr != nil {
+			return nil, categoryErr
+		}
 		var results []sp.GetPlaceByIDResponse
 		vectorSearchTool := NewVectorSearchTool(ps.PGVectorDB, "greviews", ps.AppConfig)
-		rawString, _ := vectorSearchTool.Call(context.Background(), fmt.Sprintf(`{"query": "%s", "limit": 10}`, q))
+
+		// Create proper JSON for categories
+		categoriesJSON, _ := json.Marshal(categories)
+		rawString, _ := vectorSearchTool.Call(context.Background(), fmt.Sprintf(`{"query": "%s", "limit": 20, "categories": %s}`, q, string(categoriesJSON)))
 		rawResults := []placeRow{}
 		fmt.Println("rawString", rawString)
 		err := json.Unmarshal([]byte(rawString), &rawResults)
@@ -229,7 +236,7 @@ func (ps *PlaceService) SearchPlace(q string, lat string, long string, agentic b
 	}
 
 	// Create a new SQL chat agent with our specialized system prompt
-	sqlAgent := oa.NewSQLChatAgent("", "gpt-4.1")
+	sqlAgent := oa.NewSQLChatAgent("", "gpt-4.1-mini")
 	sqlAgent.SystemPrompt = oa.SystemPrompt // Use our specialized prompt for place search
 	sqlAgent.ClearMessages()                // Reset messages to include the new system prompt
 
@@ -445,13 +452,20 @@ func (t *VectorSearchTool) Call(ctx context.Context, argsJSON string) (string, e
 	fmt.Println("argsJSON", argsJSON)
 	// 1️⃣ parse the arguments
 	var args struct {
-		Query string `json:"query"`
-		Limit int    `json:"limit"`
+		Query      string   `json:"query"`
+		Limit      int      `json:"limit"`
+		Categories []string `json:"categories"`
 	}
 	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 		return "", fmt.Errorf("vector_search: bad args: %w", err)
 	}
-	
+
+	category_filter := ""
+	if len(args.Categories) > 0 {
+		category_filter = `
+			AND p.category && $4
+		`
+	}
 	var rows []placeRow
 	sql := fmt.Sprintf(`
         		SELECT 
@@ -463,10 +477,11 @@ func (t *VectorSearchTool) Call(ctx context.Context, argsJSON string) (string, e
                 FROM %s r
                 LEFT JOIN gplaces p ON r.gmap_id = p.gmap_id
                 WHERE r.embedding IS NOT NULL
+                %s
                 ORDER BY r.embedding <=> $2::vector
-                LIMIT $3`, t.TableName)
+                LIMIT $3`, t.TableName, category_filter)
 
-	// for simplicity we assume you’ve already got queryEmbedding as JSON array text
+	// for simplicity we assume you've already got queryEmbedding as JSON array text
 	// you could factor out your getEmbedding() if you like
 	// here we inline it:
 	emb, err := t.getEmbedding(ctx, args.Query)
@@ -474,12 +489,33 @@ func (t *VectorSearchTool) Call(ctx context.Context, argsJSON string) (string, e
 		return "", err
 	}
 	embArg, _ := json.Marshal(emb) // "[0.12,0.53,…]"
-	if err := t.DB.Raw(sql, string(embArg), string(embArg), args.Limit).Scan(&rows).Error; err != nil {
-		return "", fmt.Errorf("vector_search query: %w", err)
+
+	var err2 error
+	if len(args.Categories) > 0 {
+		// Execute with category filter
+		err2 = t.DB.Raw(sql, string(embArg), string(embArg), args.Limit, pq.Array(args.Categories)).Scan(&rows).Error
+	} else {
+		// Execute without category filter
+		err2 = t.DB.Raw(sql, string(embArg), string(embArg), args.Limit).Scan(&rows).Error
+	}
+
+	if err2 != nil {
+		return "", fmt.Errorf("vector_search query: %w", err2)
+	}
+
+	// Make results unique by gmap_id
+	uniqueRows := make([]placeRow, 0)
+	seenGMapIDs := make(map[string]bool)
+
+	for _, row := range rows {
+		if !seenGMapIDs[row.GMapID] {
+			seenGMapIDs[row.GMapID] = true
+			uniqueRows = append(uniqueRows, row)
+		}
 	}
 
 	// 3️⃣ marshal the result list to JSON
-	out, err := json.Marshal(rows)
+	out, err := json.Marshal(uniqueRows)
 	if err != nil {
 		return "", fmt.Errorf("vector_search marshal: %w", err)
 	}
@@ -582,4 +618,97 @@ func (ps *PlaceService) GetPlaceRecommendations(query string) ([]string, error) 
 	}
 
 	return []string{}, fmt.Errorf("GPT never returned a final answer after %d rounds", maxRounds)
+}
+
+func (ps *PlaceService) GetQueryCategories(query string) ([]string, error) {
+	categories := []string{
+		"Restaurant",
+		"Coffee shop",
+		"Bar",
+		"Park",
+		"Tourist attraction",
+		"Clothing store",
+		"Gift shop",
+		"Auto repair shop",
+		"Hotel",
+		"Condominium complex",
+		"Medical clinic",
+		"Grocery store",
+		"Electronics store",
+		"Home goods store",
+		"Beauty salon",
+		"Bank",
+		"Gas station",
+		"Pharmacy",
+		"Car rental agency",
+		"Movie theater",
+	}
+
+	// Create OpenAI client
+	client := openai.NewClient(option.WithAPIKey(ps.AppConfig.OpenaiApiKey))
+
+	// Create system prompt for category detection
+	systemPrompt := fmt.Sprintf(`You are a place category classifier. Given a user query, return one or more relevant categories from this exact list:
+
+%s
+
+Rules:
+1. Only return categories that are EXACTLY in the list above
+2. Return multiple categories if the query could match multiple types of places
+3. If no category matches, return an empty list
+4. Return only the category names, separated by commas
+5. Do not add any explanations or additional text
+
+Example queries and responses:
+- "I want to eat pizza" → "Restaurant"
+- "Looking for coffee and wifi" → "Coffee shop"
+- "Need to buy clothes and get a haircut" → "Clothing store,Beauty salon"
+- "Where can I park my car?" → "Park"
+- "Random unrelated query" → ""`, strings.Join(categories, "\n"))
+
+	// Create messages for the chat completion
+	messages := []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage(systemPrompt),
+		openai.UserMessage(query),
+	}
+
+	// Call OpenAI API
+	resp, err := client.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
+		Model:    openai.ChatModelGPT4oMini,
+		Messages: messages,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get categories from OpenAI: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return []string{}, nil
+	}
+
+	// Extract the response content
+	response := strings.TrimSpace(resp.Choices[0].Message.Content)
+
+	// If response is empty, return empty slice
+	if response == "" {
+		return []string{}, nil
+	}
+
+	// Split by comma and clean up each category
+	categoryList := strings.Split(response, ",")
+	var result []string
+
+	for _, cat := range categoryList {
+		cat = strings.TrimSpace(cat)
+		if cat != "" {
+			// Verify the category exists in our predefined list
+			for _, validCat := range categories {
+				if cat == validCat {
+					result = append(result, cat)
+					break
+				}
+			}
+		}
+	}
+
+	return result, nil
 }
