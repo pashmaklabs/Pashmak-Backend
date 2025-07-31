@@ -7,6 +7,7 @@ type GetPlaceByIDResponse struct {
 	Latitude  *float64 `json:"latitude"`
 	Longitude *float64 `json:"longitude"`
 	ID        string   `json:"id"`
+	Rating    float64 `json:"rating"`
 	ImageURLs []string `json:"image_urls"`
 }
 
