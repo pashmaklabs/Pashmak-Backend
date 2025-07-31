@@ -9,13 +9,14 @@ import (
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
+	middlewares_prometheus "pashmak.com/pashmak/middlewares/prometheus"
 )
 
-type CommentController struct{
+type CommentController struct {
 	CommentService *services_comment.CommentService
 }
 
-func NewCommentController(commentservice *services_comment.CommentService) *CommentController{
+func NewCommentController(commentservice *services_comment.CommentService) *CommentController {
 	return &CommentController{
 		CommentService: commentservice,
 	}
@@ -25,16 +26,16 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 	isLoggedIn := false
 	var userpayload services_auth.UserInfo
 	userinfo, _ := c.Get("user")
-	if userinfo != nil{
+	if userinfo != nil {
 		isLoggedIn = true
 		userpayload = userinfo.(services_auth.UserInfo)
 	}
-	
+
 	token := c.Param("placeToken")
 	paginator, pagedComments, err := cc.CommentService.GetCommentsByPlaceToken(c, token, userpayload, isLoggedIn)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
@@ -42,13 +43,13 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"comments": pagedComments,
+		"status":     "success",
+		"comments":   pagedComments,
 		"Pagination": paginator.PageInfo,
 	})
 }
 
-func (cc *CommentController) SetNewReaction(c *gin.Context){
+func (cc *CommentController) SetNewReaction(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -84,16 +85,16 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 	// id, _ := strconv.Atoi(c.Param("id"))
 
 	err := cc.CommentService.AddReaction(userpayload, uint(commentID), body.ReactionType)
-	if err != nil{
-		if err.Error() == "comment not found"{
+	if err != nil {
+		if err.Error() == "comment not found" {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "کامنت یافت نشد",
 			})
 			return
-		}else{
+		} else {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "مشکل غیرمنتظره ای رخ داده است",
 			})
 			return
@@ -102,7 +103,7 @@ func (cc *CommentController) SetNewReaction(c *gin.Context){
 	c.Status(http.StatusOK)
 }
 
-func (cc *CommentController) AddNewComment(c *gin.Context){
+func (cc *CommentController) AddNewComment(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -125,39 +126,39 @@ func (cc *CommentController) AddNewComment(c *gin.Context){
 
 	placeToken := c.Param("id")
 	userinfo, exists := c.Get("user")
-	
-	if !exists{
+
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "ابتدا باید وارد شوید",
 		})
 		return
 	}
 	userpayload := userinfo.(services_auth.UserInfo)
 	err := cc.CommentService.AddNewComment(placeToken, userpayload, body)
-	if err != nil{
-		if err.Error() == "place not found"{
+	if err != nil {
+		if err.Error() == "place not found" {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "مکان یافت نشد",
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیر منتظره ای رخ داد",
 		})
 		log.Println(err.Error())
 		return
 	}
-
+	middlewares_prometheus.IncrementCommentCreated()
 	c.JSON(http.StatusAccepted, gin.H{
-		"status": "success",
+		"status":  "success",
 		"message": "دیدگاه با موفقیت ثبت شد",
 	})
 }
 
-func (cc *CommentController) RemoveReaction(c *gin.Context){
+func (cc *CommentController) RemoveReaction(c *gin.Context) {
 	userinfo, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -170,19 +171,17 @@ func (cc *CommentController) RemoveReaction(c *gin.Context){
 	userpayload := userinfo.(services_auth.UserInfo)
 	commentID, _ := strconv.Atoi(c.Param("id"))
 
-
-
 	err := cc.CommentService.RemoveRection(userpayload, uint(commentID))
-	if err != nil{
-		if err.Error() == "comment not found"{
+	if err != nil {
+		if err.Error() == "comment not found" {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "success",
+				"status":  "success",
 				"message": "دیدگاه یافت نشد",
 			})
 			return
-		}else{
+		} else {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "مشکل غیرمنتظره ای رخ داده است",
 			})
 			return
@@ -191,7 +190,7 @@ func (cc *CommentController) RemoveReaction(c *gin.Context){
 	c.Status(http.StatusOK)
 }
 
-func (cc *CommentController) ReportComment(c *gin.Context){
+func (cc *CommentController) ReportComment(c *gin.Context) {
 	validatedData, exists := c.Get("validated")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -214,26 +213,26 @@ func (cc *CommentController) ReportComment(c *gin.Context){
 
 	commentID, _ := strconv.Atoi(c.Param("id"))
 	userinfo, exists := c.Get("user")
-	
-	if !exists{
+
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "ابتدا باید وارد شوید",
 		})
 		return
 	}
 	userpayload := userinfo.(services_auth.UserInfo)
 	err := cc.CommentService.ReportComment(userpayload, commentID, body.Reason)
-	if err != nil{
-		if err.Error() == "comment not found"{
+	if err != nil {
+		if err.Error() == "comment not found" {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "success",
+				"status":  "success",
 				"message": "دیدگاه یافت نشد",
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیر منتظره ای رخ داد",
 		})
 		log.Println(err.Error())
@@ -241,28 +240,28 @@ func (cc *CommentController) ReportComment(c *gin.Context){
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{
-		"status": "success",
+		"status":  "success",
 		"message": "گزارش با موفقیت ثبت شد",
 	})
 }
 
-func (cc *CommentController) GetReportedComments(c *gin.Context){
+func (cc *CommentController) GetReportedComments(c *gin.Context) {
 	status := c.Query("status")
 	paginator, pagedReports, err := cc.CommentService.GetReportedComments(c, status)
 	if err != nil {
-		if err.Error() == "no reports found"{
+		if err.Error() == "no reports found" {
 			if pagedReports == nil {
 				pagedReports = []serializers_comment.ReportedCommentsResponse{}
 			}
 			c.JSON(http.StatusOK, gin.H{
-				"status": "success",
-				"reports": pagedReports,
+				"status":    "success",
+				"reports":   pagedReports,
 				"paginator": paginator,
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())
@@ -270,14 +269,13 @@ func (cc *CommentController) GetReportedComments(c *gin.Context){
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"reports": pagedReports,
+		"status":    "success",
+		"reports":   pagedReports,
 		"paginator": paginator,
 	})
 }
 
-
-func (cc *CommentController) ChangeReportStatus(c *gin.Context){
+func (cc *CommentController) ChangeReportStatus(c *gin.Context) {
 	reportId := c.Param("id")
 	validatedData, exists := c.Get("validated")
 	if !exists {
@@ -303,13 +301,13 @@ func (cc *CommentController) ChangeReportStatus(c *gin.Context){
 	if err != nil {
 		if err.Error() == "report not found" {
 			c.JSON(http.StatusNotFound, gin.H{
-				"status": "error",
+				"status":  "error",
 				"message": "گزارش یافت نشد",
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",
 		})
 		log.Println(err.Error())

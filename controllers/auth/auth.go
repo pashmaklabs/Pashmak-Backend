@@ -13,6 +13,8 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 	serializers_auth "pashmak.com/pashmak/serializers/auth"
 	services_auth "pashmak.com/pashmak/services/auth"
+	middlewares_prometheus "pashmak.com/pashmak/middlewares/prometheus"
+
 )
 
 type AuthController struct {
@@ -27,7 +29,7 @@ func NewAuthController(authService *services_auth.AuthService, appConfig *bootst
 	}
 }
 
-func (ac *AuthController) GetValidatedData(c *gin.Context) (interface{}, bool){
+func (ac *AuthController) GetValidatedData(c *gin.Context) (interface{}, bool) {
 	validatedData, exists := c.Get("validated")
 	return validatedData, exists
 }
@@ -52,7 +54,6 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		log.Printf("Failed type assertion for validated data: expected SendOTPRequest, got %T", validatedData)
 		return
 	}
-	
 
 	resp, err := ac.authService.ValidateUser(body.Email)
 	if err != nil {
@@ -93,7 +94,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 
 	resp, err := ac.authService.ValidateOTP(body.Email, body.OTP)
 	if err != nil {
-		if err == redis.Nil{
+		if err == redis.Nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
 				"message": "کد یکبار مصرف منقضی شده است",
@@ -109,7 +110,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 	}
 	if resp {
 		var exists bool = true
-		
+
 		if err := ac.authService.CheckExistance(body.Email); errors.Is(err, gorm.ErrRecordNotFound) {
 			exists = false
 		} else if err != nil {
@@ -134,7 +135,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 
 		user, _ := ac.authService.GetUserByGmail(body.Email)
 		// TODO: Move logic to service
-		
+
 		if jwt, err := ac.authService.GenerateJWT(user); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
@@ -142,7 +143,7 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			})
 			log.Println(err.Error())
 			return
-		}else{
+		} else {
 			c.SetCookie("pashmak_authentication", jwt, int(ac.AppConfig.TokenAge), "/", ac.AppConfig.CookieDomain, true, false)
 			c.SetSameSite(http.SameSiteNoneMode)
 		}
@@ -157,12 +158,11 @@ func (ac *AuthController) VerifyOTP(c *gin.Context) {
 			}
 		}
 		c.SetCookie("session_id", "", -1, "/", "", false, true)
-		
-		
+		middlewares_prometheus.IncrementUserLogin("OTP", "success")
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "ورود با موفقیت انجام شد.",
-			"role":	map[uint]string{1: "admin", 10: "user"}[user.RoleID],
+			"role":    map[uint]string{1: "admin", 10: "user"}[user.RoleID],
 		})
 		return
 	} else {
@@ -201,7 +201,7 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		log.Printf("Failed type assertion for validated data: expected LoginWithPasswordRequest, got %T", validatedData)
 		return
 	}
-	
+
 	user, jwt, err := ac.authService.LoginWithPassword(body.Email, body.Password)
 	if err != nil {
 		if err.Error() == "crypto/bcrypt: hashedPassword is not the hash of the given password" || err.Error() == "user has no password" || err.Error() == "record not found" { // TODO: Integrate errors
@@ -231,11 +231,11 @@ func (ac *AuthController) LoginWithPassword(c *gin.Context) {
 		}
 	}
 	c.SetCookie("session_id", "", -1, "/", "", false, true)
-
+	middlewares_prometheus.IncrementUserLogin("Password", "success")
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "ورود با موفقیت انجام شد.",
-		"role":	map[uint]string{1: "admin", 10: "user"}[user.RoleID],
+		"role":    map[uint]string{1: "admin", 10: "user"}[user.RoleID],
 	})
 }
 
@@ -364,7 +364,7 @@ func (ac *AuthController) ForgetPasswordReset(c *gin.Context) {
 		log.Printf("Failed type assertion for validated data: expected ForgetPasswordResetRequest, got %T", validatedData)
 		return
 	}
-	
+
 	value, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -419,7 +419,7 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 	userinfo, exists := c.Get("user")
-	
+
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -437,9 +437,10 @@ func (ac *AuthController) SignUp(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
+	// Prometheus: increment user registration metric (method hardcoded as "email" for now)
+	middlewares_prometheus.IncrementUserRegistration("email")
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "ثبت نام با موفقیت انجام شد.",
 	})
 }
-	

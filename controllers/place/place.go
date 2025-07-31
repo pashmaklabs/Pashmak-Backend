@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
+	middlewares_prometheus "pashmak.com/pashmak/middlewares/prometheus"
 	models_place "pashmak.com/pashmak/models/place"
 	serializers_place "pashmak.com/pashmak/serializers/place"
 	services_auth "pashmak.com/pashmak/services/auth"
@@ -198,7 +199,7 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			place, err := placeOsmUtils.ImportFromOSM(uint(id), pc.CommnetService.DB)
-			if err != nil{
+			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"status":  "error",
 					"message": err.Error(),
@@ -307,7 +308,7 @@ func (pc *PlaceController) AddNewPlace(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
-
+	middlewares_prometheus.IncrementPlaceCreated()
 	c.JSON(http.StatusAccepted, gin.H{
 		"status":  "success",
 		"message": "مکان با موفقیت ثبت شد",
