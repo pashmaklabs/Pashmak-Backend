@@ -203,6 +203,7 @@ func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error
 		response.Amenity = &osmResult.Amenity
 		response.Latitude = &osmResult.Latitude
 		response.Longitude = &osmResult.Longitude
+		response.ID = strconv.FormatUint(uint64(place.ID), 10)
 	} else {
 		// For non-OSM places, use data from the places table
 		response.OsmID = nil
@@ -210,6 +211,7 @@ func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error
 		response.Amenity = &place.Amenity
 		response.Latitude = &place.Latitude
 		response.Longitude = &place.Longitude
+		response.ID = strconv.FormatUint(uint64(place.ID), 10)
 	}
 
 	// Common data for both OSM and non-OSM places

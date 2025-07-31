@@ -14,8 +14,8 @@ import (
 	services_comment "pashmak.com/pashmak/services/comment"
 )
 
-func AdminRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, minio *minio.Client, appConfig *bootstrap.AppConfig) {
-	commentService := services_comment.NewCommentService(db, appConfig)
+func AdminRoutes(router *gin.Engine, db *gorm.DB, pgvectorDB *gorm.DB, redis *redis.Client, minio *minio.Client, appConfig *bootstrap.AppConfig) {
+	commentService := services_comment.NewCommentService(db, pgvectorDB, appConfig)
 	commentController := controllers_comment.NewCommentController(commentService)
 	authService := services_auth.NewAuthService(db, redis, appConfig)
 	authMiddleware := middlewares_auth.NewAuthMiddleware(authService)

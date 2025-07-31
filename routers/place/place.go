@@ -20,7 +20,7 @@ import (
 func PlaceRoutes(router *gin.Engine, db *gorm.DB, pgvectorDB *gorm.DB, redis *redis.Client, minio *minio.Client, appConfig *bootstrap.AppConfig) {
 	openaiService := services_openai.NewOpenAIService(appConfig.OpenaiApiKey)
 	placeService := services_place.NewPlaceService(db, appConfig, openaiService, minio, pgvectorDB)
-	commentService := services_comment.NewCommentService(db, appConfig)
+	commentService := services_comment.NewCommentService(db, pgvectorDB, appConfig)
 	profileService := services_profile.NewProfileService(db, minio, appConfig)
 	placeController := controllers_place.NewPlaceController(placeService, commentService, profileService, appConfig)
 	authService := services_auth.NewAuthService(db, redis, appConfig)

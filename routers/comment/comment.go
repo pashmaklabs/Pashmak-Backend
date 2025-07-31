@@ -13,8 +13,8 @@ import (
 	services_comment "pashmak.com/pashmak/services/comment"
 )
 
-func CommentRoutes(router *gin.Engine, db *gorm.DB, redis *redis.Client, appconfig *bootstrap.AppConfig) {
-	commentService := services_comment.NewCommentService(db, appconfig)
+func CommentRoutes(router *gin.Engine, db *gorm.DB, pgvectorDB *gorm.DB, redis *redis.Client, appconfig *bootstrap.AppConfig) {
+	commentService := services_comment.NewCommentService(db, pgvectorDB, appconfig)
 	commentController := controllers_comment.NewCommentController(commentService)
 	authService := services_auth.NewAuthService(db, redis, appconfig)
 	authMiddleware := middlewares_auth.NewAuthMiddleware(authService)

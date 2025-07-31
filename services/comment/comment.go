@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
+	models_pgvector "pashmak.com/pashmak/models/pgvector"
 	models_place "pashmak.com/pashmak/models/place"
 	models_report "pashmak.com/pashmak/models/report"
 	serializers_comment "pashmak.com/pashmak/serializers/comment"
@@ -18,14 +19,16 @@ import (
 )
 
 type CommentService struct {
-	DB        *gorm.DB
-	AppConfig *bootstrap.AppConfig
+	DB         *gorm.DB
+	PGVectorDB *gorm.DB
+	AppConfig  *bootstrap.AppConfig
 }
 
-func NewCommentService(db *gorm.DB, appconfig *bootstrap.AppConfig) *CommentService {
+func NewCommentService(db *gorm.DB, pgvectorDB *gorm.DB, appconfig *bootstrap.AppConfig) *CommentService {
 	return &CommentService{
-		DB:        db,
-		AppConfig: appconfig,
+		DB:         db,
+		PGVectorDB: pgvectorDB,
+		AppConfig:  appconfig,
 	}
 }
 
@@ -141,9 +144,55 @@ func (cs *CommentService) PaginateReportedComments(c *gin.Context, comments *gor
 }
 
 func (cs *CommentService) GetCommentsByPlaceToken(c *gin.Context, token string, userpayload services_auth.UserInfo, isLoggedIn bool) (*pagination.Paginator, []serializers_comment.CommentResponse, error) {
+	tokenInt, err := strconv.ParseUint(token, 10, 64)
+	if err != nil {
+		// This is a Google Place ID - get comments from greview table
+		var greviews []models_pgvector.Greview
+		commentsQuery := cs.PGVectorDB.Where("gmap_id = ?", token).Find(&greviews)
+		if commentsQuery.Error != nil {
+			return nil, nil, commentsQuery.Error
+		}
+
+		pagedComments, paginator, err := services_paginator.Paginate[models_pgvector.Greview](commentsQuery, c, cs.PGVectorDB, 20)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Reverse the pagedComments slice
+		for i := 0; i < len(pagedComments)/2; i++ {
+			j := len(pagedComments) - 1 - i
+			pagedComments[i], pagedComments[j] = pagedComments[j], pagedComments[i]
+		}
+	
+		commentDTOs := make([]serializers_comment.CommentResponse, len(pagedComments))
+		
+		
+		// Convert greview to CommentResponse format
+		for i, greview := range pagedComments {
+			commentDTOs[i] = serializers_comment.CommentResponse{
+				ID:      greview.ID,
+				Content: greview.Text,
+				Rating:  uint(greview.Rating),
+				User: serializers_comment.UserResponse{
+					ID:        0,
+					FirstName: greview.Name,
+					LastName:  "",
+					Avatar:    "",
+				},
+				CreatedAt:               greview.CreatedAt,
+				Likes:                   0,
+				Dislikes:                0,
+				IsLikedByCurrentUser:    false,
+				IsDislikedByCurrentUser: false,
+			}
+		}
+
+		return paginator, commentDTOs, nil
+	}
+
 	var comments []models_place.Comment
 	commentsQuery := cs.DB.
-		Where("place_id = ?", token).
+		Where("place_id = ?", tokenInt).
 		Preload("User").      // use if you want to use comment.User
 		Preload("Reactions"). // use if you want to use comment.Reactions
 		Find(&comments)
@@ -318,27 +367,27 @@ func (cs *CommentService) ChangeReportStatus(status string, reportId string) err
 	return nil
 }
 
-func (cs *CommentService) GetCommentsByUser(userInfo services_auth.UserInfo) ([]serializers_comment.UserCommentsRespone, error){
+func (cs *CommentService) GetCommentsByUser(userInfo services_auth.UserInfo) ([]serializers_comment.UserCommentsRespone, error) {
 	var userComments []models_place.Comment
 	query := cs.DB.Model(&models_place.Comment{})
 	result := query.Where("user_id = ?", userInfo.ID).Preload("Place").Preload("User").Find(&userComments)
-	if result.Error != nil{
+	if result.Error != nil {
 		return []serializers_comment.UserCommentsRespone{}, result.Error
 	}
 
 	commentDTOs := make([]serializers_comment.UserCommentsRespone, len(userComments))
 	for i, comment := range userComments {
 		likes, dislikes, err := cs.FetchReactionsFromDatabase(comment.ID)
-		if err != nil{
+		if err != nil {
 			return []serializers_comment.UserCommentsRespone{}, err
 		}
 		commentDTOs[i] = serializers_comment.UserCommentsRespone{
-			ID:     comment.ID,
-			Content: comment.Content,
-			Rating: comment.Rating,
-			Likes: likes,
-			Dislikes: dislikes,
-			PlaceID: comment.Place.ID,
+			ID:        comment.ID,
+			Content:   comment.Content,
+			Rating:    comment.Rating,
+			Likes:     likes,
+			Dislikes:  dislikes,
+			PlaceID:   comment.Place.ID,
 			PlaceName: comment.Place.Name,
 			CreatedAt: comment.CreatedAt,
 		}
