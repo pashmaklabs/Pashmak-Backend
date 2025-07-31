@@ -433,10 +433,11 @@ func (t *VectorSearchTool) Description() string {
 }
 
 type placeRow struct {
-	GMapID string  `gorm:"column:gmap_id" json:"gmap_id"`
-	Name   string  `gorm:"column:name"    json:"name"`
-	Review string  `gorm:"column:review"  json:"review"`
-	Rating float64 `gorm:"column:rating"  json:"rating"`
+	GMapID     string  `gorm:"column:gmap_id" json:"gmap_id"`
+	Name       string  `gorm:"column:name"    json:"name"`
+	Review     string  `gorm:"column:review"  json:"review"`
+	Rating     float64 `gorm:"column:rating"  json:"rating"`
+	Similarity float64 `gorm:"column:similarity"  json:"similarity"`
 }
 
 // Call is invoked by the LLM (via function‑calling). argsJSON looks like: {"query":"…","limit":5}
@@ -451,21 +452,19 @@ func (t *VectorSearchTool) Call(ctx context.Context, argsJSON string) (string, e
 		return "", fmt.Errorf("vector_search: bad args: %w", err)
 	}
 	
-	
 	var rows []placeRow
 	sql := fmt.Sprintf(`
-        SELECT
-            gr.gmap_id AS gmap_id,
-            g.name AS name,
-            gr.text   AS review,
-            g.avg_rating AS rating
-        FROM %s gr
-        JOIN gplaces g ON gr.gmap_id = g.gmap_id
-        WHERE gr.embedding IS NOT NULL
-		ORDER BY gr.embedding <-> $1::vector
-        LIMIT $2`, t.TableName)
-
-	fmt.Println("sql", sql)
+        		SELECT 
+                    r.text as review,
+                    r.rating as rating,
+                    1 - (r.embedding <=> $1::vector) as similarity,
+                    p.gmap_id as gmap_id,
+					p.name as name
+                FROM %s r
+                LEFT JOIN gplaces p ON r.gmap_id = p.gmap_id
+                WHERE r.embedding IS NOT NULL
+                ORDER BY r.embedding <=> $2::vector
+                LIMIT $3`, t.TableName)
 
 	// for simplicity we assume you’ve already got queryEmbedding as JSON array text
 	// you could factor out your getEmbedding() if you like
@@ -475,22 +474,16 @@ func (t *VectorSearchTool) Call(ctx context.Context, argsJSON string) (string, e
 		return "", err
 	}
 	embArg, _ := json.Marshal(emb) // "[0.12,0.53,…]"
-	if err := t.DB.Raw(sql, string(embArg), args.Limit).Scan(&rows).Error; err != nil {
-		return "", fmt.Errorf("vector_search query: %w", err)
-	}
-
-	if err := t.DB.Raw(sql, string(embArg), args.Limit).Scan(&rows).Error; err != nil {
-		fmt.Println("err", err)
+	if err := t.DB.Raw(sql, string(embArg), string(embArg), args.Limit).Scan(&rows).Error; err != nil {
 		return "", fmt.Errorf("vector_search query: %w", err)
 	}
 
 	// 3️⃣ marshal the result list to JSON
 	out, err := json.Marshal(rows)
-	fmt.Println(string(out))
 	if err != nil {
 		return "", fmt.Errorf("vector_search marshal: %w", err)
 	}
-	fmt.Println("out", string(out))
+
 	return string(out), nil
 }
 
@@ -498,7 +491,7 @@ func (t *VectorSearchTool) Call(ctx context.Context, argsJSON string) (string, e
 func (t *VectorSearchTool) getEmbedding(ctx context.Context, text string) ([]float32, error) {
 	client := openai.NewClient(option.WithAPIKey(t.AppConfig.OpenaiApiKey))
 	resp, err := client.Embeddings.New(ctx, openai.EmbeddingNewParams{
-		Model: openai.EmbeddingModelTextEmbeddingAda002,
+		Model: openai.EmbeddingModelTextEmbedding3Small,
 		Input: openai.EmbeddingNewParamsInputUnion{OfString: openai.String(text)},
 	})
 	if err != nil {
