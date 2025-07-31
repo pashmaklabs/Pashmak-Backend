@@ -61,22 +61,26 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 			"status":  "error",
 			"message": "خطا در دریافت مکان",
 		})
+		log.Println(err)
 		return
 	}
-
-	avgRating, err := pc.CommnetService.GetAverageRating(idStr)
+	_, err = strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		if err.Error() == "نظری ثبت نشده" {
-			avgRating = 0
-		} else {
-			fmt.Println(err)
-			c.JSON(500, gin.H{
-				"status":  "error",
-				"message": "خطا در دریافت امتیاز",
-			})
-			return
+		place.Rating, err = pc.CommnetService.GetAverageRating(idStr)
+		if err != nil {
+			if err.Error() == "نظری ثبت نشده" {
+				place.Rating = 0
+			} else {
+				fmt.Println(err)
+				c.JSON(500, gin.H{
+					"status":  "error",
+					"message": "خطا در دریافت امتیاز",
+				})
+				return
+			}
 		}
 	}
+	
 
 	response := serializers_place.PlaceWithRatingResponse{
 		ID:        place.ID, // Now this is a string
@@ -84,7 +88,7 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 		Amenity:   *place.Amenity,
 		Latitude:  *place.Latitude,
 		Longitude: *place.Longitude,
-		Rating:    avgRating,
+		Rating:    place.Rating,
 		ImageURLs: place.ImageURLs,
 	}
 
@@ -103,7 +107,6 @@ func (pc *PlaceController) GetPlace(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"status":  "success",
-		"message": "",
 		"place":   response,
 	})
 }

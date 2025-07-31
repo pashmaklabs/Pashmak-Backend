@@ -71,6 +71,7 @@ func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		// If parsing fails, search in gplace table
+
 		var result struct {
 			ID        uint    `db:"id"`
 			Name      string  `db:"name"`
@@ -78,13 +79,48 @@ func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error
 			Category  string  `db:"category"`
 			Latitude  float64 `db:"latitude"`
 			Longitude float64 `db:"longitude"`
+			Rating    float64 `db:"avg_rating"`
 		}
 
-		if err := ps.PGVectorDB.Raw("SELECT id, name, gmap_id, category, latitude, longitude FROM gplaces WHERE gmap_id = ? AND deleted_at IS NULL", id).First(&result).Error; err != nil {
+		if err := ps.PGVectorDB.Raw("SELECT id, name, gmap_id, category, latitude, longitude, avg_rating FROM gplaces WHERE gmap_id = ? AND deleted_at IS NULL", id).First(&result).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, fmt.Errorf("no place found with ID %s", id)
 			}
 			return nil, fmt.Errorf("error searching gplace table: %w", err)
+		}
+
+		log.Println("rat", result.Rating)
+
+		type PicItem struct {
+			URL []string `json:"url"`
+		}
+		type ReviewResult struct {
+			Pics json.RawMessage `db:"pics"`
+		}
+		var reviewResults []ReviewResult
+		if err := ps.PGVectorDB.Raw("SELECT pics FROM greviews WHERE gmap_id = ? AND deleted_at IS NULL", id).First(&reviewResults).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, fmt.Errorf("error searching gplace table: %w", err)
+			}
+		}
+
+		// Process the results to extract and flatten image URLs
+		var imageURLs []string
+		for _, result := range reviewResults {
+			if result.Pics == nil {
+				continue // Skip if no pics
+			}
+
+			// Unmarshal the JSONB data into a slice of PicItem
+			var pics []PicItem
+			if err := json.Unmarshal(result.Pics, &pics); err != nil {
+				return nil, fmt.Errorf("error unmarshaling pics JSON: %w", err)
+			}
+
+			// Flatten the URLs from each PicItem
+			for _, pic := range pics {
+				imageURLs = append(imageURLs, pic.URL...)
+			}
 		}
 
 		// Debug: print the category value
@@ -110,7 +146,8 @@ func (ps *PlaceService) GetPlaceByID(id string) (*sp.GetPlaceByIDResponse, error
 			Amenity:   &amenity, // Use first category as amenity
 			Latitude:  &result.Latitude,
 			Longitude: &result.Longitude,
-			ImageURLs: []string{}, // gplace doesn't have images in our current structure
+			Rating: result.Rating,
+			ImageURLs: imageURLs, // gplace doesn't have images in our current structure
 		}
 
 		return &response, nil
