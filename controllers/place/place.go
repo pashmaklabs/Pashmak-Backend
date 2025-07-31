@@ -18,6 +18,7 @@ import (
 	services_auth "pashmak.com/pashmak/services/auth"
 	services_comment "pashmak.com/pashmak/services/comment"
 	services_place "pashmak.com/pashmak/services/place"
+	"pashmak.com/pashmak/services/placeOsmUtils"
 	services_profile "pashmak.com/pashmak/services/profile"
 )
 
@@ -155,8 +156,8 @@ func (pc *PlaceController) GetPlaceRecommendations(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "",
+		"status":          "success",
+		"message":         "",
 		"recommendations": recommendations,
 	})
 }
@@ -174,37 +175,19 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 	err = pc.PlaceService.DB.First(&place, uint(id)).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			var count int64
-			dbErr := pc.PlaceService.DB.Raw(`
-				SELECT COUNT(*)
-				FROM planet_osm_point
-				WHERE osm_id = ?
-			`, id).Scan(&count).Error
-			if dbErr != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "خطا در بررسی وجود مکان"})
-				return
+			place, err := placeOsmUtils.ImportFromOSM(uint(id), pc.CommnetService.DB)
+			if err != nil{
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status":  "error",
+					"message": err.Error(),
+				})
 			}
-			if count > 0 {
-				place = models_place.Place{
-					ID:     uint(id),
-					IsOSM:  true,
-					Name:   "Unknown",
-					Images: []models_place.Image{},
-				}
-				if err := pc.PlaceService.DB.Create(&place).Error; err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "خطا در ایجاد رکورد مکان"})
-					return
-				}
-				// Retrieve the newly created place
-				if err := pc.PlaceService.DB.Where("id = ?", id).First(&place).Error; err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{
-						"status":  "error",
-						"message": err.Error(),
-					})
-					return
-				}
-			} else if count == 0 {
-				c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "مکان یافت نشد"})
+			// Retrieve the newly created place
+			if err := pc.PlaceService.DB.Where("id = ?", id).First(&place).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status":  "error",
+					"message": err.Error(),
+				})
 				return
 			}
 		} else {
@@ -221,7 +204,8 @@ func (pc *PlaceController) UploadPlaceImage(c *gin.Context) {
 	}
 	objectName, err := pc.PlaceService.UploadPlaceImage(&place, file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "مشکل غیر منتظره ای رخ داده است"})
+		log.Println(err.Error())
 		return
 	}
 	c.JSON(http.StatusAccepted, gin.H{

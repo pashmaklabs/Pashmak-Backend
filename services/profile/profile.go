@@ -398,10 +398,6 @@ func (ps *ProfileService) FetchSearchHistory(userInfo services_auth.UserInfo) ([
 	if historyQuery.Error != nil {
 		return nil, historyQuery.Error
 	}
-
-	if len(history) == 0 {
-		return nil, errors.New("no history found")
-	}
 	return history, nil
 }
 

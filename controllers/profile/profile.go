@@ -236,13 +236,6 @@ func (pc *ProfileController) FetchSearchHistory(c *gin.Context) {
 	userpayload := userinfo.(services_auth.UserInfo)
 	history, err := pc.ProfileService.FetchSearchHistory(userpayload)
 	if err != nil {
-		if err.Error() == "no history found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "success",
-				"message": "تاریخچه ای وجود ندارد",
-			})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",

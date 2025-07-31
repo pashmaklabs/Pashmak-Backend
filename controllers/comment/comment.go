@@ -33,13 +33,6 @@ func (cc *CommentController) GetCommentsByPlaceToken(c *gin.Context) {
 	token := c.Param("placeToken")
 	paginator, pagedComments, err := cc.CommentService.GetCommentsByPlaceToken(c, token, userpayload, isLoggedIn)
 	if err != nil {
-		if err.Error() == "no comments found"{
-			c.JSON(http.StatusNotFound, gin.H{
-				"status": "success",
-				"message": "دیدگاهی برای این مکان ثبت نشده است",
-			})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
 			"message": "مشکل غیرمنتظره ای رخ داده است",

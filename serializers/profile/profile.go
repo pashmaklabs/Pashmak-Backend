@@ -50,8 +50,8 @@ type DeleteSavedLocation struct {
 }
 
 type UpdateUserProfileRequest struct {
-	FirstName string `json:"firstname" binding:"required,alpha"`
-	LastName  string `json:"lastname" binding:"required,alpha"`
+	FirstName string `json:"firstname" binding:"required"`
+	LastName  string `json:"lastname" binding:"required"` //TODO: Register persian language for validating
 }
 
 type CreateSavedLocationRequest struct {
