@@ -114,16 +114,6 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	long := c.Query("lng")
 	agentic := c.Query("agentic") == "true"
 
-	places, err := pc.PlaceService.SearchPlace(q, lat, long, agentic)
-	if err != nil {
-		fmt.Println("err", err)
-		c.JSON(500, gin.H{
-			"status":  "error",
-			"message": "خطا در جستجوی مکان",
-		})
-		return
-	}
-
 	sessionID, err := c.Cookie("session_id")
 	userinfo, loggedIn := c.Get("user")
 	if !loggedIn && (err != nil || sessionID == "") {
@@ -141,6 +131,16 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 		log.Printf("Failed to save search query fo user: %v, %v", userID, err)
 	}
 
+	places, err := pc.PlaceService.SearchPlace(q, lat, long, agentic)
+	if err != nil {
+		fmt.Println("err", err)
+		c.JSON(500, gin.H{
+			"status":  "error",
+			"message": "خطا در جستجوی مکان",
+		})
+		return
+	}
+
 	c.JSON(200, gin.H{
 		"status":  "success",
 		"message": "",
@@ -150,9 +150,28 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 
 func (pc *PlaceController) GetPlaceRecommendations(c *gin.Context) {
 	query := c.Query("q")
+
+	sessionID, err := c.Cookie("session_id")
+	userinfo, loggedIn := c.Get("user")
+	if !loggedIn && (err != nil || sessionID == "") {
+		sessionID = uuid.New().String()
+		c.SetCookie("session_id", sessionID, 30*24*3600, "/", pc.AppConfig.CookieDomain, false, true)
+	}
+
+	var userID *uint
+	if loggedIn {
+		id := userinfo.(services_auth.UserInfo).ID
+		userID = &id
+	}
+	err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, query)
+	if err != nil {
+		log.Printf("Failed to save search query fo user: %v, %v", userID, err)
+	}
+
 	recommendations, err := pc.PlaceService.GetPlaceRecommendations(query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "مشکل غیرمنتظره ای پیش آمده است"})
+		log.Println(err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
