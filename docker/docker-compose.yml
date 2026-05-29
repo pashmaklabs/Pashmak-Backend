@@ -73,20 +73,20 @@ services:
     volumes:
       - pashmak_redis:/data
   
-  # backend:
-  #   image: registry.hamdocker.ir/bluh-bluh/pashmak-backend:1.0.4
-  #   container_name: pashmak_backend
-  #   restart: unless-stopped
-  #   ports:
-  #     - 8080:8080
-  #   env_file:
-  #     - ../.env
-  #   dns:
-  #     - 8.8.8.8
-  #     - 8.8.4.4
-  #   depends_on:
-  #     - postgres
-  #     - redis
+  backend:
+    image: registry.hamdocker.ir/pashm-narm/pashmak-backend:1.0.5
+    container_name: pashmak_backend
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    env_file:
+      - ../.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      - postgres
+      - redis
 
 networks:
   minionetwork:
