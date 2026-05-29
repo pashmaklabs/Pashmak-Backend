@@ -52,6 +52,8 @@ type AppConfig struct {
 
 	AdminEmail    string
 	AdminPassword string
+
+	SentryDsn string
 }
 
 var (
@@ -91,10 +93,12 @@ var (
 
 	OPENAI_API_KEY string
 	METIS_BASE_URL string
-	METIS_API_KEY string
+	METIS_API_KEY  string
 
 	ADMIN_EMAIL    string
 	ADMIN_PASSWORD string
+
+	SENTRY_DSN string
 )
 
 func LoadEnvVars() *AppConfig {
@@ -160,6 +164,8 @@ func LoadEnvVars() *AppConfig {
 	ADMIN_EMAIL = os.Getenv("ADMIN_EMAIL")
 	ADMIN_PASSWORD = os.Getenv("ADMIN_PASSWORD")
 
+	SENTRY_DSN = os.Getenv("SENTRY_DSN")
+
 	return &AppConfig{
 		PashmakApiUrl:    PASHMAK_API_URL,
 		ServerHost:       SERVER_HOST,
@@ -191,5 +197,6 @@ func LoadEnvVars() *AppConfig {
 		PGVectorDBName:   PGVECTOR_DBNAME,
 		PGVectorPort:     PGVECTOR_PORT,
 		PGVectorPassword: PGVECTOR_PASSWORD,
+		SentryDsn:        SENTRY_DSN,
 	}
 }

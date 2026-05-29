@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -45,6 +47,19 @@ func init() {
 }
 
 func main() {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              AppConfig.SentryDsn,
+		AttachStacktrace: true,
+		Environment:      AppConfig.Environment,
+		TracesSampleRate: 1.0,
+	})
+
+	if err != nil {
+		log.Fatalf("sentry.Init failed: %s", err)
+	}
+
+	defer sentry.Flush(2 * time.Second)
+
 	Router = gin.Default()
 
 	// Initialize Prometheus metrics first
@@ -52,6 +67,11 @@ func main() {
 
 	// Apply Prometheus middleware to all routes (should be early in the chain)
 	Router.Use(middlewares_prometheus.PrometheusMiddleware())
+
+	// Apply Sentry Middleware right after Prometheus
+	Router.Use(sentrygin.New(sentrygin.Options{
+		Repanic: true,
+	}))
 
 	// CORS middleware
 	corsMiddleware := middlewares_cors.NewCorsMiddleware(AppConfig)
@@ -68,6 +88,22 @@ func main() {
 
 	// Health check endpoint
 	Router.GET("/health", middlewares_prometheus.HealthHandler)
+
+	// --- SENTRY TEST ROUTES (Remove these before deploying to production) ---
+	Router.GET("/sentry-test-error", func(c *gin.Context) {
+		// 1. Testing a manually captured, handled error
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureMessage("Sentry manual test: Something minor went wrong!")
+		}
+		c.JSON(200, gin.H{"status": "Handled message sent to Sentry"})
+	})
+
+	Router.GET("/sentry-test-panic", func(c *gin.Context) {
+		// 2. Testing an unhandled panic (Nil pointer dereference)
+		// Sentry middleware will automatically catch this, report it, and keep the server alive!
+		var emptyStringPointer *string
+		println(*emptyStringPointer) // This intentionally crashes the request
+	})
 
 	// Expose Prometheus metrics endpoint
 	Router.GET("/metrics", gin.WrapH(promhttp.Handler()))
