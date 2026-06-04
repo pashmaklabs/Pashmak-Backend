@@ -87,7 +87,8 @@ Temporary Items
 .apdisk
 
 # Environment variables
-.env
+.env.production
+.env.local
 
 # Private key
 *.pem

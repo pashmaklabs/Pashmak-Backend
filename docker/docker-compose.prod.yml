@@ -17,22 +17,22 @@ services:
       - MINIO_DEFAULT_BUCKETS=pashmak
     command: server /data --console-address ":9001"
 
-  # osm2pgsql:
-  #   image: iboates/osm2pgsql:2.1.1
-  #   environment:
-  #     PGPASSWORD: postgres
-  #   command: >
-  #     osm2pgsql
-  #     --slim
-  #     --drop
-  #     --cache 1000
-  #     -d pashmak_postgres
-  #     -U postgres
-  #     -H postgres
-  #     -P 5432
-  #     https://download.geofabrik.de/asia/iran-latest.osm.pbf
-  #   depends_on:
-  #     - postgres
+  osm2pgsql:
+    image: iboates/osm2pgsql:2.1.1
+    environment:
+      PGPASSWORD: postgres
+    command: >
+      osm2pgsql
+      --slim
+      --drop
+      --cache 1000
+      -d pashmak_postgres
+      -U postgres
+      -H postgres
+      -P 5432
+      https://download.geofabrik.de/asia/iran-latest.osm.pbf
+    depends_on:
+      - postgres
 
   postgres:
     image: postgis/postgis:17-3.5-alpine
@@ -49,19 +49,19 @@ services:
     ports:
       - 5432:5432
 
-  # pgvector:
-  #   image: pgvector/pgvector:0.8.0-pg16
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #     - POSTGRES_DB=google
-  #     - PGPORT=5433
-  #   ports:
-  #     - 5433:5433
-  #   volumes:
-  #     - type: volume
-  #       source: pashmak_pgvector
-  #       target: /var/lib/postgresql/data
+  pgvector:
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=google
+      - PGPORT=5433
+    ports:
+      - 5433:5433
+    volumes:
+      - type: volume
+        source: pashmak_pgvector
+        target: /var/lib/postgresql/data
     
   redis:
     image: redis:7.4.2
