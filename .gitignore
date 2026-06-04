@@ -99,3 +99,6 @@ KubeConfig.yaml
 
 # Linux swap file
 *.swp
+
+# Hamravesh Config template
+hamravesh-custom-config.tmpl.yaml
