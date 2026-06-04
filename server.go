@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/getsentry/sentry-go/gin"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -51,7 +52,21 @@ func main() {
 		Dsn:              AppConfig.SentryDsn,
 		AttachStacktrace: true,
 		Environment:      AppConfig.Environment,
-		TracesSampleRate: 1.0,
+		TracesSampler: sentry.TracesSampler(func(ctx sentry.SamplingContext) float64 {
+			// Don't trace health checks
+			if strings.Contains(ctx.Span.Name, "/health") {
+				return 0
+			}
+
+			// Always trace critical endpoints (payments, auth)
+			if strings.Contains(ctx.Span.Name, "/payment") ||
+				strings.Contains(ctx.Span.Name, "/login") {
+				return 1.0
+			}
+
+			// Sample everything else at 10% for production
+			return 0.1
+		}),
 	})
 
 	if err != nil {
