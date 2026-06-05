@@ -1,7 +1,6 @@
 package services_auth
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
