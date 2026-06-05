@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"pashmak.com/pashmak/bootstrap"
 )
 
 func TestCaptureAuthError_SentryEventShape(t *testing.T) {
@@ -58,16 +59,21 @@ func TestCaptureAuthError_RealSentry(t *testing.T) {
 	}
 	defer sentry.Flush(5 * time.Second)
 
-	as := &AuthService{}
-	as.CaptureAuthError(
-		fmt.Errorf("real test: redis timeout"),
-		"validate_otp",
-		"test@example.com",
-		map[string]interface{}{
+	appConfig := bootstrap.LoadEnvVars()
+	redisClient := bootstrap.SetupRedis()
+	defer redisClient.Close()
+
+	as := NewAuthService(nil, redisClient, appConfig)
+
+	err = as.StoreOTPAndSendEmail("test@example.com")
+	if err != nil {
+		as.CaptureAuthError(err, "send_email", "test@example.com", map[string]interface{}{
 			"test_run": true,
-			"password": "should_not_appear",
-		},
-	)
+		})
+		t.Logf("error captured and sent to Sentry: %v", err)
+	} else {
+		t.Log("email sent successfully — check inbox")
+	}
 
 	sentry.Flush(5 * time.Second)
 	t.Log("Event sent — check your Sentry dashboard")
