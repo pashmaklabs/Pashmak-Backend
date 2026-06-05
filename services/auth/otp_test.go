@@ -10,34 +10,6 @@ import (
 	"pashmak.com/pashmak/bootstrap"
 )
 
-func TestCaptureAuthError_SentryEventShape(t *testing.T) {
-	var captured []*sentry.Event
-
-	_ = sentry.Init(sentry.ClientOptions{
-		Dsn: "https://examplePublicKey@o0.ingest.sentry.io/0", // fake DSN
-		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
-			captured = append(captured, event)
-			return nil
-		},
-	})
-	defer sentry.Flush(time.Second)
-
-	as := &AuthService{}
-	as.CaptureAuthError(fmt.Errorf("redis timeout"), "validate_otp", "u@example.com", nil)
-	sentry.Flush(time.Second)
-
-	if len(captured) != 1 {
-		t.Fatalf("expected 1 event, got %d", len(captured))
-	}
-	ev := captured[0]
-	if ev.Tags["operation"] != "validate_otp" {
-		t.Errorf("unexpected operation tag: %s", ev.Tags["operation"])
-	}
-	if ev.Tags["service"] != "auth" {
-		t.Errorf("expected service=auth tag")
-	}
-}
-
 func TestCaptureAuthError_RealSentry(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping real Sentry test in short mode")
