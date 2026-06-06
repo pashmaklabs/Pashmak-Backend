@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Semantic version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_notes:
+        description: 'Optional custom release notes to prepend'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release Version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history and tags for accurate SemVer calculation
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Release Engine
+        id: release_engine
+        run: |
+          go run scripts/release/release-engine.go -bump "${{ github.event.inputs.bump_type }}" -notes "${{ github.event.inputs.custom_notes }}"
+
+      - name: Commit & Push Changes
+        run: |
+          git add CHANGELOG.md
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(release): version ${{ steps.release_engine.outputs.version }}"
+            git push origin HEAD
+          else
+            echo "No changes to commit in CHANGELOG.md"
+          fi
+
+      - name: Create and Push Tag
+        run: |
+          git tag -a "${{ steps.release_engine.outputs.tag }}" -m "Release ${{ steps.release_engine.outputs.version }}"
+          git push origin "${{ steps.release_engine.outputs.tag }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_engine.outputs.tag }}
+          name: Release ${{ steps.release_engine.outputs.version }}
+          body: ${{ steps.release_engine.outputs.release_notes }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
