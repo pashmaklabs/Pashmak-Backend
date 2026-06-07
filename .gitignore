@@ -87,7 +87,8 @@ Temporary Items
 .apdisk
 
 # Environment variables
-.env
+.env.production
+.env.local
 
 # Private key
 *.pem
@@ -99,3 +100,6 @@ KubeConfig.yaml
 
 # Linux swap file
 *.swp
+
+# Hamravesh Config template
+hamravesh-custom-config.tmpl.yaml
