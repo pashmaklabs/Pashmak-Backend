@@ -68,12 +68,18 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 			rl.redis.Expire(ctx, key, rl.window)
 		}
 
+		ttlSeconds, err := rl.redis.TTL(ctx, key).Result()
+		if err != nil || ttlSeconds < 0 {
+			ttlSeconds = rl.window // Fallback to original window if error
+		}
+		
+		retryAfter := int(ttlSeconds.Seconds())
+		
 		// Set informational headers
-		ttl, _ := rl.redis.TTL(ctx, key).Result()
 		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", rl.limit))
 		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", max(0, rl.limit-int(count))))
-		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(ttl).Unix()))
-
+		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", retryAfter))
+		
 		if int(count) > rl.limit {
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"status":  "error",
@@ -85,11 +91,4 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 
 		c.Next()
 	}
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
