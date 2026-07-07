@@ -55,7 +55,7 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		return
 	}
 
-	resp, err := ac.authService.ValidateUser(body.Email)
+	resp, otp, err := ac.authService.ValidateUser(body.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -64,10 +64,12 @@ func (ac *AuthController) SendOTP(c *gin.Context) {
 		log.Println(err.Error())
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":     "success",
 		"message":    "رمز یکبار مصرف ارسال شد",
 		"userExists": resp,
+		"otp":        otp, // TEMPORARY
 	})
 }
 
