@@ -36,7 +36,7 @@ func TestCaptureAuthError_RealSentry(t *testing.T) {
 
 	as := NewAuthService(nil, redisClient, appConfig)
 
-	err = as.StoreOTPAndSendEmail("test@example.com")
+	_, err = as.StoreOTPAndSendEmail("test@example.com")
 	if err != nil {
 		as.CaptureAuthError(err, "send_email", "test@example.com", map[string]interface{}{
 			"test_run": true,

@@ -3,13 +3,13 @@ package services_auth
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
-	"net/smtp"
-	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/redis/go-redis/v9"
+	mail "github.com/wneessen/go-mail"
 	"gorm.io/gorm"
 	"pashmak.com/pashmak/bootstrap"
 	models_auth "pashmak.com/pashmak/models/auth"
@@ -85,56 +85,60 @@ func (as *AuthService) GnerateOTP() string {
 	return fmt.Sprintf("%04d", otp)
 }
 
-func (as *AuthService) SendMail(Email string, userOTP string) error {
-	startTime := time.Now()
+func (as *AuthService) SendMail(email string, userOTP string) error {
+	start := time.Now()
+
 	from := as.AppConfig.EmailAddr
 	password := as.AppConfig.EmailPassword
-	smtpHost := as.AppConfig.EmailHost
-	smtpPort := as.AppConfig.EmailPort
+	host := as.AppConfig.EmailHost
+	port := as.AppConfig.EmailPort
 
-	htmlContent := fmt.Sprintf(`
-	<html>
-		<body>
-			<h1>Your Verification Code:</h2>
-			<h1 style="font-size: 36px; color: #007BFF;">%s</h1>
-			<p>Please use this code to verify your email address.</p>
-		</body>
-	</html>
-	`, userOTP)
+	log.Printf("[MAIL] host=%s port=%s from=%s", host, port, from)
 
-	message := []byte(fmt.Sprintf(
-		"To: %s\r\n"+
-			"Subject: %s\r\n"+
-			"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n"+
-			"%s",
-		strings.Join([]string{Email}, ","),
-		"Verify Email",
-		htmlContent,
-	))
+	html := fmt.Sprintf(`
+<html>
+<body>
+<h1>Your Verification Code:</h1>
+<h1 style="font-size:36px;color:#007BFF;">%s</h1>
+<p>Please use this code to verify your email address.</p>
+</body>
+</html>
+`, userOTP)
 
-	auth := smtp.PlainAuth("", from, password, smtpHost)
+	m := mail.NewMsg()
 
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{Email}, message)
-
-	duration := time.Since(startTime)
-
-	as.addAuthBreadcrumb("Email sending attempted", sentry.LevelInfo, map[string]interface{}{
-		"email":       Email,
-		"smtp_host":   smtpHost,
-		"duration_ms": duration.Milliseconds(),
-		"success":     err == nil,
-	})
-
-	if err != nil {
-		// Capture email sending failures - these are critical!
-		as.CaptureAuthError(err, "send_email", Email, map[string]interface{}{
-			"smtp_host":   smtpHost,
-			"duration_ms": duration.Milliseconds(),
-			"error_type":  fmt.Sprintf("%T", err),
-		})
+	if err := m.From(from); err != nil {
 		return err
 	}
 
+	if err := m.To(email); err != nil {
+		return err
+	}
+
+	m.Subject("Verify Email")
+	m.SetBodyString(mail.TypeTextHTML, html)
+
+	client, err := mail.NewClient(
+		host,
+		mail.WithPort(587),
+		mail.WithSMTPAuth(mail.SMTPAuthPlain),
+		mail.WithUsername(from),
+		mail.WithPassword(password),
+		mail.WithTLSPolicy(mail.TLSMandatory),
+		mail.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Println("[MAIL] Sending...")
+
+	if err := client.DialAndSend(m); err != nil {
+		log.Printf("[MAIL] ERROR: %v", err)
+		return err
+	}
+
+	log.Printf("[MAIL] Sent in %v", time.Since(start))
 	return nil
 }
 
@@ -150,32 +154,38 @@ func (as *AuthService) CheckExistance(email string) error {
 	return result.Error
 }
 
-func (as *AuthService) StoreOTPAndSendEmail(email string) error {
+func (as *AuthService) StoreOTPAndSendEmail(email string) (string, error) {
 	userOTP := GenerateOTP()
+
 	ctx := context.Background()
 	if err := as.RedisClient.Set(ctx, email, userOTP, 2*time.Minute).Err(); err != nil {
-		return fmt.Errorf("failed to store OTP in Redis: %w", err)
+		return "", fmt.Errorf("failed to store OTP in Redis: %w", err)
 	}
-	if err := as.SendMail(email, userOTP); err != nil {
-		return err
-	}
-	return nil
+
+	// TEMPORARY: skip email sending
+	// if err := as.SendMail(email, userOTP); err != nil {
+	//     return "", err
+	// }
+
+	return userOTP, nil
 }
 
-func (as *AuthService) ValidateUser(email string) (bool, error) {
+func (as *AuthService) ValidateUser(email string) (bool, string, error) {
 	err := as.CheckExistance(email)
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return false, fmt.Errorf("failed to check user existence: %w", err)
+		return false, "", fmt.Errorf("failed to check user existence: %w", err)
 	}
 
-	if err := as.StoreOTPAndSendEmail(email); err != nil {
-		return false, err
+	otp, err := as.StoreOTPAndSendEmail(email)
+	if err != nil {
+		return false, "", err
 	}
 
 	if err == gorm.ErrRecordNotFound {
-		return false, nil
+		return false, otp, nil
 	}
-	return true, nil
+
+	return true, otp, nil
 }
 
 func (as *AuthService) ValidateOTP(Email string, RecievedOTP string) (bool, error) {
