@@ -21,6 +21,7 @@ import (
 	middlewares_prometheus "pashmak.com/pashmak/middlewares/prometheus"
 	routers_admin "pashmak.com/pashmak/routers/admin"
 	routers_auth "pashmak.com/pashmak/routers/auth"
+	routers_captcha "pashmak.com/pashmak/routers/captcha"
 	routers_comment "pashmak.com/pashmak/routers/comment"
 	routers_navigation "pashmak.com/pashmak/routers/navigation"
 	routers_place "pashmak.com/pashmak/routers/place"
@@ -130,6 +131,7 @@ func main() {
 	routers_comment.CommentRoutes(Router, DB, PGVectorDB, Redis, AppConfig)
 	routers_place.PlaceRoutes(Router, DB, PGVectorDB, Redis, Minio, AppConfig)
 	routers_admin.AdminRoutes(Router, DB, PGVectorDB, Redis, Minio, AppConfig)
+	routers_captcha.CaptchaRoutes(Router, AppConfig)
 
 	// Start periodic database metrics collection
 	go updateDatabaseMetrics()
