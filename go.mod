@@ -23,6 +23,7 @@ require (
 )
 
 require (
+	github.com/arcaptcha/arcaptcha-go v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
