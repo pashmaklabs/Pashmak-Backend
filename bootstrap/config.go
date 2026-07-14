@@ -54,6 +54,9 @@ type AppConfig struct {
 	AdminPassword string
 
 	SentryDsn string
+
+	ArcaptchaSiteKey string
+	ArcaptchaSecretKey string
 }
 
 var (
@@ -99,6 +102,9 @@ var (
 	ADMIN_PASSWORD string
 
 	SENTRY_DSN string
+
+	ARCAPTCHA_SITE_KEY string
+	ARCAPTCHA_SECRET_KEY string
 )
 
 func LoadEnvVars() *AppConfig {
@@ -168,6 +174,9 @@ func LoadEnvVars() *AppConfig {
 
 	SENTRY_DSN = os.Getenv("SENTRY_DSN")
 
+	ARCAPTCHA_SITE_KEY = os.Getenv("ARCAPTCHA_SITE_KEY")
+	ARCAPTCHA_SECRET_KEY = os.Getenv("ARCAPTCHA_SECRET_KEY")
+
 	return &AppConfig{
 		PashmakApiUrl:    PASHMAK_API_URL,
 		ServerHost:       SERVER_HOST,
@@ -200,5 +209,7 @@ func LoadEnvVars() *AppConfig {
 		PGVectorPort:     PGVECTOR_PORT,
 		PGVectorPassword: PGVECTOR_PASSWORD,
 		SentryDsn:        SENTRY_DSN,
+		ArcaptchaSiteKey: ARCAPTCHA_SITE_KEY,
+		ArcaptchaSecretKey: ARCAPTCHA_SECRET_KEY,
 	}
 }
