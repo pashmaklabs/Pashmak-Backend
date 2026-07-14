@@ -241,94 +241,170 @@ func (ps *PlaceService) SaveSearch(userID *uint, sessionID string, loggedIn bool
 	return nil
 }
 
-func (ps *PlaceService) SearchPlace(q string, lat string, long string, agentic bool) ([]sp.GetPlaceByIDResponse, error) {
-	query := fmt.Sprintf("Query: %s\nLatitude: %s\nLongitude: %s", q, lat, long)
+type SearchMode int
+
+const (
+	SearchModeNormal SearchMode = iota
+	SearchModeAISQL
+	SearchModeAgentic
+)
+
+func (ps *PlaceService) SearchPlace(q, lat, long string, mode SearchMode) ([]sp.GetPlaceByIDResponse, error) {
+	switch mode {
+	case SearchModeNormal:
+		return ps.normalSearch(q)
+
+	case SearchModeAISQL:
+		return ps.aiSQLSearch(q, lat, long)
+
+	case SearchModeAgentic:
+		return ps.agenticSearch(q)
+
+	default:
+		return nil, fmt.Errorf("unknown search mode")
+	}
+}
+
+func (ps *PlaceService) normalSearch(q string) ([]sp.GetPlaceByIDResponse, error) {
 	var rawResults []placeSearchResult
 
-	if agentic {
-		categories, categoryErr := ps.GetQueryCategories(q)
-		if categoryErr != nil {
-			return nil, categoryErr
-		}
-		var results []sp.GetPlaceByIDResponse
-		vectorSearchTool := NewVectorSearchTool(ps.PGVectorDB, "greviews", ps.AppConfig)
+	query := `
+SELECT
+	NULL AS osm_id,
+	name,
+	NULL AS latitude,
+	NULL AS longitude,
+	NULL AS amenity,
+	id
+FROM places
+WHERE name ILIKE ?
 
-		// Create proper JSON for categories
-		categoriesJSON, _ := json.Marshal(categories)
-		rawString, _ := vectorSearchTool.Call(context.Background(), fmt.Sprintf(`{"query": "%s", "limit": 20, "categories": %s}`, q, string(categoriesJSON)))
-		rawResults := []placeRow{}
-		fmt.Println("rawString", rawString)
-		err := json.Unmarshal([]byte(rawString), &rawResults)
-		if err != nil {
-			return nil, err
-		}
-		fmt.Println("rawResults", rawResults)
-		for _, result := range rawResults {
-			fmt.Println("result", result.GMapID)
-			place, err := ps.GetPlaceByID(result.GMapID)
-			if err != nil {
-				return nil, err
-			}
-			results = append(results, *place)
-		}
-		return results, nil
+UNION ALL
+
+SELECT
+	osm_id,
+	name,
+	ST_Y(ST_Transform(way, 4326)) AS latitude,
+	ST_X(ST_Transform(way, 4326)) AS longitude,
+	amenity,
+	NULL AS id
+FROM planet_osm_point
+WHERE name ILIKE ?
+LIMIT 50`
+
+	err := ps.DB.Raw(
+		query,
+		"%"+q+"%",
+		"%"+q+"%",
+	).Scan(&rawResults).Error
+	if err != nil {
+		return nil, fmt.Errorf("search failed: %w", err)
 	}
 
-	// Create a new SQL chat agent with our specialized system prompt
-	sqlAgent := oa.NewSQLChatAgent("", "gpt-4.1-mini")
-	sqlAgent.SystemPrompt = oa.SystemPrompt // Use our specialized prompt for place search
-	sqlAgent.ClearMessages()                // Reset messages to include the new system prompt
+	return ps.mapSearchResultsToResponse(rawResults), nil
+}
 
-	// Add the user's query
+func (ps *PlaceService) aiSQLSearch(q, lat, long string) ([]sp.GetPlaceByIDResponse, error) {
+	// No API key? Immediately fall back.
+	if strings.TrimSpace(ps.AppConfig.OpenaiApiKey) == "" {
+		log.Println("OpenAI API key not configured, falling back to normal search.")
+		return ps.normalSearch(q)
+	}
+
+	query := fmt.Sprintf(
+		"Query: %s\nLatitude: %s\nLongitude: %s",
+		q,
+		lat,
+		long,
+	)
+
+	sqlAgent := oa.NewSQLChatAgent("", "gpt-4.1-mini")
+	sqlAgent.SystemPrompt = oa.SystemPrompt
+	sqlAgent.ClearMessages()
 	sqlAgent.AddUserMessage(query)
 
-	// Get the generated SQL
-	client := openai.NewClient(option.WithAPIKey(ps.AppConfig.OpenaiApiKey))
+	client := openai.NewClient(
+		option.WithAPIKey(ps.AppConfig.OpenaiApiKey),
+	)
+
 	resp, err := client.Chat.Completions.New(
-		context.TODO(),
+		context.Background(),
 		openai.ChatCompletionNewParams{
 			Messages: sqlAgent.GetMessages(),
 			Model:    sqlAgent.Model,
 		},
 	)
 	if err != nil {
-		log.Printf("Error generating SQL: %v\nAPI Key length: %d\nModel: %s\nMessages: %+v",
-			err, len(ps.AppConfig.OpenaiApiKey), sqlAgent.Model, sqlAgent.GetMessages())
-		// Fallback to simple ILIKE search if SQL generation fails
-		fallbackQuery := `
-			SELECT NULL AS osm_id, name, NULL AS latitude, NULL AS longitude, NULL as amenity, id
-			FROM places
-			WHERE name ILIKE ?
-			UNION
-			SELECT osm_id, name, ST_Y(ST_Transform(way, 4326)) AS latitude, ST_X(ST_Transform(way, 4326)) AS longitude, amenity, NULL AS id
-			FROM planet_osm_point
-			WHERE name ILIKE ?
-			LIMIT 50`
-
-		err = ps.DB.Raw(fallbackQuery, "%"+q+"%", "%"+q+"%").Scan(&rawResults).Error
-		if err != nil {
-			log.Printf("Fallback search failed: %v", err)
-			return nil, fmt.Errorf("fallback search failed: %w", err)
-		}
-		return ps.mapSearchResultsToResponse(rawResults), nil
+		log.Printf("AI SQL generation failed: %v", err)
+		return ps.normalSearch(q)
 	}
 
 	if len(resp.Choices) == 0 {
-		log.Printf("No SQL query generated from OpenAI response: %+v", resp)
-		return nil, fmt.Errorf("no SQL query generated")
+		log.Println("OpenAI returned no SQL, falling back.")
+		return ps.normalSearch(q)
 	}
 
-	// Execute the generated SQL query
-	generatedSQL := resp.Choices[0].Message.Content
-	log.Printf("Generated SQL: %s", generatedSQL)
+	generatedSQL := strings.TrimSpace(resp.Choices[0].Message.Content)
+	log.Printf("Generated SQL:\n%s", generatedSQL)
+
+	var rawResults []placeSearchResult
 
 	err = ps.DB.Raw(generatedSQL).Scan(&rawResults).Error
 	if err != nil {
-		log.Printf("Failed to execute generated SQL: %v\nSQL: %s", err, generatedSQL)
-		return nil, fmt.Errorf("failed to execute generated SQL: %w", err)
+		log.Printf("Generated SQL execution failed: %v", err)
+		return ps.normalSearch(q)
 	}
 
 	return ps.mapSearchResultsToResponse(rawResults), nil
+}
+
+func (ps *PlaceService) agenticSearch(q string) ([]sp.GetPlaceByIDResponse, error) {
+	categories, err := ps.GetQueryCategories(q)
+	if err != nil {
+		return nil, err
+	}
+
+	vectorSearchTool := NewVectorSearchTool(
+		ps.PGVectorDB,
+		"greviews",
+		ps.AppConfig,
+	)
+
+	categoriesJSON, err := json.Marshal(categories)
+	if err != nil {
+		return nil, err
+	}
+
+	rawString, err := vectorSearchTool.Call(
+		context.Background(),
+		fmt.Sprintf(
+			`{"query":"%s","limit":20,"categories":%s}`,
+			q,
+			string(categoriesJSON),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var rows []placeRow
+	if err := json.Unmarshal([]byte(rawString), &rows); err != nil {
+		return nil, err
+	}
+
+	results := make([]sp.GetPlaceByIDResponse, 0, len(rows))
+
+	for _, row := range rows {
+		place, err := ps.GetPlaceByID(row.GMapID)
+		if err != nil {
+			log.Printf("Skipping place %s: %v", row.GMapID, err)
+			continue
+		}
+
+		results = append(results, *place)
+	}
+
+	return results, nil
 }
 
 // Helper function to map search results to response
