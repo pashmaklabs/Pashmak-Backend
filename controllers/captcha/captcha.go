@@ -1,4 +1,4 @@
-package captcha
+package controllers_captcha
 
 import (
 	"net/http"
