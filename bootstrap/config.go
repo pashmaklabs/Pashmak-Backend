@@ -148,6 +148,8 @@ func LoadEnvVars() *AppConfig {
 		"http://localhost:8080",
 		"https://pashmak.darkube.app",
 		"https://develop.darkube.app:5173",
+		"https://pashmak-nginx.darkube.app:5173",
+		"https://pashmak-nginx.darkube.app",
 	}
 
 	Environment := os.Getenv("GO_ENV")
