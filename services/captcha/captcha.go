@@ -1,4 +1,4 @@
-package captcha
+package services_captcha
 
 import (
     "errors"
