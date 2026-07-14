@@ -116,13 +116,21 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 	q := c.Query("q")
 	lat := c.Query("lat")
 	long := c.Query("lng")
-	agentic := c.Query("agentic") == "true"
+	agentic := c.Query("agentic") == "false"
 
 	sessionID, err := c.Cookie("session_id")
 	userinfo, loggedIn := c.Get("user")
 	if !loggedIn && (err != nil || sessionID == "") {
 		sessionID = uuid.New().String()
-		c.SetCookie("session_id", sessionID, 30*24*3600, "/", pc.AppConfig.CookieDomain, false, true)
+		c.SetCookie(
+			"session_id",
+			sessionID,
+			30*24*3600,
+			"/",
+			pc.AppConfig.CookieDomain,
+			false,
+			true,
+		)
 	}
 
 	var userID *uint
@@ -130,14 +138,26 @@ func (pc *PlaceController) SearchPlace(c *gin.Context) {
 		id := userinfo.(services_auth.UserInfo).ID
 		userID = &id
 	}
-	err = pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q)
-	if err != nil {
-		log.Printf("Failed to save search query fo user: %v, %v", userID, err)
+
+	if err := pc.PlaceService.SaveSearch(userID, sessionID, loggedIn, q); err != nil {
+		log.Printf("Failed to save search query for user %v: %v", userID, err)
 	}
 
-	places, err := pc.PlaceService.SearchPlace(q, lat, long, agentic)
+	// Current mapping:
+	//   agentic=false -> SearchModeNormal
+	//   agentic=true  -> SearchModeAgentic
+	//
+	// TODO:
+	// When AI SQL search is exposed through the API (e.g. mode=ai-sql),
+	// map it to SearchModeAISQL here instead of using the boolean.
+	searchMode := services_place.SearchModeNormal
+	if agentic {
+		searchMode = services_place.SearchModeAgentic
+	}
+
+	places, err := pc.PlaceService.SearchPlace(q, lat, long, searchMode)
 	if err != nil {
-		fmt.Println("err", err)
+		log.Printf("SearchPlace failed: %v", err)
 		c.JSON(500, gin.H{
 			"status":  "error",
 			"message": "خطا در جستجوی مکان",
