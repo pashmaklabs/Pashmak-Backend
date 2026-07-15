@@ -127,7 +127,7 @@ func main() {
 	// Add each domain routes here
 	routers_auth.AuthRoutes(Router, DB, Redis, AppConfig)
 	routers_profile.ProfileRoutes(Router, DB, PGVectorDB, Redis, Minio, AppConfig)
-	routers_navigation.NavigationRoutes(Router, DB, AppConfig)
+	routers_navigation.NavigationRoutes(Router, DB, Redis, AppConfig)
 	routers_comment.CommentRoutes(Router, DB, PGVectorDB, Redis, AppConfig)
 	routers_place.PlaceRoutes(Router, DB, PGVectorDB, Redis, Minio, AppConfig)
 	routers_admin.AdminRoutes(Router, DB, PGVectorDB, Redis, Minio, AppConfig)
