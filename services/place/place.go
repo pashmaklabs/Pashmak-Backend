@@ -266,42 +266,151 @@ func (ps *PlaceService) SearchPlace(q, lat, long string, mode SearchMode) ([]sp.
 }
 
 func (ps *PlaceService) normalSearch(q string) ([]sp.GetPlaceByIDResponse, error) {
-	var rawResults []placeSearchResult
-
-	query := `
-SELECT
-	NULL AS osm_id,
-	name,
-	NULL AS latitude,
-	NULL AS longitude,
-	NULL AS amenity,
-	id
-FROM places
-WHERE name ILIKE ?
-
-UNION ALL
-
-SELECT
-	osm_id,
-	name,
-	ST_Y(ST_Transform(way, 4326)) AS latitude,
-	ST_X(ST_Transform(way, 4326)) AS longitude,
-	amenity,
-	NULL AS id
-FROM planet_osm_point
-WHERE name ILIKE ?
-LIMIT 50`
-
-	err := ps.DB.Raw(
-		query,
-		"%"+q+"%",
-		"%"+q+"%",
-	).Scan(&rawResults).Error
-	if err != nil {
-		return nil, fmt.Errorf("search failed: %w", err)
-	}
-
-	return ps.mapSearchResultsToResponse(rawResults), nil
+    // First, search for places in the places table
+    var placeResults []struct {
+        ID        uint    `gorm:"column:id"`
+        Name      string  `gorm:"column:name"`
+        Latitude  float64 `gorm:"column:latitude"`
+        Longitude float64 `gorm:"column:longitude"`
+        Amenity   string  `gorm:"column:amenity"`
+        IsOSM     bool    `gorm:"column:is_osm"`
+    }
+    
+    // Get places from places table that match the search
+    err := ps.DB.Table("places").
+        Select("id, name, latitude, longitude, amenity, is_osm").
+        Where("name ILIKE ?", "%"+q+"%").
+        Limit(50).
+        Find(&placeResults).Error
+    
+    if err != nil {
+        return nil, fmt.Errorf("failed to search places: %w", err)
+    }
+    
+    // Get matching OSM points that are NOT already in places table
+    var osmResults []struct {
+        OsmID     uint    `gorm:"column:osm_id"`
+        Name      string  `gorm:"column:name"`
+        Latitude  float64 `gorm:"column:latitude"`
+        Longitude float64 `gorm:"column:longitude"`
+        Amenity   string  `gorm:"column:amenity"`
+    }
+    
+    // Get OSM points not yet imported
+    // We check if the osm_id exists as an id in places table
+    err = ps.DB.Raw(`
+        SELECT 
+            osm_id,
+            name,
+            ST_Y(ST_Transform(way, 4326)) AS latitude,
+            ST_X(ST_Transform(way, 4326)) AS longitude,
+            amenity
+        FROM planet_osm_point
+        WHERE name ILIKE ?
+        AND osm_id NOT IN (
+            SELECT id FROM places
+        )
+        LIMIT 50
+    `, "%"+q+"%").Scan(&osmResults).Error
+    
+    if err != nil {
+        return nil, fmt.Errorf("failed to search OSM points: %w", err)
+    }
+    
+    // Import any new OSM points to places table
+    for _, osm := range osmResults {
+        // Check if it already exists (shouldn't, but just in case)
+        var existing models_place.Place
+        result := ps.DB.Where("id = ? AND is_osm = true", osm.OsmID).First(&existing)
+        
+        if result.Error != nil {
+            // Doesn't exist, create it
+            place := models_place.Place{
+                ID:        osm.OsmID, // OSM ID becomes the place ID
+                Name:      osm.Name,
+                Latitude:  osm.Latitude,
+                Longitude: osm.Longitude,
+                Amenity:   osm.Amenity,
+                IsOSM:     true,
+            }
+            
+            if createErr := ps.DB.Create(&place).Error; createErr != nil {
+                // Log error but continue
+                continue
+            }
+            
+            // Add to placeResults for response
+            placeResults = append(placeResults, struct {
+                ID        uint    `gorm:"column:id"`
+                Name      string  `gorm:"column:name"`
+                Latitude  float64 `gorm:"column:latitude"`
+                Longitude float64 `gorm:"column:longitude"`
+                Amenity   string  `gorm:"column:amenity"`
+                IsOSM     bool    `gorm:"column:is_osm"`
+            }{
+                ID:        place.ID,
+                Name:      place.Name,
+                Latitude:  place.Latitude,
+                Longitude: place.Longitude,
+                Amenity:   place.Amenity,
+                IsOSM:     place.IsOSM,
+            })
+        } else {
+            // Exists, update it
+            existing.Name = osm.Name
+            existing.Latitude = osm.Latitude
+            existing.Longitude = osm.Longitude
+            existing.Amenity = osm.Amenity
+            ps.DB.Save(&existing)
+            
+            // Add to placeResults for response
+            placeResults = append(placeResults, struct {
+                ID        uint    `gorm:"column:id"`
+                Name      string  `gorm:"column:name"`
+                Latitude  float64 `gorm:"column:latitude"`
+                Longitude float64 `gorm:"column:longitude"`
+                Amenity   string  `gorm:"column:amenity"`
+                IsOSM     bool    `gorm:"column:is_osm"`
+            }{
+                ID:        existing.ID,
+                Name:      existing.Name,
+                Latitude:  existing.Latitude,
+                Longitude: existing.Longitude,
+                Amenity:   existing.Amenity,
+                IsOSM:     existing.IsOSM,
+            })
+        }
+    }
+    
+    // Convert to response format
+    var responses []sp.GetPlaceByIDResponse
+    for _, p := range placeResults {
+        response := sp.GetPlaceByIDResponse{
+            ID:        strconv.FormatUint(uint64(p.ID), 10),
+            Name:      p.Name,
+            Rating:    0, // You might want to calculate this
+        }
+        
+        // Set latitude and longitude if they exist
+        if p.Latitude != 0 || p.Longitude != 0 {
+            response.Latitude = &p.Latitude
+            response.Longitude = &p.Longitude
+        }
+        
+        if p.Amenity != "" {
+            response.Amenity = &p.Amenity
+        }
+        
+        // If it's an OSM place, set the osm_id
+        if p.IsOSM {
+            osmID := p.ID
+            response.OsmID = &osmID
+        }
+        
+        responses = append(responses, response)
+    }
+    
+    return responses, nil
 }
 
 func (ps *PlaceService) aiSQLSearch(q, lat, long string) ([]sp.GetPlaceByIDResponse, error) {
